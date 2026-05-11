@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ボブの秘密基地</title>
+    <style>
+        :root {
+            --bg-color: #1a1c1e;
+            --card-bg: #25282c;
+            --accent-color: #00d4ff;
+            --text-color: #e0e0e0;
+            --sub-text: #a0a0a0;
+            --header-height: 60px;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        header {
+            background-color: rgba(0, 0, 0, 0.95);
+            height: var(--header-height);
+            display: none; 
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 2px solid var(--accent-color);
+            padding: 0 15px;
+            box-sizing: border-box;
+        }
+
+        .logo-link {
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: var(--accent-color);
+            white-space: nowrap;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        .nav-links::-webkit-scrollbar { display: none; }
+
+            .nav-item-custom {
+                color: #e0e0e0; text-decoration: none; font-size: 0.85rem; 
+                padding: 6px 10px; border-radius: 4px; border: 1px solid transparent;
+                transition: 0.2s;
+            }
+            .nav-item-custom:hover { background: rgba(0, 212, 255, 0.2); border-color: #00d4ff; }
+            nav::-webkit-scrollbar { display: none; }
+
+        .page { display: none; min-height: 100vh; width: 100%; }
+        .page.active { display: flex; flex-direction: column; }
+
+        #top-page {
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: radial-gradient(circle, #2c3e50 0%, #1a1c1e 100%);
+        }
+
+        .title-large {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            color: var(--accent-color);
+        }
+
+        .enter-btn {
+            padding: 15px 50px;
+            font-size: 1.2rem;
+            color: var(--accent-color);
+            border: 1px solid var(--accent-color);
+            background: transparent;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .container { 
+            width: 100%;
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            box-sizing: border-box;
+        }
+
+        .grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid #333;
+            border-radius: 12px;
+            text-decoration: none;
+            color: inherit;
+            transition: 0.3s;
+            overflow: hidden;
+            flex: 1 1 280px;
+            max-width: 380px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card:not(.under-const):hover { 
+            transform: translateY(-5px); 
+            border-color: var(--accent-color);
+            box-shadow: 0 5px 15px rgba(0, 212, 255, 0.3);
+        }
+
+        /* 工事中カードのスタイル */
+        .under-const {
+            opacity: 0.6;
+            cursor: default;
+        }
+
+        .card-img { 
+            height: 120px; /* GIFが見えやすいよう少し高さを出すのがおすすめ */
+            background: #000; /* 背景を黒にすると映像が引き締まります */
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            overflow: hidden; /* 枠からはみ出た画像を隠す */
+            font-size: 2.5rem;
+            border-bottom: 1px solid #444;
+        }
+        .card-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* 枠いっぱいに表示。比率が違う場合は端がカットされます */    
+}
+
+        .card-content { padding: 15px; }
+        .card-title { margin: 0 0 5px 0; color: var(--accent-color); font-size: 1.1rem; }
+        .card-desc { font-size: 0.85rem; color: var(--sub-text); margin: 0; line-height: 1.4; }
+    </style>
+</head>
+<body>
+
+    <header id="main-header">
+        <a href="index.html#main" class="logo-link" onclick="location.reload()">ボブの秘密基地</a>
+        <nav class="nav-links">
+        <a href="unit.html" class="nav-item-custom">Unit</a>
+        <a href="derivatives.html" class="nav-item-custom">Derivatives</a>
+        <a href="arms.html" class="nav-item-custom">Arms</a>
+        <a href="hangar.html" class="nav-item-custom">Hangar</a>
+        <a href="#" class="nav-item-custom">Battle</a>
+        <a href="novels.html" class="nav-item-custom">Novels</a>
+        <a href="tactics.html" class="nav-item-custom">Tactics</a>
+        <a href="hunter.html" class="nav-item-custom">Hunter</a>
+        <a href="trivia.html" class="nav-item-custom">Trivia</a>
+        <a href="emoji.html" class="nav-item-custom">Emoji</a>
+        <a href="#" class="nav-item-custom">Link</a>
+        </nav>
+    </header>
+
+    <div id="top-page" class="page active">
+        <h1 class="title-large">ボブの秘密基地</h1>
+        <button class="enter-btn" onclick="goToMain()">入口</button>
+    </div>
+
+    <div id="main-page" class="page">
+        <div class="container">
+            <div class="grid">
+                 <a href="unit.html" class="card">
+                    <div class="card-img">
+        <img src="unit.gif" alt="Unit Database" class="gif-icon">
+    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">Unit Database</h3>
+                        <p class="card-desc">機体ステータス・特殊能力データ</p>
+                    </div>
+                 </a>
+                 <a href="derivatives.html" class="card">
+                    <div class="card-img">
+        <img src="derivatives.gif" alt="Derivative Table" class="gif-icon">
+    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">Derivative Table</h3>
+                       <p class="card-desc">機体開発・派生表<br>※オロさん提供 圧倒的感謝！</p>
+                   </div>
+                </a>
+                <a href="arms.html" class="card">
+                    <div class="card-img">
+        <img src="arms.gif" alt="Arms depot" class="gif-icon">
+    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">Arms depot</h3>
+                        <p class="card-desc">武器・装備データと武器庫システム</p>
+                    </div>
+                </a>
+                <a href="hangar.html" class="card">
+                    <div class="card-img">
+        <img src="hangar.gif" alt="Hangar" class="gif-icon">
+    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">Hangar</h3>
+                        <p class="card-desc">勢力メンバー専用ハンガーデッキ</p>
+                    </div>
+                </a>
+                <a href="javascript:void(0)" class="card under-const">
+                               <div class="card-img">
+        <img src="battle.gif" alt="Battle Data" class="gif-icon">
+    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">Battle Data (工事中)</h3>
+                        <p class="card-desc">戦闘記録・大会結果</p>
+                    </div>
+                </a>
+                <a href="novels.html" class="card">
+                    <div class="card-img">
+        <img src="novels.gif" alt="Novels" class="gif-icon">
+    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">Novels</h3>
+                        <p class="card-desc">戦闘記録の小説アーカイブ</p>
+                    </div>
+                </a>
+                <a href="tactics.html" class="card">
+                    <div class="card-img">
+        <img src="tactics.gif" alt="Tactics" class="gif-icon">
+    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">Tactics</h3>
+                        <p class="card-desc">個人・団体戦術の基礎知識</p>
+                    </div>
+                </a>
+               <a href="hunter.html" class="card">
+    <div class="card-img">
+        <img src="hunter.gif" alt="Hunter Chance" class="gif-icon">
+    </div>
+    <div class="card-content">
+        <h3 class="card-title">Hunter Chance</h3>
+        <p class="card-desc">システム攻略情報</p>
+    </div>
+</a>
+
+<a href="trivia.html" class="card">
+    <div class="card-img">
+        <img src="trivia.gif" alt="Trivia" class="gif-icon">
+    </div>
+    <div class="card-content">
+        <h3 class="card-title">Trivia</h3>
+        <p class="card-desc">スキル・地形豆知識</p>
+    </div>
+</a>
+
+<a href="emoji.html" class="card">
+    <div class="card-img">
+        <img src="emoji.gif" alt="Emoji" class="gif-icon">
+    </div>    
+    <div class="card-content">
+        <h3 class="card-title">Emoji</h3>
+        <p class="card-desc">html絵文字タグ一覧</p>
+    </div>
+</a>
+
+<a href="javascript:void(0)" class="card under-const">
+    <div class="card-img">
+        <img src="link.gif" alt="Link" class="gif-icon">
+    </div>
+    <div class="card-content">
+        <h3 class="card-title">Link (工事中)</h3>
+        <p class="card-desc">外部リンク集</p>
+   </div>
+</a>
+
+<a href="secret.html" id="secret-card" class="card" style="display: none; opacity: 0; transform: translateY(20px); transition: opacity 2s ease, transform 2s ease;">
+    <div class="card-img">
+        <img src="secret.gif" alt="Secret Room" class="gif-icon">
+    </div>
+    <div class="card-content">
+        <h3 class="card-title">Secret Room</h3>
+        <p class="card-desc" style="color: #00ff00; font-family: monospace;">>迚ｩ鄂ｮ縺ｧ縺吮飭...侵入成功&gt;&gt;&gt;ACCESS GRANTED</p>
+    </div>
+</a>
+            </div>
+        </div>
+    </div>
+
+<script>
+    function showPage(pageId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(pageId).classList.add('active');
+        
+        const header = document.getElementById('main-header');
+        const secretCard = document.getElementById('secret-card');
+
+        if (pageId === 'main-page') {
+            header.style.display = 'flex';
+            
+            // メインページに入ってから10秒後に実行
+            setTimeout(() => {
+                if (secretCard) {
+                    secretCard.style.display = 'flex'; // まず枠組みを存在させる
+                    
+                    // ブラウザがdisplay:flexを認識した直後にアニメーションを開始させるためのわずかな待ち
+                    setTimeout(() => {
+                        secretCard.style.opacity = '1';       // 透明度を100%に
+                        secretCard.style.transform = 'translateY(0)'; // 元の位置(0)へ移動
+                    }, 50);
+                }
+            }, 10000); // 10000ミリ秒 = 10秒
+
+        } else {
+            header.style.display = 'none';
+            // 他のページ（トップなど）に戻った時はリセットする
+            if (secretCard) {
+                secretCard.style.display = 'none';
+                secretCard.style.opacity = '0';
+                secretCard.style.transform = 'translateY(20px)';
+            }
+        }
+        window.scrollTo(0, 0);
+   // GoatCounter手動トラッキング
+    if (window.goatcounter) goatcounter.count({ path: '/#' + pageId });
+    }
+
+    function goToMain() { location.hash = "main"; showPage('main-page'); }
+    
+    window.onload = function() {
+        if (window.location.hash === '#main') showPage('main-page');
+        else showPage('top-page');
+    };
+    
+    window.onhashchange = function() {
+        if (window.location.hash === '#main') showPage('main-page');
+        else showPage('top-page');
+    };
+</script>
+<script data-goatcounter="https://bobs-base.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>
