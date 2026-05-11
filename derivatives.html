@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Derivative Table - ボブの秘密基地</title>
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/scroller/2.2.0/css/scroller.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/fixedcolumns/4.3.0/css/fixedColumns.dataTables.min.css">
+    
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/scroller/2.2.0/js/dataTables.scroller.min.js"></script>
+    <script src="https://cdn.datatables.net/fixedcolumns/4.3.0/js/dataTables.fixedColumns.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/jquery.mark.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #1a1c1e;
+            --accent-color: #00d4ff;
+            --text-color: #e0e0e0;
+            --card-bg: #25282c;
+            --border-color: #444;
+        }
+
+        html, body {
+            margin: 0; padding: 0; height: 100%;
+            background-color: var(--bg-color); color: var(--text-color);
+            overflow: hidden; font-family: sans-serif;
+        }
+
+        /* 指定された共通ヘッダー様式 */
+        header {
+            background: rgba(0,0,0,0.95); height: 60px; display: flex; 
+            justify-content: space-between; align-items: center; 
+            position: sticky; top: 0; z-index: 1000; 
+            border-bottom: 2px solid var(--accent-color); padding: 0 15px; box-sizing: border-box;
+        }
+
+        .nav-item-custom {
+            color: #e0e0e0; text-decoration: none; font-size: 0.85rem; 
+            padding: 6px 10px; border-radius: 4px; border: 1px solid transparent;
+            transition: 0.2s;
+        }
+        .nav-item-custom:hover { background: rgba(0, 212, 255, 0.2); border-color: #00d4ff; }
+        nav::-webkit-scrollbar { display: none; }
+
+        /* 検索エリア */
+        .top-section {
+            height: 65px; background: var(--bg-color);
+            border-bottom: 1px solid var(--border-color);
+            padding: 10px 20px; box-sizing: border-box;
+        }
+
+        .search-area { display: flex; gap: 10px; align-items: center; }
+        #search-box {
+            flex-grow: 1; padding: 10px; background: #222; 
+            border: 1px solid var(--accent-color); color: white; border-radius: 4px;
+            max-width: 500px;
+        }
+
+        /* テーブルエリア */
+        .main-content {
+            height: calc(100% - 125px); /* header + top-section */
+            background: var(--bg-color);
+        }
+
+        table.dataTable { background-color: var(--card-bg) !important; margin: 0 !important; border-collapse: collapse !important; }
+        table.dataTable thead th { 
+            background: #333 !important; color: var(--accent-color) !important; 
+            padding: 12px 10px; border: 1px solid var(--border-color) !important;
+        }
+        table.dataTable td { 
+            border: 1px solid var(--border-color) !important; padding: 8px 10px !important; 
+            white-space: pre !important; color: var(--text-color) !important;
+            background-color: var(--card-bg) !important;
+            font-family: "MS Gothic", "Osaka-mono", monospace;
+        }
+
+        .dtfc-fixed-left td, .dtfc-fixed-left th { background-color: #2a2d31 !important; z-index: 5; }
+
+        /* スクロールバー */
+        .dataTables_scrollBody::-webkit-scrollbar { height: 16px; width: 16px; }
+        .dataTables_scrollBody::-webkit-scrollbar-track { background: #111; }
+        .dataTables_scrollBody::-webkit-scrollbar-thumb { background: #555; border-radius: 8px; border: 3px solid #111; }
+        .dataTables_scrollBody::-webkit-scrollbar-thumb:hover { background: var(--accent-color); }
+
+        mark { background: #ffeb3b; color: #000; padding: 0 2px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <a href="index.html#main" style="text-decoration:none; font-weight:bold; font-size:1.1rem; color:var(--accent-color); white-space:nowrap; margin-right:15px;">ボブの秘密基地</a>
+    <nav style="display:flex; gap:10px; overflow-x:auto; white-space:nowrap; -webkit-overflow-scrolling:touch; padding:5px 0;">
+        <a href="unit.html" class="nav-item-custom">Unit</a>
+        <a href="derivatives.html" class="nav-item-custom">Derivatives</a>
+        <a href="arms.html" class="nav-item-custom">Arms</a>
+        <a href="hangar.html" class="nav-item-custom">Hangar</a>
+        <a href="battle.html" class="nav-item-custom">Battle</a>
+        <a href="novels.html" class="nav-item-custom">Novels</a>
+        <a href="tactics.html" class="nav-item-custom">Tactics</a>
+        <a href="hunter.html" class="nav-item-custom">Hunter</a>
+        <a href="trivia.html" class="nav-item-custom">Trivia</a>
+        <a href="emoji.html" class="nav-item-custom">Emoji</a>
+        <a href="link.html" class="nav-item-custom">Link</a>
+    </nav>
+</header>
+
+<div class="top-section">
+    <div class="search-area">
+        <input type="text" id="search-box" placeholder="機体名・NOで検索...">
+    </div>
+</div>
+
+<div class="main-content">
+    <table id="derivativeTable" class="display nowrap" style="width:100%"></table>
+</div>
+
+<script>
+$(document).ready(function () {
+    let table;
+
+    fetch('derivatives.csv')
+        .then(response => response.arrayBuffer())
+        .then(buffer => {
+            const decoder = new TextDecoder('shift-jis');
+            const csvText = decoder.decode(buffer);
+            
+            // ヘッダーが重複（1, 2, 3...）しているため、列名の代わりに配列として読み込む
+            const results = Papa.parse(csvText, {
+                header: false, // ヘッダーを自動処理せず、手動で制御
+                skipEmptyLines: true
+            });
+
+            if (results.data.length > 0) {
+                initDataTable(results.data);
+            }
+        });
+
+    function initDataTable(rawData) {
+        // 1行目をヘッダーとして取得
+        const headerRow = rawData[0];
+        const bodyData = rawData.slice(1);
+
+        // すべての列（J列以降のBG列までも含むすべて）を定義
+        const columns = headerRow.map((title, index) => ({
+            title: title || " ",
+            data: index, // 列番号で紐付け
+            orderable: false,
+            defaultContent: ""
+        }));
+
+        table = $('#derivativeTable').DataTable({
+            data: bodyData,
+            columns: columns,
+            deferRender: true,
+            scrollY: "calc(100vh - 165px)",
+            scrollX: true,
+            scroller: true,
+            dom: 'rti',
+            ordering: false,
+            fixedColumns: {
+                left: 2 // NOと目的派生検索
+            },
+            language: { url: "https://cdn.datatables.net/plug-ins/1.13.6/i18n/ja.json" }
+        });
+
+        // 検索機能
+        $('#search-box').on('input', function() {
+            const keyword = $(this).val();
+            table.search(keyword).draw();
+            if (keyword.length > 0) {
+                $('.dataTables_scrollBody').unmark().mark(keyword);
+            }
+        });
+    }
+});
+</script>
+<script data-goatcounter="https://bobs-base.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>
