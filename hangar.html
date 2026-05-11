@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hangar - ボブの秘密基地</title>
+    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/fixedcolumns/4.3.0/css/fixedColumns.dataTables.min.css">
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/fixedcolumns/4.3.0/js/dataTables.fixedColumns.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #1a1c1e;
+            --accent-color: #00d4ff;
+            --text-color: #e0e0e0;
+            --border-color: #444;
+        }
+
+        body { font-family: sans-serif; margin: 0; background: var(--bg-color); color: var(--text-color); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+        header { background: rgba(0,0,0,0.95); height: 60px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; border-bottom: 2px solid var(--accent-color); padding: 0 15px; box-sizing: border-box; }
+        .nav-item-custom { color: #e0e0e0; text-decoration: none; font-size: 0.85rem; padding: 6px 10px; border-radius: 4px; border: 1px solid transparent; transition: 0.2s; }
+        .nav-item-custom:hover { background: rgba(0, 212, 255, 0.2); border-color: #00d4ff; }
+        nav::-webkit-scrollbar { display: none; }
+
+        .control-panel { padding: 10px 20px; background: #222; }
+        .tab-wrapper { display: flex; gap: 5px; overflow-x: auto; margin-bottom: 10px; padding-bottom: 5px; }
+        .tab-btn { background: #333; color: #aaa; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px; white-space: nowrap; }
+        .tab-btn.active { background: var(--accent-color); color: #000; font-weight: bold; }
+        #search-box { width: 100%; background: #111; border: 1px solid var(--border-color); color: #fff; padding: 8px; box-sizing: border-box; }
+
+        .main-content { flex: 1; overflow: hidden; background: #000; }
+        table.dataTable { font-size: 0.85em; background-color: #000 !important; }
+        table.dataTable thead th { background: #222 !important; color: var(--accent-color) !important; border-bottom: 1px solid var(--accent-color) !important; }
+        table.dataTable tbody td { border-bottom: 1px solid #222; background-color: #000 !important; color: #ccc; }
+
+        /* 固定列のデザイン調整：背景黒・文字色をアクセントカラーや白に */
+        .DTFC_LeftBodyLiner td { 
+            background-color: #111 !important; /* 少しだけ明るい黒 */
+            color: #fff !important; /* 基本は白文字 */
+            border-right: 1px solid var(--border-color) !important;
+        }
+        
+        /* BAY番号と機体名リンクを強調 */
+        .bay-cell { color: var(--accent-color) !important; font-weight: bold; font-family: monospace; }
+        .no-link { color: var(--accent-color) !important; text-decoration: underline; font-weight: bold; }
+        /* 機体名の列（5列目）を白く強調 */
+        .DTFC_LeftBodyLiner td:nth-child(5) { color: #fff !important; font-weight: bold; }
+
+        /* 入力UI（以前の黒地スタイルに戻す） */
+        .memo-input { background: #111; border: 1px solid #444; color: #fff; width: 100px; font-size: 0.9em; padding: 2px; }
+        .deploy-input { background: #000; border: 1px solid var(--accent-color); color: #fff; width: 60px; text-align: center; }
+        .action-btn { cursor: pointer; padding: 3px 10px; border-radius: 3px; border: none; font-weight: bold; font-size: 0.8em; }
+        .reg-btn { background: var(--accent-color); color: #000; }
+        .del-btn { background: #552222; color: #ff8888; }
+
+        /* スクロールバー */
+        .dataTables_scrollBody::-webkit-scrollbar { width: 16px; height: 16px; }
+        .dataTables_scrollBody::-webkit-scrollbar-track { background: #000; }
+        .dataTables_scrollBody::-webkit-scrollbar-thumb { background: var(--accent-color); border-radius: 8px; border: 3px solid #000; }
+
+        #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; display: flex; justify-content: center; align-items: center; color: var(--accent-color); }
+    </style>
+</head>
+<body>
+
+<div id="overlay">SYNCING SYSTEM...</div>
+
+<header>
+    <a href="index.html#main" style="text-decoration:none; font-weight:bold; font-size:1.1rem; color:var(--accent-color); white-space:nowrap; margin-right:15px;">ボブの秘密基地</a>
+    <nav style="display:flex; gap:10px; overflow-x:auto; white-space:nowrap; -webkit-overflow-scrolling:touch; padding:5px 0;">
+        <a href="unit.html" class="nav-item-custom">Unit</a>
+        <a href="derivatives.html" class="nav-item-custom">Derivatives</a>
+        <a href="arms.html" class="nav-item-custom">Arms</a>
+        <a href="hangar.html" class="nav-item-custom">Hangar</a>
+        <a href="battle.html" class="nav-item-custom">Battle</a>
+        <a href="novels.html" class="nav-item-custom">Novels</a>
+        <a href="tactics.html" class="nav-item-custom">Tactics</a>
+        <a href="hunter.html" class="nav-item-custom">Hunter</a>
+        <a href="trivia.html" class="nav-item-custom">Trivia</a>
+        <a href="emoji.html" class="nav-item-custom">Emoji</a>
+        <a href="link.html" class="nav-item-custom">Link</a>
+    </nav>
+</header>
+
+<div class="control-panel">
+    <div class="tab-wrapper" id="memberTabs"></div>
+    <input type="text" id="search-box" placeholder="機体名や武装で検索...">
+</div>
+
+<div class="main-content">
+    <table id="hangarTable" class="display nowrap" style="width:100%">
+        <thead id="tableHeader"></thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+</div>
+
+<script>
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxbNqD5XbkQFOEcRXvL5XQY5J4B1Woq2T1v033J-3qm-OaX9cpFG4Pol1RyRd_tkQG-_g/exec";
+    const CSV_URL = "unit_26.3.24.csv";
+    const PILOTS = ["オロ〇ミン", "ライナセロス", "カイジン", "炎のナイト", "Net", "なぎさ", "オズナ", "エル・シエル", "アルトリア","かみねこ", "ボブ", "ナメレス", "Yggdrasill", "マルク"];
+    
+    let masterData = [];
+    let cloudData = [];
+    let activePilot = PILOTS[0];
+    let table = null;
+
+    $(document).ready(async function() {
+        initTabs();
+        await loadCSV();
+        await fetchCloudData();
+        $("#overlay").fadeOut();
+    });
+
+    function initTabs() {
+        const $tw = $('#memberTabs');
+        PILOTS.forEach(p => {
+            $('<button class="tab-btn"></button>').text(p).toggleClass('active', p === activePilot)
+                .on('click', function() {
+                    activePilot = p; $('.tab-btn').removeClass('active'); $(this).addClass('active');
+                    renderTable();
+                }).appendTo($tw);
+        });
+    }
+
+    async function loadCSV() {
+        return new Promise(res => {
+            Papa.parse(CSV_URL, { download: true, header: true, skipEmptyLines: true, complete: (r) => { masterData = r.data; res(); } });
+        });
+    }
+
+    async function fetchCloudData() {
+        try { cloudData = await $.getJSON(GAS_URL); renderTable(); } catch(e) { console.error(e); }
+    }
+
+    function renderTable() {
+        if (table) { table.destroy(); $('#tableHeader, #tableBody').empty(); }
+
+        const baseKeys = Object.keys(masterData[0]);
+        const headers = ["BAY", "ACTION", "PILOT MEMO", ...baseKeys];
+        const $theadTr = $('<tr></tr>');
+        headers.forEach(h => $theadTr.append(`<th>${h}</th>`));
+        $('#tableHeader').append($theadTr);
+
+        const pilotUnits = cloudData.filter(d => d.memberName === activePilot);
+
+        // BAYを15まで表示
+        for (let i = 1; i <= 15; i++) {
+            const reg = pilotUnits.find(u => String(u.slotIndex) === String(i));
+            const unit = reg ? masterData.find(m => String(m.No) === String(reg.unitNo)) : null;
+            const $tr = $('<tr></tr>');
+
+            $tr.append(`<td class="bay-cell">BAY-${String(i).padStart(2, '0')}</td>`);
+            
+            if (unit) {
+                $tr.append(`<td><button class="action-btn del-btn" onclick="updateSlot(${i}, '', '')">予備役</button></td>`);
+                $tr.append(`<td><input type="text" class="memo-input" id="memo-${i}" value="${reg.note || ''}" onchange="handleSave(${i})"></td>`);
+                
+                baseKeys.forEach((key) => {
+                    let val = unit[key] || "";
+                    if (key === "No" && val !== "") {
+                        const nameVal = unit["機体名"] || "";
+                        const formBaseUrl = "https://docs.google.com/forms/d/e/1FAIpQLSc1qt_Bgvh8kwdOUtjc5qPOKl1cGoBn0jVaHW1E5oBMCIonfQ/viewform";
+                        const entryIdNo = "entry.701929867";
+                        const entryIdName = "entry.501950524";
+                        const formUrl = `${formBaseUrl}?${entryIdNo}=${encodeURIComponent(val)}&${entryIdName}=${encodeURIComponent(nameVal)}&usp=pp_url`;
+                        $tr.append(`<td><a href="${formUrl}" target="_blank" class="no-link">${val}</a></td>`);
+                    } else {
+                        $tr.append(`<td>${val}</td>`);
+                    }
+                });
+            } else {
+                $tr.append(`<td><button class="action-btn reg-btn" onclick="handleSave(${i})">配備</button></td>`);
+                $tr.append(`<td><input type="text" class="memo-input" id="memo-${i}" placeholder="..."></td>`);
+                $tr.append(`<td><input type="number" class="deploy-input" id="in-${i}" placeholder="No."></td>`);
+                for(let j=1; j < baseKeys.length; j++) $tr.append('<td></td>');
+            }
+            $('#tableBody').append($tr);
+        }
+
+        table = $('#hangarTable').DataTable({
+            scrollY: "calc(100vh - 230px)",
+            scrollX: true,
+            paging: false,
+            info: false,
+            fixedColumns: { left: 5 }, // BAY, ACTION, MEMO, No, 機体名まで固定
+            dom: 'rti',
+            ordering: false
+        });
+        $('#search-box').on('input', function() { table.search(this.value).draw(); });
+    }
+
+    async function handleSave(slot) {
+        const no = $(`#in-${slot}`).val() || cloudData.find(d => d.memberName === activePilot && String(d.slotIndex) === String(slot))?.unitNo;
+        const note = $(`#memo-${slot}`).val();
+        if (no) await updateSlot(slot, no, note);
+    }
+
+    async function updateSlot(slot, no, note) {
+        $("#overlay").show();
+        await $.post(GAS_URL, JSON.stringify({ memberName: activePilot, slotIndex: String(slot), unitNo: no, note: note }));
+        await fetchCloudData();
+        $("#overlay").hide();
+    }
+</script>
+<script data-goatcounter="https://bobs-base.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>
