@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SS Upload - 秘密結社の部屋</title>
+    <style>
+        :root {
+            --bg-color: #1a1c1e;
+            --card-bg: #25282c;
+            --accent-color: #00d4ff;
+            --text-color: #e0e0e0;
+            --sub-text: #a0a0a0;
+            --header-height: 60px;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        header {
+            background-color: rgba(0, 0, 0, 0.95);
+            height: var(--header-height);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 2px solid var(--accent-color);
+            padding: 0 15px;
+            box-sizing: border-box;
+        }
+
+        .logo-link {
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: var(--accent-color);
+            white-space: nowrap;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        .nav-links::-webkit-scrollbar { display: none; }
+
+        .nav-item-custom {
+            color: #e0e0e0; text-decoration: none; font-size: 0.85rem; 
+            padding: 6px 10px; border-radius: 4px; border: 1px solid transparent;
+            transition: 0.2s;
+        }
+        .nav-item-custom:hover, .nav-item-custom.active { 
+            background: rgba(0, 212, 255, 0.2); 
+            border-color: #00d4ff; 
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .page-title {
+            color: var(--accent-color);
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+            margin-top: 10px;
+        }
+
+        /* 投稿フォームエリア */
+        .upload-form-card {
+            background: var(--card-bg);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.9rem;
+            color: var(--sub-text);
+            margin-bottom: 5px;
+        }
+
+        .form-group input[type="text"],
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            background: #1a1c1e;
+            border: 1px solid #444;
+            border-radius: 4px;
+            color: var(--text-color);
+            font-size: 1rem;
+        }
+
+        .form-group textarea {
+            height: 80px;
+            resize: vertical;
+        }
+
+        .file-input-wrapper {
+            margin-top: 10px;
+        }
+
+        .submit-btn {
+            background: transparent;
+            color: var(--accent-color);
+            border: 1px solid var(--accent-color);
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .submit-btn:hover {
+            background: rgba(0, 212, 255, 0.2);
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+        }
+
+        /* 投稿一覧エリア */
+        .post-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .post-card {
+            background: var(--card-bg);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .post-header {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #333;
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+            font-size: 0.85rem;
+            color: var(--sub-text);
+        }
+
+        .post-author {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        .post-title {
+            font-size: 1.2rem;
+            margin: 0 0 10px 0;
+        }
+
+        .post-comment {
+            margin-bottom: 15px;
+            white-space: pre-wrap;
+        }
+
+        .post-image {
+            max-width: 100%;
+            max-height: 500px;
+            border-radius: 6px;
+            border: 1px solid #444;
+            display: block;
+        }
+
+        #loading-msg {
+            text-align: center;
+            color: var(--sub-text);
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="index.html#main" class="logo-link">秘密結社の部屋</a>
+        <nav class="nav-links">
+            <a href="unit.html" class="nav-item-custom">Unit</a>
+            <a href="derivatives.html" class="nav-item-custom">Derivatives</a>
+            <a href="arms.html" class="nav-item-custom">Arms</a>
+            <a href="hangar.html" class="nav-item-custom">Hangar</a>
+            <a href="upload.html" class="nav-item-custom active">Upload</a>
+            <a href="#" class="nav-item-custom">Battle</a>
+            <a href="novels.html" class="nav-item-custom">Novels</a>
+            <a href="tactics.html" class="nav-item-custom">Tactics</a>
+            <a href="hunter.html" class="nav-item-custom">Hunter</a>
+            <a href="trivia.html" class="nav-item-custom">Trivia</a>
+            <a href="emoji.html" class="nav-item-custom">Emoji</a>
+            <a href="#" class="nav-item-custom">Link</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <h1 class="page-title">SS Upload (スクリーンショット投稿)</h1>
+
+        <!-- 投稿フォーム -->
+        <div class="upload-form-card">
+            <form id="upload-form">
+                <div class="form-group">
+                    <label for="author">投稿者名</label>
+                    <input type="text" id="author" placeholder="名無しパイロット" required>
+                </div>
+                <div class="form-group">
+                    <label for="title">タイトル / 特殊能力名</label>
+                    <input type="text" id="title" placeholder="例：発動時のエフェクト検証" required>
+                </div>
+                <div class="form-group">
+                    <label for="comment">コメント</label>
+                    <textarea id="comment" placeholder="検証内容やメモなど"></textarea>
+                </div>
+                <div class="form-group file-input-wrapper">
+                    <label for="image-file">画像ファイルを選んでください</label>
+                    <input type="file" id="image-file" accept="image/*" required>
+                </div>
+                <button type="submit" id="submit-btn" class="submit-btn">投稿する</button>
+            </form>
+        </div>
+
+        <!-- 投稿表示エリア -->
+        <h2>投稿一覧</h2>
+        <div id="loading-msg">データを読み込み中...</div>
+        <div id="post-list" class="post-list"></div>
+    </div>
+
+    <!-- Firebase SDK (バージョン10のモジュール読み込み) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+
+        // 設定いただいたFirebaseのキー情報
+        const firebaseConfig = {
+            apiKey: "AIzaSyAKnEENO4tuGtFHsTOAWusbUNPzzUiMNMY",
+            authDomain: "himitsukessya-aa509.firebaseapp.com",
+            projectId: "himitsukessya-aa509",
+            storageBucket: "himitsukessya-aa509.firebasestorage.app",
+            messagingSenderId: "584936417780",
+            appId: "1:584936417780:web:7702b98ea7faf7ccfbb1a1",
+            measurementId: "G-9XBXVQN1JC"
+        };
+
+        // Firebaseの初期化
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        const form = document.getElementById('upload-form');
+        const submitBtn = document.getElementById('submit-btn');
+        const postList = document.getElementById('post-list');
+        const loadingMsg = document.getElementById('loading-msg');
+
+        // 投稿の読み込み処理
+        async function loadPosts() {
+            try {
+                postList.innerHTML = '';
+                loadingMsg.style.display = 'block';
+
+                const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+                const querySnapshot = await getDocs(q);
+
+                loadingMsg.style.display = 'none';
+
+                if (querySnapshot.empty) {
+                    postList.innerHTML = '<p style="color: var(--sub-text);">まだ投稿はありません。</p>';
+                    return;
+                }
+
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const dateStr = data.createdAt ? new Date(data.createdAt.toDate()).toLocaleString('ja-JP') : '日時不明';
+
+                    const card = document.createElement('div');
+                    card.className = 'post-card';
+                    card.innerHTML = `
+                        <div class="post-header">
+                            <span class="post-author">${escapeHTML(data.author)}</span>
+                            <span class="post-date">${dateStr}</span>
+                        </div>
+                        <h3 class="post-title">${escapeHTML(data.title)}</h3>
+                        ${data.comment ? `<p class="post-comment">${escapeHTML(data.comment)}</p>` : ''}
+                        ${data.imageUrl ? `<img src="${data.imageUrl}" class="post-image" alt="投稿画像" loading="lazy">` : ''}
+                    `;
+                    postList.appendChild(card);
+                });
+            } catch (error) {
+                console.error("読み込みエラー:", error);
+                loadingMsg.textContent = 'データの読み込みに失敗しました。';
+            }
+        }
+
+        // 投稿処理
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const author = document.getElementById('author').value.trim();
+            const title = document.getElementById('title').value.trim();
+            const comment = document.getElementById('comment').value.trim();
+            const fileInput = document.getElementById('image-file');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert('画像を選択してください。');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = '送信中...';
+
+            try {
+                // 1. 画像をStorageにアップロード（重複防止のタイムスタンプ付き）
+                const storageRef = ref(storage, 'uploads/' + Date.now() + '_' + file.name);
+                await uploadBytes(storageRef, file);
+                const imageUrl = await getDownloadURL(storageRef);
+
+                // 2. Firestoreにテキスト情報と画像のURLを保存
+                await addDoc(collection(db, "posts"), {
+                    author: author,
+                    title: title,
+                    comment: comment,
+                    imageUrl: imageUrl,
+                    createdAt: serverTimestamp()
+                });
+
+                // フォームのリセットと一覧再読み込み
+                form.reset();
+                alert('投稿が完了しました！');
+                await loadPosts();
+
+            } catch (error) {
+                console.error("投稿エラー:", error);
+                alert('投稿に失敗しました。Firebaseの権限設定（ルール）を確認してください。');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '投稿する';
+            }
+        });
+
+        // XSS対策用テキストエスケープ関数
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+            );
+        }
+
+        // 初期読み込み
+        loadPosts();
+    </script>
+</body>
+</html>
