@@ -77,7 +77,6 @@
             margin-top: 10px;
         }
 
-        /* 投稿フォームエリア */
         .upload-form-card {
             background: var(--card-bg);
             border: 1px solid #333;
@@ -134,7 +133,6 @@
             box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
         }
 
-        /* 投稿一覧エリア */
         .post-list {
             display: flex;
             flex-direction: column;
@@ -211,7 +209,6 @@
     <div class="container">
         <h1 class="page-title">SS Upload (スクリーンショット投稿)</h1>
 
-        <!-- 投稿フォーム -->
         <div class="upload-form-card">
             <form id="upload-form">
                 <div class="form-group">
@@ -234,19 +231,18 @@
             </form>
         </div>
 
-        <!-- 投稿表示エリア -->
         <h2>投稿一覧</h2>
         <div id="loading-msg">データを読み込み中...</div>
         <div id="post-list" class="post-list"></div>
     </div>
 
-    <!-- Firebase SDK (バージョン10のモジュール読み込み) -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
-        // 設定いただいたFirebaseのキー情報
+        // 設定いただいたImgBB APIキーをすでに組み込んであります
+        const IMGBB_API_KEY = "29969679b0297f97687888bd7faede64";
+
         const firebaseConfig = {
             apiKey: "AIzaSyAKnEENO4tuGtFHsTOAWusbUNPzzUiMNMY",
             authDomain: "himitsukessya-aa509.firebaseapp.com",
@@ -257,17 +253,15 @@
             measurementId: "G-9XBXVQN1JC"
         };
 
-        // Firebaseの初期化
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const storage = getStorage(app);
 
         const form = document.getElementById('upload-form');
         const submitBtn = document.getElementById('submit-btn');
         const postList = document.getElementById('post-list');
         const loadingMsg = document.getElementById('loading-msg');
 
-        // 投稿の読み込み処理
+        // 投稿一覧を取得して表示
         async function loadPosts() {
             try {
                 postList.innerHTML = '';
@@ -325,12 +319,24 @@
             submitBtn.textContent = '送信中...';
 
             try {
-                // 1. 画像をStorageにアップロード（重複防止のタイムスタンプ付き）
-                const storageRef = ref(storage, 'uploads/' + Date.now() + '_' + file.name);
-                await uploadBytes(storageRef, file);
-                const imageUrl = await getDownloadURL(storageRef);
+                // 1. ImgBBへ画像アップロード
+                const formData = new FormData();
+                formData.append("image", file);
 
-                // 2. Firestoreにテキスト情報と画像のURLを保存
+                const imgbbResponse = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+                    method: "POST",
+                    body: formData
+                });
+
+                const imgbbResult = await imgbbResponse.json();
+
+                if (!imgbbResult.success) {
+                    throw new Error("画像のアップロードに失敗しました。");
+                }
+
+                const imageUrl = imgbbResult.data.url;
+
+                // 2. Firestoreにデータ保存
                 await addDoc(collection(db, "posts"), {
                     author: author,
                     title: title,
@@ -339,28 +345,25 @@
                     createdAt: serverTimestamp()
                 });
 
-                // フォームのリセットと一覧再読み込み
                 form.reset();
                 alert('投稿が完了しました！');
                 await loadPosts();
 
             } catch (error) {
                 console.error("投稿エラー:", error);
-                alert('投稿に失敗しました。Firebaseの権限設定（ルール）を確認してください。');
+                alert('投稿に失敗しました：' + error.message);
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.textContent = '投稿する';
             }
         });
 
-        // XSS対策用テキストエスケープ関数
         function escapeHTML(str) {
             return str.replace(/[&<>'"]/g, 
                 tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
             );
         }
 
-        // 初期読み込み
         loadPosts();
     </script>
 </body>
