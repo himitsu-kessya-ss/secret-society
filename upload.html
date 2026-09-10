@@ -150,7 +150,7 @@
 
         .search-box {
             width: 100%;
-            max-width: 340px;
+            max-width: 360px;
             padding: 8px 14px;
             background: #1a1c1e;
             border: 1px solid var(--accent-color);
@@ -219,21 +219,33 @@
         }
 
         .post-unit-title {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             margin: 0 0 12px 0;
             display: flex;
             align-items: center;
-            gap: 10px;
+            flex-wrap: wrap;
+            gap: 8px;
         }
 
+        /* 投稿No.用のバッジ（黄色系アクネット） */
+        .post-number-badge {
+            background: rgba(255, 215, 0, 0.15);
+            color: #ffd700;
+            border: 1px solid #ffd700;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+
+        /* 機体ナンバー用のバッジ（シアン系アクセント） */
         .unit-number-badge {
             background: rgba(0, 212, 255, 0.15);
             color: var(--accent-color);
             border: 1px solid var(--accent-color);
             padding: 2px 8px;
             border-radius: 4px;
-            font-size: 0.9rem;
-            font-weight: normal;
+            font-size: 0.85rem;
         }
 
         .post-image {
@@ -309,8 +321,8 @@
 
         <div class="list-header-area">
             <h2 style="margin: 0;">投稿一覧</h2>
-            <!-- 機体名・機体ナンバー検索用入力欄 -->
-            <input type="text" id="search-input" class="search-box" placeholder="🔍 機体名・ナンバーで検索...">
+            <!-- 検索用入力欄 -->
+            <input type="text" id="search-input" class="search-box" placeholder="🔍 投稿No.・機体名・機体No.で検索...">
         </div>
 
         <div id="loading-msg">データを読み込み中...</div>
@@ -381,6 +393,8 @@
 
             postsToRender.forEach((data) => {
                 const dateStr = data.createdAt ? new Date(data.createdAt.toDate()).toLocaleString('ja-JP') : '日時不明';
+                const postNoStr = data.postNo ? `投稿 No.${data.postNo}` : '投稿 No.--';
+                const unitNoStr = data.unitNumber ? `機体 No.${escapeHTML(data.unitNumber)}` : '機体 No.----';
 
                 const card = document.createElement('div');
                 card.className = 'post-card';
@@ -393,7 +407,8 @@
                         <button class="delete-btn" data-id="${data.id}">削除</button>
                     </div>
                     <h3 class="post-unit-title">
-                        <span class="unit-number-badge">No. ${escapeHTML(data.unitNumber || '----')}</span>
+                        <span class="post-number-badge">${postNoStr}</span>
+                        <span class="unit-number-badge">${unitNoStr}</span>
                         <span>${escapeHTML(data.unitName || '名称未設定')}</span>
                     </h3>
                     ${data.imageUrl ? `<img src="${data.imageUrl}" class="post-image" alt="投稿画像" loading="lazy">` : ''}
@@ -411,7 +426,6 @@
         async function deletePost(docId, savedKey) {
             const inputKey = prompt('削除キーを入力してください：');
 
-            // キャンセルされた場合は何もしない
             if (inputKey === null) return;
 
             const trimmedKey = inputKey.trim();
@@ -451,23 +465,24 @@
             }
         }
 
-        // 機体名・機体ナンバーのリアルタイム絞り込み処理
+        // 投稿No.・機体ナンバー・機体名のリアルタイム絞り込み処理
         searchInput.addEventListener('input', (e) => {
             const keyword = e.target.value.toLowerCase().trim();
 
-            // 検索欄が空の場合は全件表示
             if (!keyword) {
                 renderPosts(allPosts);
                 return;
             }
 
-            // 機体名・機体ナンバー・投稿者名のいずれかにキーワードが含まれていれば抽出
             const filtered = allPosts.filter(post => {
-                const unitNameMatch = (post.unitName || '').toLowerCase().includes(keyword);
+                const postNoStr = post.postNo ? `no.${post.postNo}` : '';
+                const rawPostNoStr = post.postNo ? String(post.postNo) : '';
                 const unitNumberMatch = (post.unitNumber || '').toLowerCase().includes(keyword);
+                const unitNameMatch = (post.unitName || '').toLowerCase().includes(keyword);
                 const authorMatch = (post.author || '').toLowerCase().includes(keyword);
+                const postNoMatch = postNoStr.includes(keyword) || rawPostNoStr.includes(keyword);
                 
-                return unitNameMatch || unitNumberMatch || authorMatch;
+                return unitNameMatch || unitNumberMatch || authorMatch || postNoMatch;
             });
 
             renderPosts(filtered);
@@ -489,7 +504,6 @@
                 return;
             }
 
-            // 削除キーが数字4桁か再度確認
             if (!/^\d{4}$/.test(deleteKey)) {
                 alert('削除キーは数字4桁で設定してください。');
                 return;
@@ -499,8 +513,22 @@
             submitBtn.textContent = '送信中...';
 
             try {
+                // --- 1. 自動採番（投稿ナンバー postNo の割り振り） ---
+                const snapshot = await getDocs(collection(db, "posts"));
+                let maxNo = 0;
+                snapshot.forEach(docSnap => {
+                    const data = docSnap.data();
+                    if (data.postNo && typeof data.postNo === 'number') {
+                        if (data.postNo > maxNo) {
+                            maxNo = data.postNo;
+                        }
+                    }
+                });
+                const newPostNo = maxNo + 1; // 投稿ログ用の通し番号 (1, 2, 3...)
+
+                // --- 2. 画像のアップロード (ImgBB) ---
                 const fileExtension = file.name.substring(file.name.lastIndexOf('.'));
-                const newFileName = `${unitNumber}_${unitName}${fileExtension}`;
+                const newFileName = `PostNo${newPostNo}_${unitNumber}_${unitName}${fileExtension}`;
                 const renamedFile = new File([file], newFileName, { type: file.type });
 
                 const formData = new FormData();
@@ -519,9 +547,11 @@
 
                 const imageUrl = imgbbResult.data.url;
 
+                // --- 3. Firestoreへの保存 ---
                 await addDoc(collection(db, "posts"), {
-                    unitNumber: unitNumber,
-                    unitName: unitName,
+                    postNo: newPostNo,       // 自動割り振りの投稿ナンバー (1, 2, 3...)
+                    unitNumber: unitNumber, // ユーザー入力の機体ナンバー (例: 0001)
+                    unitName: unitName,     // ユーザー入力の機体名
                     author: author,
                     deleteKey: deleteKey,
                     imageUrl: imageUrl,
@@ -530,7 +560,7 @@
 
                 form.reset();
                 searchInput.value = '';
-                alert('投稿が完了しました！');
+                alert(`投稿が完了しました！（投稿 No.${newPostNo}）`);
                 await loadPosts();
 
             } catch (error) {
