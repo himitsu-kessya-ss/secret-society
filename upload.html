@@ -78,6 +78,45 @@
             margin-top: 10px;
         }
 
+        /* 使い方ガイドパネルのスタイル */
+        .guide-card {
+            background: rgba(0, 212, 255, 0.05);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-left: 4px solid var(--accent-color);
+            border-radius: 8px;
+            padding: 18px 20px;
+            margin-bottom: 25px;
+        }
+
+        .guide-title {
+            margin: 0 0 10px 0;
+            font-size: 1rem;
+            color: var(--accent-color);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .guide-list {
+            margin: 0;
+            padding-left: 20px;
+            font-size: 0.9rem;
+            color: var(--text-color);
+        }
+
+        .guide-list li {
+            margin-bottom: 6px;
+        }
+
+        .guide-list li:last-child {
+            margin-bottom: 0;
+        }
+
+        .guide-highlight {
+            color: #ffd700;
+            font-weight: bold;
+        }
+
         .upload-form-card {
             background: var(--card-bg);
             border: 1px solid #333;
@@ -227,7 +266,6 @@
             gap: 8px;
         }
 
-        /* 投稿No.用のバッジ（黄色系アクネット） */
         .post-number-badge {
             background: rgba(255, 215, 0, 0.15);
             color: #ffd700;
@@ -238,7 +276,6 @@
             font-weight: bold;
         }
 
-        /* 機体ナンバー用のバッジ（シアン系アクセント） */
         .unit-number-badge {
             background: rgba(0, 212, 255, 0.15);
             color: var(--accent-color);
@@ -285,6 +322,17 @@
 
     <div class="container">
         <h1 class="page-title">SS Upload (スクリーンショット投稿)</h1>
+
+        <!-- 投稿者向けの使い方説明エリア -->
+        <div class="guide-card">
+            <h2 class="guide-title">ℹ️ SS投稿の使い方・ルール</h2>
+            <ul class="guide-list">
+                <li><strong>機体ナンバー：</strong> 対象となる機体の4桁の番号（例：0001）を入力してください。</li>
+                <li><strong>機体名・投稿者：</strong> お好きな名称やパイロット名を入力してください。</li>
+                <li><strong>削除キー：</strong> 投稿後に自分で削除したい場合に使用する<span class="guide-highlight">数字4桁の暗証番号</span>を設定してください。</li>
+                <li><strong>投稿ナンバー：</strong> 投稿が成功すると、システムによって<span class="guide-highlight">ログ用の通し番号（投稿 No.1, No.2...）</span>が自動的に付与されます。</li>
+            </ul>
+        </div>
 
         <div class="upload-form-card">
             <form id="upload-form">
