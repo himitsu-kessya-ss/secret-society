@@ -150,8 +150,8 @@
 
         .search-box {
             width: 100%;
-            max-width: 320px;
-            padding: 8px 12px;
+            max-width: 340px;
+            padding: 8px 14px;
             background: #1a1c1e;
             border: 1px solid var(--accent-color);
             border-radius: 20px;
@@ -159,10 +159,12 @@
             font-size: 0.9rem;
             box-sizing: border-box;
             outline: none;
+            transition: 0.2s;
         }
 
         .search-box:focus {
-            box-shadow: 0 0 8px rgba(0, 212, 255, 0.4);
+            box-shadow: 0 0 8px rgba(0, 212, 255, 0.5);
+            border-color: #55e6ff;
         }
 
         .post-list {
@@ -307,7 +309,8 @@
 
         <div class="list-header-area">
             <h2 style="margin: 0;">投稿一覧</h2>
-            <input type="text" id="search-input" class="search-box" placeholder="🔍 検索 (機体名・ナンバー・投稿者)">
+            <!-- 機体名・機体ナンバー検索用入力欄 -->
+            <input type="text" id="search-input" class="search-box" placeholder="🔍 機体名・ナンバーで検索...">
         </div>
 
         <div id="loading-msg">データを読み込み中...</div>
@@ -372,7 +375,7 @@
             postList.innerHTML = '';
 
             if (postsToRender.length === 0) {
-                postList.innerHTML = '<p style="color: var(--sub-text);">該当する投稿が見つかりませんでした。</p>';
+                postList.innerHTML = '<p style="color: var(--sub-text); text-align: center; padding: 30px 0;">該当する投稿が見つかりませんでした。</p>';
                 return;
             }
 
@@ -448,19 +451,22 @@
             }
         }
 
-        // 検索ボックスのリアルタイム検索処理
+        // 機体名・機体ナンバーのリアルタイム絞り込み処理
         searchInput.addEventListener('input', (e) => {
             const keyword = e.target.value.toLowerCase().trim();
 
+            // 検索欄が空の場合は全件表示
             if (!keyword) {
                 renderPosts(allPosts);
                 return;
             }
 
+            // 機体名・機体ナンバー・投稿者名のいずれかにキーワードが含まれていれば抽出
             const filtered = allPosts.filter(post => {
                 const unitNameMatch = (post.unitName || '').toLowerCase().includes(keyword);
                 const unitNumberMatch = (post.unitNumber || '').toLowerCase().includes(keyword);
                 const authorMatch = (post.author || '').toLowerCase().includes(keyword);
+                
                 return unitNameMatch || unitNumberMatch || authorMatch;
             });
 
@@ -517,7 +523,7 @@
                     unitNumber: unitNumber,
                     unitName: unitName,
                     author: author,
-                    deleteKey: deleteKey, // 投稿時に設定した数字4桁キーを保存
+                    deleteKey: deleteKey,
                     imageUrl: imageUrl,
                     createdAt: serverTimestamp()
                 });
