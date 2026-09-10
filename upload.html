@@ -9,6 +9,7 @@
             --bg-color: #1a1c1e;
             --card-bg: #25282c;
             --accent-color: #00d4ff;
+            --danger-color: #ff4d4d;
             --text-color: #e0e0e0;
             --sub-text: #a0a0a0;
             --header-height: 60px;
@@ -106,7 +107,8 @@
             margin-bottom: 5px;
         }
 
-        .form-group input[type="text"] {
+        .form-group input[type="text"],
+        .form-group input[type="password"] {
             width: 100%;
             padding: 10px;
             box-sizing: border-box;
@@ -179,6 +181,7 @@
         .post-header {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             border-bottom: 1px solid #333;
             padding-bottom: 8px;
             margin-bottom: 12px;
@@ -186,9 +189,31 @@
             color: var(--sub-text);
         }
 
+        .post-header-left {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
         .post-author {
             color: var(--accent-color);
             font-weight: bold;
+        }
+
+        .delete-btn {
+            background: transparent;
+            color: var(--danger-color);
+            border: 1px solid var(--danger-color);
+            padding: 2px 8px;
+            font-size: 0.75rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .delete-btn:hover {
+            background: rgba(255, 77, 77, 0.2);
+            box-shadow: 0 0 6px rgba(255, 77, 77, 0.4);
         }
 
         .post-unit-title {
@@ -260,9 +285,15 @@
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="author">投稿者</label>
-                    <input type="text" id="author" placeholder="名無しパイロット" required>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="author">投稿者</label>
+                        <input type="text" id="author" placeholder="名無しパイロット" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="delete-key">削除キー（数字4桁）</label>
+                        <input type="password" id="delete-key" placeholder="例：1234" maxlength="4" pattern="\d{4}" required title="数字4桁で入力してください">
+                    </div>
                 </div>
 
                 <div class="form-group file-input-wrapper">
@@ -285,9 +316,12 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const IMGBB_API_KEY = "29969679b0297f97687888bd7faede64";
+
+        // 【管理者用マスターパスワード】
+        const ADMIN_PASS = "p@ssw0rd";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAKnEENO4tuGtFHsTOAWusbUNPzzUiMNMY",
@@ -322,8 +356,8 @@
                 loadingMsg.style.display = 'none';
 
                 allPosts = [];
-                querySnapshot.forEach((doc) => {
-                    allPosts.push({ id: doc.id, ...doc.data() });
+                querySnapshot.forEach((docSnap) => {
+                    allPosts.push({ id: docSnap.id, ...docSnap.data() });
                 });
 
                 renderPosts(allPosts);
@@ -349,8 +383,11 @@
                 card.className = 'post-card';
                 card.innerHTML = `
                     <div class="post-header">
-                        <span class="post-author">${escapeHTML(data.author || '名無し')}</span>
-                        <span class="post-date">${dateStr}</span>
+                        <div class="post-header-left">
+                            <span class="post-author">${escapeHTML(data.author || '名無し')}</span>
+                            <span class="post-date">${dateStr}</span>
+                        </div>
+                        <button class="delete-btn" data-id="${data.id}">削除</button>
                     </div>
                     <h3 class="post-unit-title">
                         <span class="unit-number-badge">No. ${escapeHTML(data.unitNumber || '----')}</span>
@@ -358,8 +395,57 @@
                     </h3>
                     ${data.imageUrl ? `<img src="${data.imageUrl}" class="post-image" alt="投稿画像" loading="lazy">` : ''}
                 `;
+
+                // 削除ボタンのクリックイベントを設定
+                const deleteBtn = card.querySelector('.delete-btn');
+                deleteBtn.addEventListener('click', () => deletePost(data.id, data.deleteKey));
+
                 postList.appendChild(card);
             });
+        }
+
+        // 投稿を削除する関数（管理者キーまたは投稿者の数字4桁キー照合）
+        async function deletePost(docId, savedKey) {
+            const inputKey = prompt('削除キーを入力してください：');
+
+            // キャンセルされた場合は何もしない
+            if (inputKey === null) return;
+
+            const trimmedKey = inputKey.trim();
+
+            // 1. まず管理者キー（p@ssw0rd）の判定
+            if (trimmedKey === ADMIN_PASS) {
+                try {
+                    await deleteDoc(doc(db, "posts", docId));
+                    alert('【管理者権限】投稿を削除しました。');
+                    await loadPosts();
+                    return;
+                } catch (error) {
+                    console.error("削除エラー:", error);
+                    alert('削除処理に失敗しました：' + error.message);
+                    return;
+                }
+            }
+
+            // 2. 管理者キーでない場合は「数字4桁」であるかを判定
+            if (!/^\d{4}$/.test(trimmedKey)) {
+                alert('投稿者用の削除キーは数字4桁で入力してください。');
+                return;
+            }
+
+            // 3. 投稿時のキーと一致するか判定
+            if (trimmedKey === savedKey) {
+                try {
+                    await deleteDoc(doc(db, "posts", docId));
+                    alert('投稿を削除しました。');
+                    await loadPosts();
+                } catch (error) {
+                    console.error("削除エラー:", error);
+                    alert('削除処理に失敗しました：' + error.message);
+                }
+            } else {
+                alert('削除キーが違います。');
+            }
         }
 
         // 検索ボックスのリアルタイム検索処理
@@ -388,6 +474,7 @@
             const unitNumber = document.getElementById('unit-number').value.trim();
             const unitName = document.getElementById('unit-name').value.trim();
             const author = document.getElementById('author').value.trim();
+            const deleteKey = document.getElementById('delete-key').value.trim();
             const fileInput = document.getElementById('image-file');
             const file = fileInput.files[0];
 
@@ -396,20 +483,20 @@
                 return;
             }
 
+            // 削除キーが数字4桁か再度確認
+            if (!/^\d{4}$/.test(deleteKey)) {
+                alert('削除キーは数字4桁で設定してください。');
+                return;
+            }
+
             submitBtn.disabled = true;
             submitBtn.textContent = '送信中...';
 
             try {
-                // 元の画像の拡張子 (.jpg, .png など) を取得
                 const fileExtension = file.name.substring(file.name.lastIndexOf('.'));
-                
-                // 新しいファイル名を作成（例：0001_ガンダム.jpg）
                 const newFileName = `${unitNumber}_${unitName}${fileExtension}`;
-
-                // ファイル名を変更した新しいFileオブジェクトを生成
                 const renamedFile = new File([file], newFileName, { type: file.type });
 
-                // 1. 画像をImgBBにアップロード
                 const formData = new FormData();
                 formData.append("image", renamedFile);
 
@@ -426,11 +513,11 @@
 
                 const imageUrl = imgbbResult.data.url;
 
-                // 2. データベース(Firestore)に投稿データを保存
                 await addDoc(collection(db, "posts"), {
                     unitNumber: unitNumber,
                     unitName: unitName,
                     author: author,
+                    deleteKey: deleteKey, // 投稿時に設定した数字4桁キーを保存
                     imageUrl: imageUrl,
                     createdAt: serverTimestamp()
                 });
