@@ -328,7 +328,8 @@
             <h2 class="guide-title">ℹ️ SS投稿の使い方・ルール</h2>
             <ul class="guide-list">
                 <li><strong>機体ナンバー：</strong> 対象となる機体の4桁の番号（例：0001）を入力してください。</li>
-                <li><strong>機体名・投稿者：</strong> お好きな名称やパイロット名を入力してください。</li>
+                <li><strong>機体名：</strong> 画像に映っている機体の名称を入力してください。</li>
+                <li><strong>投稿者：</strong> ゲーム内でのキャラクター名（パイロット名）を入力してください。</li>
                 <li><strong>削除キー：</strong> 投稿後に自分で削除したい場合に使用する<span class="guide-highlight">数字4桁の暗証番号</span>を設定してください。</li>
                 <li><strong>投稿ナンバー：</strong> 投稿が成功すると、システムによって<span class="guide-highlight">ログ用の通し番号（投稿 No.1, No.2...）</span>が自動的に付与されます。</li>
             </ul>
@@ -336,6 +337,7 @@
 
         <div class="upload-form-card">
             <form id="upload-form">
+                <!-- 1段目：画像の説明（機体情報） -->
                 <div class="form-row">
                     <div class="form-group small">
                         <label for="unit-number">機体ナンバー</label>
@@ -347,10 +349,11 @@
                     </div>
                 </div>
 
+                <!-- 2段目：投稿者情報・削除キー -->
                 <div class="form-row">
                     <div class="form-group">
-                        <label for="author">投稿者</label>
-                        <input type="text" id="author" placeholder="名無しパイロット" required>
+                        <label for="author">投稿者（キャラ名）</label>
+                        <input type="text" id="author" placeholder="例：名無しパイロット" required>
                     </div>
                     <div class="form-group">
                         <label for="delete-key">削除キー（数字4桁）</label>
