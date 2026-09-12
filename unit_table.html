@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登録機体一覧表</title>
+    <style>
+        :root {
+            --bg-color: #1a1c1e;
+            --card-bg: #25282c;
+            --accent-color: #00d4ff;
+            --text-color: #e0e0e0;
+            --border-color: #333;
+        }
+
+        body {
+            margin: 0;
+            padding: 10px;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-size: 0.9rem;
+        }
+
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--card-bg);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: rgba(0, 212, 255, 0.1);
+            color: var(--accent-color);
+            font-weight: bold;
+            border-bottom: 2px solid var(--accent-color);
+        }
+
+        tr:hover {
+            background-color: rgba(255, 255, 255, 0.03);
+        }
+
+        /* 機体ナンバーのバッジ装飾 */
+        .unit-no-badge {
+            background: rgba(0, 212, 255, 0.15);
+            color: var(--accent-color);
+            border: 1px solid var(--accent-color);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-family: monospace;
+        }
+
+        /* 画像リンクのボタン装飾 */
+        .img-link-btn {
+            color: var(--accent-color);
+            text-decoration: none;
+            border: 1px solid var(--accent-color);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            transition: 0.2s;
+            display: inline-block;
+        }
+
+        .img-link-btn:hover {
+            background: rgba(0, 212, 255, 0.2);
+            box-shadow: 0 0 8px rgba(0, 212, 255, 0.4);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>機体 No.</th>
+                    <th>機体名</th>
+                    <th>画像リンク</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- 登録データ（必要に応じて行を追加・編集してください） -->
+                <tr>
+                    <td><span class="unit-no-badge">0001</span></td>
+                    <td>ガンダム</td>
+                    <td><a href="https://via.placeholder.com/600x400" target="_blank" class="img-link-btn">🔗 画像を見る</a></td>
+                </tr>
+                <tr>
+                    <td><span class="unit-no-badge">0002</span></td>
+                    <td>ガンキャノン</td>
+                    <td><a href="https://via.placeholder.com/600x400" target="_blank" class="img-link-btn">🔗 画像を見る</a></td>
+                </tr>
+                <tr>
+                    <td><span class="unit-no-badge">0003</span></td>
+                    <td>ガンタンク</td>
+                    <td><a href="https://via.placeholder.com/600x400" target="_blank" class="img-link-btn">🔗 画像を見る</a></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>
