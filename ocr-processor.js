@@ -30,7 +30,7 @@ export function levenshteinDistance(str1, str2) {
     return dp[m][n];
 }
 
-// マスター辞書との照合関数（完全一致優先＆文字化け救済）
+// マスター辞書との照合関数（強力な強制救済ルール付き）
 export function getBestMatchingAbility(rawText) {
     if (!rawText) return null;
 
@@ -38,16 +38,20 @@ export function getBestMatchingAbility(rawText) {
     let cleanText = rawText.replace(/＋/g, '+').replace(/[\s\t\n|:._\-「」,、]/g, '');
     if (cleanText.length === 0) return null;
 
+    // 【最優先救済】「大気圏」が含まれていれば無条件で「大気圏適正」に確定させる
+    if (cleanText.includes('大気圏') || cleanText.includes('気圏') || cleanText.includes('大気')) {
+        return '大気圏適正';
+    }
+
+    // 他の環境適正の救済
+    if (cleanText.includes('砂漠')) return '砂漠適正';
+    if (cleanText.includes('月面')) return '月面適正';
+    if (cleanText.includes('森林')) return '森林適正';
+
     // 1. 完全一致するものがマスターに存在すれば即座に採用
     if (MASTER_ABILITIES.includes(cleanText)) {
         return cleanText;
     }
-
-    // 「適性」「適正」の読み取りズレを「大気圏適正」等へ確実に補正
-    if (cleanText.includes('大気圏')) return '大気圏適正';
-    if (cleanText.includes('砂漠')) return '砂漠適正';
-    if (cleanText.includes('月面')) return '月面適正';
-    if (cleanText.includes('森林')) return '森林適正';
 
     // 近・中・遠距離戦闘強化の強制補正判定
     if (cleanText.includes('近') && (cleanText.includes('強化') || cleanText.includes('戦') || cleanText.includes('離'))) {
