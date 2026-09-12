@@ -30,14 +30,14 @@ export function levenshteinDistance(str1, str2) {
     return dp[m][n];
 }
 
-// マスター辞書との高度な照合関数（完全一致優先＆判定の厳格化）
+// マスター辞書との高度な照合関数（完全一致優先＆適度な許容誤差）
 export function getBestMatchingAbility(rawText) {
     if (!rawText) return null;
 
     let cleanText = rawText.replace(/[\s\t\n|:._\-「」,、]/g, '');
     if (cleanText.length === 0) return null;
 
-    // 1. 完全一致するものがマスターに存在すれば、即座にそれを採用
+    // 1. 完全一致するものがマスターに存在すれば、即座にそれを採用（最優先）
     if (MASTER_ABILITIES.includes(cleanText)) {
         return cleanText;
     }
@@ -60,11 +60,12 @@ export function getBestMatchingAbility(rawText) {
     for (const master of MASTER_ABILITIES) {
         const dist = levenshteinDistance(cleanText, master);
         
-        // 許容誤差をより厳格に設定（短い単語での誤判定を防止）
+        // 4文字以上なら誤差2文字まで許容しつつ、短い単語の誤認を防ぐ
         let maxAllowedDist = 1;
-        if (master.length >= 6) {
+        if (master.length >= 4) {
             maxAllowedDist = 2;
-        } else if (master.length >= 10) {
+        }
+        if (master.length >= 8) {
             maxAllowedDist = 3;
         }
 
