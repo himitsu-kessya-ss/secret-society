@@ -179,13 +179,41 @@
             margin-bottom: 35px;
         }
 
+        .table-header-area {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
         .section-title {
             font-size: 1.1rem;
             color: var(--text-color);
-            margin-bottom: 12px;
+            margin: 0;
             display: flex;
             align-items: center;
             gap: 8px;
+        }
+
+        .table-search-box {
+            width: 100%;
+            max-width: 300px;
+            padding: 6px 12px;
+            background: #1a1c1e;
+            border: 1px solid #444;
+            border-radius: 16px;
+            color: var(--text-color);
+            font-size: 0.85rem;
+            box-sizing: border-box;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        .table-search-box:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 6px rgba(0, 212, 255, 0.4);
         }
 
         .table-container {
@@ -446,7 +474,10 @@
 
         <!-- 登録済み機体一覧データ -->
         <div class="registered-units-area">
-            <h2 class="section-title">📋 登録済み機体一覧データ</h2>
+            <div class="table-header-area">
+                <h2 class="section-title">📋 登録済み機体一覧データ</h2>
+                <input type="text" id="table-search-input" class="table-search-box" placeholder="🔍 機体名・機体No.でフィルタ...">
+            </div>
             <div class="table-container">
                 <table>
                     <thead>
@@ -500,6 +531,7 @@
         const postList = document.getElementById('post-list');
         const loadingMsg = document.getElementById('loading-msg');
         const searchInput = document.getElementById('search-input');
+        const tableSearchInput = document.getElementById('table-search-input');
         const tableBody = document.getElementById('registered-table-body');
 
         let allPosts = [];
@@ -642,17 +674,34 @@
             }
         }
 
-        // 検索機能（投稿一覧 ＆ 登録済み機体一覧データ の両方を同時に絞り込み）
+        // 【1】「登録済み機体一覧データ」専用のテーブルフィルタリング
+        tableSearchInput.addEventListener('input', (e) => {
+            const keyword = e.target.value.toLowerCase().trim();
+
+            if (!keyword) {
+                renderRegisteredTable(allPosts);
+                return;
+            }
+
+            const filteredTableData = allPosts.filter(post => {
+                const unitNumberMatch = (post.unitNumber || '').toLowerCase().includes(keyword);
+                const unitNameMatch = (post.unitName || '').toLowerCase().includes(keyword);
+                return unitNameMatch || unitNumberMatch;
+            });
+
+            renderRegisteredTable(filteredTableData);
+        });
+
+        // 【2】「投稿一覧」専用の検索（確認・修正用）
         searchInput.addEventListener('input', (e) => {
             const keyword = e.target.value.toLowerCase().trim();
 
             if (!keyword) {
                 renderPosts(allPosts);
-                renderRegisteredTable(allPosts);
                 return;
             }
 
-            const filtered = allPosts.filter(post => {
+            const filteredPosts = allPosts.filter(post => {
                 const postNoStr = post.postNo ? `no.${post.postNo}` : '';
                 const rawPostNoStr = post.postNo ? String(post.postNo) : '';
                 const unitNumberMatch = (post.unitNumber || '').toLowerCase().includes(keyword);
@@ -663,9 +712,7 @@
                 return unitNameMatch || unitNumberMatch || authorMatch || postNoMatch;
             });
 
-            // 検索結果を両方のエリアに反映
-            renderPosts(filtered);
-            renderRegisteredTable(filtered);
+            renderPosts(filteredPosts);
         });
 
         // フォーム送信処理
@@ -737,6 +784,7 @@
 
                 form.reset();
                 searchInput.value = '';
+                tableSearchInput.value = '';
                 alert(`投稿が完了しました！（投稿 No.${newPostNo}）`);
                 
                 // 投稿完了時に一覧と表を最新情報に更新
