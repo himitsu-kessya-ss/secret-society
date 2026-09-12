@@ -174,7 +174,7 @@
             box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
         }
 
-        /* 登録済み機体データ一覧（自動生成テーブルのスタイル） */
+        /* 登録済み機体データ一覧（固定ヘッダー修正版） */
         .registered-units-area {
             margin-bottom: 35px;
         }
@@ -196,11 +196,13 @@
             background: var(--card-bg);
             max-height: 280px;
             overflow-y: auto;
+            position: relative; /* 固定位置の基準点を設定 */
         }
 
         table {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate; /* 境界線のズレを防止 */
+            border-spacing: 0;
             text-align: left;
             white-space: nowrap;
         }
@@ -210,8 +212,9 @@
             border-bottom: 1px solid var(--border-color);
         }
 
+        /* 行固定（ヘッダー固定）の設定 */
         th {
-            background-color: rgba(0, 212, 255, 0.1);
+            background-color: #1b2838; /* 透けない濃い背景色に変更 */
             color: var(--accent-color);
             font-weight: bold;
             border-bottom: 2px solid var(--accent-color);
