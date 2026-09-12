@@ -178,6 +178,28 @@
             box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
         }
 
+        /* 埋め込み表エリアのスタイル */
+        .table-embed-area {
+            margin-bottom: 35px;
+        }
+
+        .table-embed-title {
+            font-size: 1.1rem;
+            color: var(--text-color);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .table-iframe {
+            width: 100%;
+            height: 250px; /* 必要に応じて高さを変更できます */
+            border: none;
+            border-radius: 8px;
+            background: var(--card-bg);
+        }
+
         .list-header-area {
             display: flex;
             justify-content: space-between;
@@ -368,6 +390,12 @@
 
                 <button type="submit" id="submit-btn" class="submit-btn">投稿する</button>
             </form>
+        </div>
+
+        <!-- 登録済み機体一覧表（別ページ unit_table.html の埋め込み） -->
+        <div class="table-embed-area">
+            <h2 class="table-embed-title">📋 登録済み機体データ一覧</h2>
+            <iframe src="unit_table.html" class="table-iframe" title="登録機体一覧"></iframe>
         </div>
 
         <div class="list-header-area">
@@ -625,7 +653,7 @@
 
         function escapeHTML(str) {
             return str.replace(/[&<>'"]/g, 
-                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+                tag => ({ '&': '&amp;', '<': '&lt;'>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
             );
         }
 
