@@ -72,12 +72,6 @@
         .novel-info h3 { margin: 0 0 5px 0; font-size: 1.1rem; }
         .novel-info .date { font-size: 0.8rem; color: #888; }
         
-        .badge {
-            background: #ff4d00; color: white; font-size: 0.7rem;
-            padding: 2px 8px; border-radius: 10px; margin-left: 10px;
-            vertical-align: middle;
-        }
-
         .arrow { color: var(--accent-color); font-size: 1.2rem; }
 
     </style>
@@ -105,88 +99,64 @@
     <h1 class="page-title">📖 Novels <span style="font-size: 1rem; color: #888;">- 戦記アーカイブ</span></h1>
 
     <div class="tabs">
-        <button class="tab-btn active" onclick="showCategory('serious')">勢力戦</button>
-        <button class="tab-btn active" onclick="showCategory('internal')">勢力内戦</button>
-        <button class="tab-btn" onclick="showCategory('exchange')">勢力交流戦</button>
-        <button class="tab-btn" onclick="showCategory('tournament')">トナメ</button>
-    </div>
-<div id="serious" class="novel-list active">
-    <a href="2026.5.27勢力戦秘密結社対オガ研低コスト.html" class="novel-card" target="_blank" rel="noopener noreferrer">
-        <div class="novel-info">
-            <h3>【勢力戦】 秘密結社対オガ研（低コストの部） <span style="color: #EB6101; margin-left: 5px;">NEW</span></h3>
-            <div class="date">2026.05.23</div>
-        </div>
-        <div class="arrow">▶</div>
-    </a>
-    <a href="2026.5.23勢力戦秘密結社対オガ研高コスト.html" class="novel-card" target="_blank" rel="noopener noreferrer">
-        <div class="novel-info">
-            <h3>【勢力戦】 秘密結社対オガ研（高コストの部） <span style="color: #EB6101; margin-left: 5px;">NEW</span></h3>
-            <div class="date">2026.05.23</div>
-        </div>
-        <div class="arrow">▶</div>
-    </a>
-</div>
-<div id="internal" class="novel-list active">
-    <a href="2026.4.30勢力内戦春の大乱闘秘密結社ブラザーズ.html" class="novel-card" target="_blank" rel="noopener noreferrer">
-        <div class="novel-info">
-            <h3>春の大乱闘秘密結社ブラザーズ <span style="color: #EB6101; margin-left: 5px;">NEW</span></h3>
-            <div class="date">2026.04.30</div>
-        </div>
-        <div class="arrow">▶</div>
-    </a>
-    <a href="2026.3.22勢力内第一回タッグマッチエキシビジョン.html" class="novel-card" target="_blank" rel="noopener noreferrer">
-        <div class="novel-info">
-            <h3>第一回タッグマッチ：エキシビジョン</h3>
-            <div class="date">2026.03.22</div>
-        </div>
-        <div class="arrow">▶</div>
-    </a>
-    <a href="2026.3.21勢力内第一回タッグマッチ決勝戦.html" class="novel-card" target="_blank" rel="noopener noreferrer">
-        <div class="novel-info">
-            <h3>第一回タッグマッチ：決勝戦</h3>
-            <div class="date">2026.03.21</div>
-        </div>
-        <div class="arrow">▶</div>
-    </a>
-    <a href="2026.3.19勢力内第一回タッグマッチ1回戦第二試合.html" class="novel-card" target="_blank" rel="noopener noreferrer">
-        <div class="novel-info">
-            <h3>第一回タッグマッチ：1回戦 第二試合</h3>
-            <div class="date">2026.03.19</div>
-        </div>
-        <div class="arrow">▶</div>
-    </a>
-    <a href="2026.3.18勢力内第一回タッグマッチ1回戦第一試合.html" class="novel-card" target="_blank" rel="noopener noreferrer">
-        <div class="novel-info">
-            <h3>第一回タッグマッチ：1回戦 第一試合</h3>
-            <div class="date">2026.03.18</div>
-        </div>
-        <div class="arrow">▶</div>
-    </a>
-</div>
-<div id="exchange" class="novel-list">
-    <a href="2026.4.12交流戦秘密結社対オガ研高コスト.html" class="novel-card" target="_blank" rel="noopener noreferrer">
-        <div class="novel-info">
-            <h3>【交流戦】秘密結社 vs オガ研 （高コストの部） <span style="color: #EB6101; margin-left: 5px;">NEW</span></h3>
-            <div class="date">2026.03.22</div>
-        </div>
-        <div class="arrow">▶</div>
-    </a>
-    <a href="2026.4.12交流戦秘密結社対オガ研低コスト.html" class="novel-card" target="_blank" rel="noopener noreferrer">
-        <div class="novel-info">
-            <h3>【交流戦】秘密結社 vs オガ研 （低コストの部） <span style="color: #EB6101; margin-left: 5px;">NEW</span></h3>
-            <div class="date">2026.03.22</div>
-        </div>
-        <div class="arrow">▶</div>
-    </a>
-</div>    
-    <div id="tournament" class="novel-list">
-        <div style="padding: 20px; color: #666; text-align: center;">記録待ち...</div>
+        <button class="tab-btn active" onclick="showCategory('serious', event)">勢力戦</button>
+        <button class="tab-btn" onclick="showCategory('internal', event)">勢力内戦</button>
+        <button class="tab-btn" onclick="showCategory('exchange', event)">勢力交流戦</button>
+        <button class="tab-btn" onclick="showCategory('tournament', event)">トナメ</button>
     </div>
 
+    <!-- ここに外部ファイルから読み込んだリストが自動で差し込まれます -->
+    <div id="serious" class="novel-list active"></div>
+    <div id="internal" class="novel-list"></div>
+    <div id="exchange" class="novel-list"></div>
+    <div id="tournament" class="novel-list"></div>
 </div>
+
+<!-- 外部データファイルを読み込み -->
+<script src="novels-data.js"></script>
 
 <script>
-    function showCategory(id) {
+    // ページ読み込み時にデータを自動でHTMLに展開する処理
+    window.addEventListener('DOMContentLoaded', () => {
+        // 各カテゴリごとにループを回してHTMLを生成
+        const categories = ['serious', 'internal', 'exchange', 'tournament'];
+
+        categories.forEach(catId => {
+            const container = document.getElementById(catId);
+            const items = novelsData[catId];
+
+            if (!items || items.length === 0) {
+                container.innerHTML = '<div style="padding: 20px; color: #666; text-align: center;">記録待ち...</div>';
+                return;
+            }
+
+            // public: true のものだけをフィルターして表示（falseのものは保管用として非表示に）
+            const publicItems = items.filter(item => item.public !== false);
+
+            if (publicItems.length === 0) {
+                container.innerHTML = '<div style="padding: 20px; color: #666; text-align: center;">記録待ち...</div>';
+                return;
+            }
+
+            let htmlContent = '';
+            publicItems.forEach(item => {
+                let newBadge = item.isNew ? '<span style="color: #EB6101; margin-left: 5px;">NEW</span>' : '';
+                htmlContent += `
+                    <a href="${item.url}" class="novel-card" target="_blank" rel="noopener noreferrer">
+                        <div class="novel-info">
+                            <h3>${item.title} ${newBadge}</h3>
+                            <div class="date">${item.date}</div>
+                        </div>
+                        <div class="arrow">▶</div>
+                    </a>
+                `;
+            });
+            container.innerHTML = htmlContent;
+        });
+    });
+
+    // タブ切り替え用関数
+    function showCategory(id, event) {
         // 全リストを非表示
         document.querySelectorAll('.novel-list').forEach(list => list.classList.remove('active'));
         // 全ボタンのactive解除
