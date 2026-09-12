@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SS Upload - 秘密結社の部屋</title>
+    <!-- 完全無料のOCRライブラリ (Tesseract.js) -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
         :root {
             --bg-color: #1a1c1e;
@@ -66,7 +68,7 @@
 
         .container {
             width: 100%;
-            max-width: 900px;
+            max-width: 950px;
             margin: 0 auto;
             padding: 20px;
             box-sizing: border-box;
@@ -264,6 +266,15 @@
             font-family: monospace;
         }
 
+        .ability-badge {
+            background: rgba(255, 215, 0, 0.1);
+            color: #ffd700;
+            border: 1px solid rgba(255, 215, 0, 0.4);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
         .img-link-btn {
             color: var(--accent-color);
             text-decoration: none;
@@ -434,7 +445,7 @@
                 <li><strong>機体名：</strong> 画像に映っている機体の名称を入力してください。</li>
                 <li><strong>投稿者：</strong> ゲーム内でのキャラクター名（パイロット名）を入力してください。</li>
                 <li><strong>削除キー：</strong> 投稿後に自分で削除したい場合に使用する<span class="guide-highlight">数字4桁の暗証番号</span>を設定してください。</li>
-                <li><strong>投稿ナンバー：</strong> 投稿が成功すると、システムによって<span class="guide-highlight">ログ用の通し番号（投稿 No.1, No.2...）</span>が自動的に付与されます。</li>
+                <li><strong>特殊能力解析：</strong> 画像添付時、システムが「No.1」「No.2」の特殊能力テキストを自動抽出します。</li>
             </ul>
         </div>
 
@@ -476,7 +487,7 @@
         <div class="registered-units-area">
             <div class="table-header-area">
                 <h2 class="section-title">📋 登録済み機体一覧データ</h2>
-                <input type="text" id="table-search-input" class="table-search-box" placeholder="🔍 機体名・機体No.でフィルタ...">
+                <input type="text" id="table-search-input" class="table-search-box" placeholder="🔍 機体名・機体No.・能力でフィルタ...">
             </div>
             <div class="table-container">
                 <table>
@@ -484,12 +495,14 @@
                         <tr>
                             <th>機体 No.</th>
                             <th>機体名</th>
+                            <th>特殊能力 No.1</th>
+                            <th>特殊能力 No.2</th>
                             <th>画像リンク</th>
                         </tr>
                     </thead>
                     <tbody id="registered-table-body">
                         <tr>
-                            <td colspan="3" style="text-align: center; color: var(--sub-text);">データを読み込み中...</td>
+                            <td colspan="5" style="text-align: center; color: var(--sub-text);">データを読み込み中...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -561,7 +574,7 @@
             } catch (error) {
                 console.error("読み込みエラー:", error);
                 loadingMsg.textContent = 'データの読み込みに失敗しました。画面を再読み込みしてください。';
-                tableBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--danger-color);">データの読み込みに失敗しました。</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--danger-color);">データの読み込みに失敗しました。</td></tr>';
             }
         }
 
@@ -570,7 +583,7 @@
             tableBody.innerHTML = '';
 
             if (posts.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--sub-text);">該当する機体データはありません。</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--sub-text);">該当する機体データはありません。</td></tr>';
                 return;
             }
 
@@ -585,11 +598,15 @@
                 const tr = document.createElement('tr');
                 const unitNo = escapeHTML(data.unitNumber || '----');
                 const unitName = escapeHTML(data.unitName || '名称未設定');
+                const ability1 = data.ability1 ? `<span class="ability-badge">${escapeHTML(data.ability1)}</span>` : '<span style="color:#666;">-</span>';
+                const ability2 = data.ability2 ? `<span class="ability-badge">${escapeHTML(data.ability2)}</span>` : '<span style="color:#666;">-</span>';
                 const imgUrl = data.imageUrl || '#';
 
                 tr.innerHTML = `
                     <td><span class="unit-no-badge">${unitNo}</span></td>
                     <td>${unitName}</td>
+                    <td>${ability1}</td>
+                    <td>${ability2}</td>
                     <td><a href="${imgUrl}" target="_blank" rel="noopener noreferrer" class="img-link-btn">🔗 画像を見る</a></td>
                 `;
                 tableBody.appendChild(tr);
@@ -635,6 +652,34 @@
             });
         }
 
+        // 画像からNo.1 / No.2 の特殊能力テキストをOCR解析抽出する関数
+        async function analyzeImageAbilities(file) {
+            try {
+                // Tesseract.js で日本語OCR解析実行
+                const result = await Tesseract.recognize(file, 'jpn');
+                const text = result.data.text;
+
+                let ability1 = '';
+                let ability2 = '';
+
+                // No.1 / No.2 の行パターン（「No.1」「No. 1」「No1」などに柔軟に対応）
+                const match1 = text.match(/No\.?\s*1[\s:]*([^\n\r]+)/i);
+                const match2 = text.match(/No\.?\s*2[\s:]*([^\n\r]+)/i);
+
+                if (match1 && match1[1]) {
+                    ability1 = match1[1].trim();
+                }
+                if (match2 && match2[1]) {
+                    ability2 = match2[1].trim();
+                }
+
+                return { ability1, ability2 };
+            } catch (err) {
+                console.warn("OCR解析エラー (スルーして続行):", err);
+                return { ability1: '', ability2: '' };
+            }
+        }
+
         // 削除処理の関数
         async function deletePost(docId, savedKey) {
             const inputKey = prompt('削除キーを入力してください：');
@@ -674,7 +719,7 @@
             }
         }
 
-        // 【1】「登録済み機体一覧データ」専用のテーブルフィルタリング
+        // 「登録済み機体一覧データ」専用のテーブルフィルタリング
         tableSearchInput.addEventListener('input', (e) => {
             const keyword = e.target.value.toLowerCase().trim();
 
@@ -686,13 +731,15 @@
             const filteredTableData = allPosts.filter(post => {
                 const unitNumberMatch = (post.unitNumber || '').toLowerCase().includes(keyword);
                 const unitNameMatch = (post.unitName || '').toLowerCase().includes(keyword);
-                return unitNameMatch || unitNumberMatch;
+                const ability1Match = (post.ability1 || '').toLowerCase().includes(keyword);
+                const ability2Match = (post.ability2 || '').toLowerCase().includes(keyword);
+                return unitNameMatch || unitNumberMatch || ability1Match || ability2Match;
             });
 
             renderRegisteredTable(filteredTableData);
         });
 
-        // 【2】「投稿一覧」専用の検索（確認・修正用）
+        // 「投稿一覧」専用の検索
         searchInput.addEventListener('input', (e) => {
             const keyword = e.target.value.toLowerCase().trim();
 
@@ -737,9 +784,14 @@
             }
 
             submitBtn.disabled = true;
-            submitBtn.textContent = '送信中...';
+            submitBtn.textContent = '画像解析中... (数秒かかります)';
 
             try {
+                // 画像から特殊能力を自動抽出
+                const { ability1, ability2 } = await analyzeImageAbilities(file);
+
+                submitBtn.textContent = 'アップロード中...';
+
                 const snapshot = await getDocs(collection(db, "posts"));
                 let maxNo = 0;
                 snapshot.forEach(docSnap => {
@@ -779,6 +831,8 @@
                     author: author,
                     deleteKey: deleteKey,
                     imageUrl: imageUrl,
+                    ability1: ability1,
+                    ability2: ability2,
                     createdAt: serverTimestamp()
                 });
 
@@ -787,7 +841,6 @@
                 tableSearchInput.value = '';
                 alert(`投稿が完了しました！（投稿 No.${newPostNo}）`);
                 
-                // 投稿完了時に一覧と表を最新情報に更新
                 await loadPosts();
 
             } catch (error) {
