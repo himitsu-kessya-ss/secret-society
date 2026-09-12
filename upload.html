@@ -68,7 +68,7 @@
 
         .container {
             width: 100%;
-            max-width: 950px;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 20px;
             box-sizing: border-box;
@@ -224,7 +224,7 @@
             border: 1px solid var(--border-color);
             border-radius: 8px;
             background: var(--card-bg);
-            max-height: 280px;
+            max-height: 320px;
             overflow-y: auto;
             position: relative;
         }
@@ -234,12 +234,12 @@
             border-collapse: separate;
             border-spacing: 0;
             text-align: left;
-            white-space: nowrap;
         }
 
         th, td {
             padding: 12px 15px;
             border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
         }
 
         th {
@@ -250,6 +250,7 @@
             position: sticky;
             top: 0;
             z-index: 10;
+            white-space: nowrap;
         }
 
         tr:hover {
@@ -264,6 +265,14 @@
             border-radius: 4px;
             font-size: 0.85rem;
             font-family: monospace;
+            white-space: nowrap;
+        }
+
+        /* 特殊能力バッジ群のレイアウト */
+        .ability-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
         }
 
         .ability-badge {
@@ -272,7 +281,16 @@
             border: 1px solid rgba(255, 215, 0, 0.4);
             padding: 2px 8px;
             border-radius: 4px;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .ability-num {
+            color: var(--accent-color);
+            font-weight: bold;
+            font-size: 0.75rem;
         }
 
         .img-link-btn {
@@ -284,6 +302,7 @@
             font-size: 0.8rem;
             transition: 0.2s;
             display: inline-block;
+            white-space: nowrap;
         }
 
         .img-link-btn:hover {
@@ -445,7 +464,7 @@
                 <li><strong>機体名：</strong> 画像に映っている機体の名称を入力してください。</li>
                 <li><strong>投稿者：</strong> ゲーム内でのキャラクター名（パイロット名）を入力してください。</li>
                 <li><strong>削除キー：</strong> 投稿後に自分で削除したい場合に使用する<span class="guide-highlight">数字4桁の暗証番号</span>を設定してください。</li>
-                <li><strong>特殊能力解析：</strong> 画像添付時、システムが「No.1」「No.2」の特殊能力テキストを自動抽出します。</li>
+                <li><strong>特殊能力解析：</strong> 画像添付時、システムが「No.1」〜「No.9」までの特殊能力を自動抽出します。</li>
             </ul>
         </div>
 
@@ -493,16 +512,15 @@
                 <table>
                     <thead>
                         <tr>
-                            <th>機体 No.</th>
-                            <th>機体名</th>
-                            <th>特殊能力 No.1</th>
-                            <th>特殊能力 No.2</th>
-                            <th>画像リンク</th>
+                            <th style="width: 100px;">機体 No.</th>
+                            <th style="width: 200px;">機体名</th>
+                            <th>特殊能力 (No.1 〜 No.9)</th>
+                            <th style="width: 110px;">画像リンク</th>
                         </tr>
                     </thead>
                     <tbody id="registered-table-body">
                         <tr>
-                            <td colspan="5" style="text-align: center; color: var(--sub-text);">データを読み込み中...</td>
+                            <td colspan="4" style="text-align: center; color: var(--sub-text);">データを読み込み中...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -574,7 +592,7 @@
             } catch (error) {
                 console.error("読み込みエラー:", error);
                 loadingMsg.textContent = 'データの読み込みに失敗しました。画面を再読み込みしてください。';
-                tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--danger-color);">データの読み込みに失敗しました。</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--danger-color);">データの読み込みに失敗しました。</td></tr>';
             }
         }
 
@@ -583,7 +601,7 @@
             tableBody.innerHTML = '';
 
             if (posts.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--sub-text);">該当する機体データはありません。</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--sub-text);">該当する機体データはありません。</td></tr>';
                 return;
             }
 
@@ -598,15 +616,41 @@
                 const tr = document.createElement('tr');
                 const unitNo = escapeHTML(data.unitNumber || '----');
                 const unitName = escapeHTML(data.unitName || '名称未設定');
-                const ability1 = data.ability1 ? `<span class="ability-badge">${escapeHTML(data.ability1)}</span>` : '<span style="color:#666;">-</span>';
-                const ability2 = data.ability2 ? `<span class="ability-badge">${escapeHTML(data.ability2)}</span>` : '<span style="color:#666;">-</span>';
                 const imgUrl = data.imageUrl || '#';
+
+                // 特殊能力バッジHTMLの生成（新仕様：abilities配列、旧仕様：ability1~3互換）
+                let abilityBadgesHTML = '';
+                
+                if (data.abilities && Array.isArray(data.abilities) && data.abilities.length > 0) {
+                    abilityBadgesHTML = data.abilities.map(item => `
+                        <span class="ability-badge">
+                            <span class="ability-num">No.${item.no}</span>
+                            ${escapeHTML(item.text)}
+                        </span>
+                    `).join('');
+                } else {
+                    // 以前の投稿データの互換性対応
+                    const oldAbilities = [];
+                    if (data.ability1) oldAbilities.push({ no: 1, text: data.ability1 });
+                    if (data.ability2) oldAbilities.push({ no: 2, text: data.ability2 });
+                    if (data.ability3) oldAbilities.push({ no: 3, text: data.ability3 });
+
+                    if (oldAbilities.length > 0) {
+                        abilityBadgesHTML = oldAbilities.map(item => `
+                            <span class="ability-badge">
+                                <span class="ability-num">No.${item.no}</span>
+                                ${escapeHTML(item.text)}
+                            </span>
+                        `).join('');
+                    } else {
+                        abilityBadgesHTML = '<span style="color:#666;">-</span>';
+                    }
+                }
 
                 tr.innerHTML = `
                     <td><span class="unit-no-badge">${unitNo}</span></td>
-                    <td>${unitName}</td>
-                    <td>${ability1}</td>
-                    <td>${ability2}</td>
+                    <td><strong>${unitName}</strong></td>
+                    <td><div class="ability-container">${abilityBadgesHTML}</div></td>
                     <td><a href="${imgUrl}" target="_blank" rel="noopener noreferrer" class="img-link-btn">🔗 画像を見る</a></td>
                 `;
                 tableBody.appendChild(tr);
@@ -652,31 +696,39 @@
             });
         }
 
-        // 画像からNo.1 / No.2 の特殊能力テキストをOCR解析抽出する関数
+        // 抽出テキストから枠線などの誤認識記号を綺麗に除去する関数
+        function cleanAbilityText(rawText) {
+            if (!rawText) return '';
+            return rawText
+                .replace(/[|│┃_\]\[\}\{`’'"]/g, '') // 誤認識されやすい記号を除去
+                .trim();
+        }
+
+        // 画像から No.1 〜 No.9 の特殊能力テキストをOCR解析抽出する関数
         async function analyzeImageAbilities(file) {
             try {
                 // Tesseract.js で日本語OCR解析実行
                 const result = await Tesseract.recognize(file, 'jpn');
                 const text = result.data.text;
 
-                let ability1 = '';
-                let ability2 = '';
+                const abilities = [];
 
-                // No.1 / No.2 の行パターン（「No.1」「No. 1」「No1」などに柔軟に対応）
-                const match1 = text.match(/No\.?\s*1[\s:]*([^\n\r]+)/i);
-                const match2 = text.match(/No\.?\s*2[\s:]*([^\n\r]+)/i);
-
-                if (match1 && match1[1]) {
-                    ability1 = match1[1].trim();
+                // No.1 〜 No.9 をループで判定して抽出
+                for (let i = 1; i <= 9; i++) {
+                    const regex = new RegExp(`No\\.?\\s*${i}[\\s:]*([^\\n\\r]+)`, 'i');
+                    const match = text.match(regex);
+                    if (match && match[1]) {
+                        const cleaned = cleanAbilityText(match[1]);
+                        if (cleaned) {
+                            abilities.push({ no: i, text: cleaned });
+                        }
+                    }
                 }
-                if (match2 && match2[1]) {
-                    ability2 = match2[1].trim();
-                }
 
-                return { ability1, ability2 };
+                return abilities;
             } catch (err) {
                 console.warn("OCR解析エラー (スルーして続行):", err);
-                return { ability1: '', ability2: '' };
+                return [];
             }
         }
 
@@ -731,9 +783,18 @@
             const filteredTableData = allPosts.filter(post => {
                 const unitNumberMatch = (post.unitNumber || '').toLowerCase().includes(keyword);
                 const unitNameMatch = (post.unitName || '').toLowerCase().includes(keyword);
-                const ability1Match = (post.ability1 || '').toLowerCase().includes(keyword);
-                const ability2Match = (post.ability2 || '').toLowerCase().includes(keyword);
-                return unitNameMatch || unitNumberMatch || ability1Match || ability2Match;
+                
+                // 配列および旧互換プロパティ内のテキスト検索
+                let abilityMatch = false;
+                if (post.abilities && Array.isArray(post.abilities)) {
+                    abilityMatch = post.abilities.some(item => item.text.toLowerCase().includes(keyword));
+                } else {
+                    abilityMatch = (post.ability1 || '').toLowerCase().includes(keyword) ||
+                                   (post.ability2 || '').toLowerCase().includes(keyword) ||
+                                   (post.ability3 || '').toLowerCase().includes(keyword);
+                }
+
+                return unitNameMatch || unitNumberMatch || abilityMatch;
             });
 
             renderRegisteredTable(filteredTableData);
@@ -787,8 +848,8 @@
             submitBtn.textContent = '画像解析中... (数秒かかります)';
 
             try {
-                // 画像から特殊能力を自動抽出
-                const { ability1, ability2 } = await analyzeImageAbilities(file);
+                // 画像から特殊能力を自動抽出 (No.1〜9)
+                const abilities = await analyzeImageAbilities(file);
 
                 submitBtn.textContent = 'アップロード中...';
 
@@ -831,8 +892,7 @@
                     author: author,
                     deleteKey: deleteKey,
                     imageUrl: imageUrl,
-                    ability1: ability1,
-                    ability2: ability2,
+                    abilities: abilities, // 配列として保存
                     createdAt: serverTimestamp()
                 });
 
