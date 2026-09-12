@@ -538,13 +538,10 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // 分割したOCRライブラリをインポート
-        import { analyzeImageAbilities } from "./ocr-processor.js";
-
-        const IMGBB_API_KEY = "29969679b0297f97687888bd7faede64";
-        const ADMIN_PASS = "p@ssw0rd";
+        // 外出しした投稿処理モジュールをインポート
+        import { handlePostSubmit, handlePostDelete } from "./post-handler.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAKnEENO4tuGtFHsTOAWusbUNPzzUiMNMY",
@@ -569,6 +566,7 @@
 
         let allPosts = [];
 
+        // 投稿一覧データの読み込み
         async function loadPosts() {
             try {
                 postList.innerHTML = '';
@@ -594,6 +592,7 @@
             }
         }
 
+        // 登録済み機体一覧テーブルの描画
         function renderRegisteredTable(posts) {
             tableBody.innerHTML = '';
 
@@ -651,6 +650,7 @@
             });
         }
 
+        // 投稿カードリストの描画
         function renderPosts(postsToRender) {
             postList.innerHTML = '';
 
@@ -682,51 +682,17 @@
                     ${data.imageUrl ? `<img src="${data.imageUrl}" class="post-image" alt="投稿画像" loading="lazy">` : ''}
                 `;
 
+                // 削除ボタンのクリック処理（post-handler.js の関数を呼出）
                 const deleteBtn = card.querySelector('.delete-btn');
-                deleteBtn.addEventListener('click', () => deletePost(data.id, data.deleteKey));
+                deleteBtn.addEventListener('click', () => {
+                    handlePostDelete(db, data.id, data.deleteKey, loadPosts);
+                });
 
                 postList.appendChild(card);
             });
         }
 
-        async function deletePost(docId, savedKey) {
-            const inputKey = prompt('削除キーを入力してください：');
-            if (inputKey === null) return;
-
-            const trimmedKey = inputKey.trim();
-
-            if (trimmedKey === ADMIN_PASS) {
-                try {
-                    await deleteDoc(doc(db, "posts", docId));
-                    alert('【管理者権限】投稿を削除しました。');
-                    await loadPosts();
-                    return;
-                } catch (error) {
-                    console.error("削除エラー:", error);
-                    alert('削除処理に失敗しました：' + error.message);
-                    return;
-                }
-            }
-
-            if (!/^\d{4}$/.test(trimmedKey)) {
-                alert('投稿者用の削除キーは数字4桁で入力してください。');
-                return;
-            }
-
-            if (trimmedKey === savedKey) {
-                try {
-                    await deleteDoc(doc(db, "posts", docId));
-                    alert('投稿を削除しました。');
-                    await loadPosts();
-                } catch (error) {
-                    console.error("削除エラー:", error);
-                    alert('削除処理に失敗しました：' + error.message);
-                }
-            } else {
-                alert('削除キーが違います。');
-            }
-        }
-
+        // テーブル検索フィルター
         tableSearchInput.addEventListener('input', (e) => {
             const keyword = e.target.value.toLowerCase().trim();
 
@@ -754,6 +720,7 @@
             renderRegisteredTable(filteredTableData);
         });
 
+        // 投稿カード検索フィルター
         searchInput.addEventListener('input', (e) => {
             const keyword = e.target.value.toLowerCase().trim();
 
@@ -776,91 +743,31 @@
             renderPosts(filteredPosts);
         });
 
+        // フォーム送信処理（post-handler.js の関数を呼出）
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
+            const file = document.getElementById('image-file').files[0];
             const unitNumber = document.getElementById('unit-number').value.trim();
             const unitName = document.getElementById('unit-name').value.trim();
             const author = document.getElementById('author').value.trim();
             const deleteKey = document.getElementById('delete-key').value.trim();
-            const fileInput = document.getElementById('image-file');
-            const file = fileInput.files[0];
 
-            if (!file) {
-                alert('画像を選択してください。');
-                return;
-            }
+            const success = await handlePostSubmit({
+                db,
+                file,
+                unitNumber,
+                unitName,
+                author,
+                deleteKey,
+                submitBtn
+            });
 
-            if (!/^\d{4}$/.test(deleteKey)) {
-                alert('削除キーは数字4桁で設定してください。');
-                return;
-            }
-
-            submitBtn.disabled = true;
-            submitBtn.textContent = '画像解析中... (数秒かかります)';
-
-            try {
-                // 別ファイルから読み込んだ解析関数をそのまま実行
-                const abilities = await analyzeImageAbilities(file);
-
-                submitBtn.textContent = 'アップロード中...';
-
-                const snapshot = await getDocs(collection(db, "posts"));
-                let maxNo = 0;
-                snapshot.forEach(docSnap => {
-                    const data = docSnap.data();
-                    if (data.postNo && typeof data.postNo === 'number') {
-                        if (data.postNo > maxNo) {
-                            maxNo = data.postNo;
-                        }
-                    }
-                });
-                const newPostNo = maxNo + 1;
-
-                const fileExtension = file.name.substring(file.name.lastIndexOf('.'));
-                const newFileName = `PostNo${newPostNo}_${unitNumber}_${unitName}${fileExtension}`;
-                const renamedFile = new File([file], newFileName, { type: file.type });
-
-                const formData = new FormData();
-                formData.append("image", renamedFile);
-
-                const imgbbResponse = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
-                    method: "POST",
-                    body: formData
-                });
-
-                const imgbbResult = await imgbbResponse.json();
-
-                if (!imgbbResult.success) {
-                    throw new Error("画像のアップロードに失敗しました。");
-                }
-
-                const imageUrl = imgbbResult.data.url;
-
-                await addDoc(collection(db, "posts"), {
-                    postNo: newPostNo,
-                    unitNumber: unitNumber,
-                    unitName: unitName,
-                    author: author,
-                    deleteKey: deleteKey,
-                    imageUrl: imageUrl,
-                    abilities: abilities,
-                    createdAt: serverTimestamp()
-                });
-
+            if (success) {
                 form.reset();
                 searchInput.value = '';
                 tableSearchInput.value = '';
-                alert(`投稿が完了しました！（投稿 No.${newPostNo}）`);
-                
                 await loadPosts();
-
-            } catch (error) {
-                console.error("投稿エラー:", error);
-                alert('投稿に失敗しました：' + error.message);
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = '投稿する';
             }
         });
 
@@ -870,6 +777,7 @@
             );
         }
 
+        // 初期読み込み
         loadPosts();
     </script>
 </body>
