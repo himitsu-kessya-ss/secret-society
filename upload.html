@@ -540,6 +540,9 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // 分割したOCRライブラリをインポート
+        import { analyzeImageAbilities } from "./ocr-processor.js";
+
         const IMGBB_API_KEY = "29969679b0297f97687888bd7faede64";
         const ADMIN_PASS = "p@ssw0rd";
 
@@ -563,15 +566,6 @@
         const searchInput = document.getElementById('search-input');
         const tableSearchInput = document.getElementById('table-search-input');
         const tableBody = document.getElementById('registered-table-body');
-
-        // 特殊能力マスター辞書（ここにある単語と優先的に自動照合します）
-        const MASTER_ABILITIES = [
-            "フェイズシフト装甲", "PS装甲", "VPS装甲", "大気圏適正", "EN回復",
-            "近距離戦闘強化", "中距離戦闘強化", "遠距離戦闘強化", "分身", "強化機",
-            "ビームシールド", "Iフィールド", "チョバムアーマー", "耐熱フィルム",
-            "ステルス", "ハイパーモード", "TRANS-AM", "サイコフレーム", "バイオセンサー",
-            "ニュートロンジャマーキャンセラー", "NJC", "リペアハンガー", "プロペラントタンク"
-        ];
 
         let allPosts = [];
 
@@ -695,155 +689,6 @@
             });
         }
 
-        // 文字列同士の距離（編集距離）を計算して似ている度合いを測る関数
-        function levenshteinDistance(str1, str2) {
-            const m = str1.length;
-            const n = str2.length;
-            const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
-
-            for (let i = 0; i <= m; i++) dp[i][0] = i;
-            for (let j = 0; j <= n; j++) dp[0][j] = j;
-
-            for (let i = 1; i <= m; i++) {
-                for (let j = 1; j <= n; j++) {
-                    if (str1[i - 1] === str2[j - 1]) {
-                        dp[i][j] = dp[i - 1][j - 1];
-                    } else {
-                        dp[i][j] = Math.min(
-                            dp[i - 1][j] + 1,      // 削除
-                            dp[i][j - 1] + 1,      // 挿入
-                            dp[i - 1][j - 1] + 1  // 置換
-                        );
-                    }
-                }
-            }
-            return dp[m][n];
-        }
-
-        // マスター辞書との高度なあいまい照合関数
-        function getBestMatchingAbility(rawText) {
-            if (!rawText) return null;
-
-            // OCRの誤読文字をあらかじめ補正
-            let cleanText = rawText.replace(/近[馬玄].*強化/g, '近距離戦闘強化')
-                                   .replace(/中[馬玄].*強化/g, '中距離戦闘強化')
-                                   .replace(/遠[馬玄].*強化/g, '遠距離戦闘強化')
-                                   .replace(/[\s\t\n|:._\-「」]/g, '');
-
-            if (cleanText.length === 0) return null;
-
-            let bestMatch = null;
-            let lowestDistance = Infinity;
-
-            for (const master of MASTER_ABILITIES) {
-                const dist = levenshteinDistance(cleanText, master);
-                const maxAllowedDist = Math.max(2, Math.floor(master.length * 0.5));
-
-                if (dist < lowestDistance && dist <= maxAllowedDist) {
-                    lowestDistance = dist;
-                    bestMatch = master;
-                }
-            }
-
-            return bestMatch || cleanText;
-        }
-
-        // 画像の「最下部」（特殊能力テーブルがある領域）のみを自動切り出し＆クッキリ化
-        function cropAbilityRegion(file) {
-            return new Promise((resolve) => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-
-                    // セリフ「こいつの特殊能力は…」を確実に除外するため切り出し高さを22%に制限
-                    const cropHeight = Math.floor(img.height * 0.22);
-                    const cropY = img.height - cropHeight;
-                    const cropWidth = Math.floor(img.width * 0.40);
-
-                    canvas.width = cropWidth;
-                    canvas.height = cropHeight;
-
-                    ctx.drawImage(img, 0, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
-
-                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                    const data = imageData.data;
-                    for (let i = 0; i < data.length; i += 4) {
-                        const r = data[i];
-                        const g = data[i + 1];
-                        const b = data[i + 2];
-                        const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
-                        const bw = luminance > 110 ? 255 : 0;
-                        data[i] = bw;
-                        data[i + 1] = bw;
-                        data[i + 2] = bw;
-                    }
-                    ctx.putImageData(imageData, 0, 0);
-
-                    canvas.toBlob((blob) => {
-                        resolve(blob);
-                    });
-                };
-                img.src = URL.createObjectURL(file);
-            });
-        }
-
-        // 特殊能力自動解析メイン関数
-        async function analyzeImageAbilities(file) {
-            try {
-                const croppedBlob = await cropAbilityRegion(file);
-
-                const result = await Tesseract.recognize(croppedBlob, 'jpn');
-                const rawText = result.data.text;
-                const lines = rawText.split(/\r?\n/);
-
-                const detectedItems = [];
-
-                for (let line of lines) {
-                    const trimmedLine = line.trim();
-                    if (!trimmedLine) continue;
-
-                    // アストナージのセリフ欄などの不要なテキストを厳密に除外
-                    if (
-                        trimmedLine.includes("こいつ") || 
-                        trimmedLine.includes("こんな所") || 
-                        trimmedLine.includes("特殊能力") || 
-                        trimmedLine.includes("改造先") || 
-                        trimmedLine.includes("知りたい") || 
-                        trimmedLine.includes("解説") ||
-                        trimmedLine.includes("ヒント") ||
-                        trimmedLine.length < 2
-                    ) {
-                        continue;
-                    }
-
-                    // 「No.1」などの数字ラベルや不要記号を取り除く
-                    let cleanLine = trimmedLine.replace(/^[Nn][o01-9\s._:]*/i, '').trim();
-                    cleanLine = cleanLine.replace(/[|│┃_\]\[\}\{`’'":;・.（）()「」]/g, '').trim();
-
-                    if (!cleanLine) continue;
-
-                    const matchedAbility = getBestMatchingAbility(cleanLine);
-                    if (matchedAbility && !detectedItems.includes(matchedAbility)) {
-                        detectedItems.push(matchedAbility);
-                    }
-                }
-
-                // セリフを除外した後の純粋な能力に対して、正しく No.1 〜 No.N を割り当てる
-                const abilities = detectedItems.slice(0, 9).map((text, index) => {
-                    return {
-                        no: index + 1,
-                        text: text
-                    };
-                });
-
-                return abilities;
-            } catch (err) {
-                console.warn("OCR解析エラー (スルーして続行):", err);
-                return [];
-            }
-        }
-
         async function deletePost(docId, savedKey) {
             const inputKey = prompt('削除キーを入力してください：');
             if (inputKey === null) return;
@@ -955,6 +800,7 @@
             submitBtn.textContent = '画像解析中... (数秒かかります)';
 
             try {
+                // 別ファイルから読み込んだ解析関数をそのまま実行
                 const abilities = await analyzeImageAbilities(file);
 
                 submitBtn.textContent = 'アップロード中...';
