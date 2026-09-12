@@ -724,7 +724,12 @@
         function getBestMatchingAbility(rawText) {
             if (!rawText) return null;
 
-            const cleanText = rawText.replace(/[\s\t\n|:._\-「」]/g, '');
+            // OCRの誤読文字をあらかじめ補正
+            let cleanText = rawText.replace(/近[馬玄].*強化/g, '近距離戦闘強化')
+                                   .replace(/中[馬玄].*強化/g, '中距離戦闘強化')
+                                   .replace(/遠[馬玄].*強化/g, '遠距離戦闘強化')
+                                   .replace(/[\s\t\n|:._\-「」]/g, '');
+
             if (cleanText.length === 0) return null;
 
             let bestMatch = null;
@@ -751,9 +756,10 @@
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
 
-                    const cropHeight = Math.floor(img.height * 0.30);
+                    // セリフ「こいつの特殊能力は…」を確実に除外するため切り出し高さを22%に制限
+                    const cropHeight = Math.floor(img.height * 0.22);
                     const cropY = img.height - cropHeight;
-                    const cropWidth = Math.floor(img.width * 0.50);
+                    const cropWidth = Math.floor(img.width * 0.40);
 
                     canvas.width = cropWidth;
                     canvas.height = cropHeight;
