@@ -31,7 +31,7 @@ export function levenshteinDistance(str1, str2) {
     return dp[m][n];
 }
 
-// マスター辞書との高度なあいまい照合関数（近・中・遠距離戦闘強化の強制補正含む）
+// マスター辞書との高度なあいまい照合関数
 export function getBestMatchingAbility(rawText) {
     if (!rawText) return null;
 
@@ -62,7 +62,8 @@ export function getBestMatchingAbility(rawText) {
         }
     }
 
-    return bestMatch || cleanText;
+    // マスター辞書に一致しなかった場合はそのまま返さず、厳格にnull（除外）にする
+    return bestMatch;
 }
 
 // 画像の最下部（特殊能力エリア）の範囲切り出し＆二値化処理
@@ -119,18 +120,26 @@ export async function analyzeImageAbilities(file) {
             const trimmedLine = line.trim();
             if (!trimmedLine) continue;
 
-            // NGキーワードが含まれていないかチェック
-            const containsNG = NG_KEYWORDS.some(keyword => trimmedLine.includes(keyword));
-            if (containsNG || trimmedLine.length < 2) {
+            // 【判定強化】少しでもNGキーワードが含まれていたら即座に無視して次の行へ
+            const isNG = NG_KEYWORDS.some(keyword => trimmedLine.includes(keyword));
+            if (isNG || trimmedLine.length < 2) {
                 continue;
             }
 
+            // 行頭の「No.1」などのノイズを除去
             let cleanLine = trimmedLine.replace(/^[Nn][o01-9\s._:]*/i, '').trim();
             cleanLine = cleanLine.replace(/[|│┃_\]\[\}\{`’'":;・.（）()「」、,]/g, '').trim();
 
             if (!cleanLine) continue;
 
+            // 再度クリーン後の文字でもNG判定
+            if (NG_KEYWORDS.some(keyword => cleanLine.includes(keyword))) {
+                continue;
+            }
+
             const matchedAbility = getBestMatchingAbility(cleanLine);
+            
+            // 辞書にヒットし、かつ重複していない場合のみ採用
             if (matchedAbility && !detectedItems.includes(matchedAbility)) {
                 detectedItems.push(matchedAbility);
             }
