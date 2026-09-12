@@ -174,7 +174,7 @@
             box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
         }
 
-        /* 登録済み機体データ一覧（固定ヘッダー修正版） */
+        /* 登録済み機体一覧データ */
         .registered-units-area {
             margin-bottom: 35px;
         }
@@ -196,12 +196,12 @@
             background: var(--card-bg);
             max-height: 280px;
             overflow-y: auto;
-            position: relative; /* 固定位置の基準点を設定 */
+            position: relative;
         }
 
         table {
             width: 100%;
-            border-collapse: separate; /* 境界線のズレを防止 */
+            border-collapse: separate;
             border-spacing: 0;
             text-align: left;
             white-space: nowrap;
@@ -212,9 +212,8 @@
             border-bottom: 1px solid var(--border-color);
         }
 
-        /* 行固定（ヘッダー固定）の設定 */
         th {
-            background-color: #1b2838; /* 透けない濃い背景色に変更 */
+            background-color: #1b2838;
             color: var(--accent-color);
             font-weight: bold;
             border-bottom: 2px solid var(--accent-color);
@@ -445,9 +444,9 @@
             </form>
         </div>
 
-        <!-- 登録済み機体データー一覧（自動作成テーブル） -->
+        <!-- 登録済み機体一覧データ -->
         <div class="registered-units-area">
-            <h2 class="section-title">📋 登録済み機体データー一覧</h2>
+            <h2 class="section-title">📋 登録済み機体一覧データ</h2>
             <div class="table-container">
                 <table>
                     <thead>
@@ -524,7 +523,7 @@
                 // ① 投稿一覧カードの描画
                 renderPosts(allPosts);
 
-                // ② 上部の「登録済み機体データー一覧」表の自動生成
+                // ② 上部の「登録済み機体一覧データ」表の描画
                 renderRegisteredTable(allPosts);
 
             } catch (error) {
@@ -534,12 +533,12 @@
             }
         }
 
-        // 上部の「登録済み機体データー一覧」を表として組み立てる関数
+        // 上部の「登録済み機体一覧データ」を表として組み立てる関数
         function renderRegisteredTable(posts) {
             tableBody.innerHTML = '';
 
             if (posts.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--sub-text);">登録された機体データはありません。</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--sub-text);">該当する機体データはありません。</td></tr>';
                 return;
             }
 
@@ -643,12 +642,13 @@
             }
         }
 
-        // 検索機能
+        // 検索機能（投稿一覧 ＆ 登録済み機体一覧データ の両方を同時に絞り込み）
         searchInput.addEventListener('input', (e) => {
             const keyword = e.target.value.toLowerCase().trim();
 
             if (!keyword) {
                 renderPosts(allPosts);
+                renderRegisteredTable(allPosts);
                 return;
             }
 
@@ -663,7 +663,9 @@
                 return unitNameMatch || unitNumberMatch || authorMatch || postNoMatch;
             });
 
+            // 検索結果を両方のエリアに反映
             renderPosts(filtered);
+            renderRegisteredTable(filtered);
         });
 
         // フォーム送信処理
