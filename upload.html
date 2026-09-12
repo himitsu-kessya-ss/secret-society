@@ -724,7 +724,7 @@
         function getBestMatchingAbility(rawText) {
             if (!rawText) return null;
 
-            const cleanText = rawText.replace(/[\s\t\n|:._\-]/g, '');
+            const cleanText = rawText.replace(/[\s\t\n|:._\-「」]/g, '');
             if (cleanText.length === 0) return null;
 
             let bestMatch = null;
@@ -732,7 +732,6 @@
 
             for (const master of MASTER_ABILITIES) {
                 const dist = levenshteinDistance(cleanText, master);
-                // 許容できる誤字の範囲（文字長さに応じて調整）
                 const maxAllowedDist = Math.max(2, Math.floor(master.length * 0.5));
 
                 if (dist < lowestDistance && dist <= maxAllowedDist) {
@@ -741,11 +740,10 @@
                 }
             }
 
-            // マスターリストに合致するものがあればそれを採用、なければOCR結果をそのまま採用
             return bestMatch || cleanText;
         }
 
-        // 画像の「最下部」（特殊能力テーブルがある領域）のみを自動切り出し＆クッキリ化（ロジック強化）
+        // 画像の「最下部」（特殊能力テーブルがある領域）のみを自動切り出し＆クッキリ化
         function cropAbilityRegion(file) {
             return new Promise((resolve) => {
                 const img = new Image();
@@ -753,7 +751,6 @@
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
 
-                    // 下側30%の領域を正確にキャプチャ
                     const cropHeight = Math.floor(img.height * 0.30);
                     const cropY = img.height - cropHeight;
                     const cropWidth = Math.floor(img.width * 0.50);
@@ -761,10 +758,8 @@
                     canvas.width = cropWidth;
                     canvas.height = cropHeight;
 
-                    // 切り出し描画
                     ctx.drawImage(img, 0, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
 
-                    // 輝度計算による動的二値化（文字をくっきり白・背景を黒に）
                     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                     const data = imageData.data;
                     for (let i = 0; i < data.length; i += 4) {
@@ -790,10 +785,8 @@
         // 特殊能力自動解析メイン関数
         async function analyzeImageAbilities(file) {
             try {
-                // 1. 特殊能力枠（最下部）のみを範囲切り出し
                 const croppedBlob = await cropAbilityRegion(file);
 
-                // 2. Tesseract OCRでテキスト抽出
                 const result = await Tesseract.recognize(croppedBlob, 'jpn');
                 const rawText = result.data.text;
                 const lines = rawText.split(/\r?\n/);
@@ -804,13 +797,13 @@
                     const trimmedLine = line.trim();
                     if (!trimmedLine) continue;
 
-                    // アストナージの会話や解説系テキストを確実に除外
+                    // アストナージのセリフ欄などの不要なテキストを厳密に除外
                     if (
                         trimmedLine.includes("こいつ") || 
+                        trimmedLine.includes("こんな所") || 
+                        trimmedLine.includes("特殊能力") || 
                         trimmedLine.includes("改造先") || 
                         trimmedLine.includes("知りたい") || 
-                        trimmedLine.includes("こんな所") || 
-                        trimmedLine.includes("特殊能力") ||
                         trimmedLine.includes("解説") ||
                         trimmedLine.includes("ヒント") ||
                         trimmedLine.length < 2
@@ -818,20 +811,19 @@
                         continue;
                     }
 
-                    // 「No.1」などの数字ラベルや各種記号を取り除く
+                    // 「No.1」などの数字ラベルや不要記号を取り除く
                     let cleanLine = trimmedLine.replace(/^[Nn][o01-9\s._:]*/i, '').trim();
-                    cleanLine = cleanLine.replace(/[|│┃_\]\[\}\{`’'":;・.（）()]/g, '').trim();
+                    cleanLine = cleanLine.replace(/[|│┃_\]\[\}\{`’'":;・.（）()「」]/g, '').trim();
 
                     if (!cleanLine) continue;
 
-                    // マスターリストと照合して認識補正
                     const matchedAbility = getBestMatchingAbility(cleanLine);
                     if (matchedAbility && !detectedItems.includes(matchedAbility)) {
                         detectedItems.push(matchedAbility);
                     }
                 }
 
-                // 先頭から最大9個分を No.1 〜 No.9 にセット
+                // セリフを除外した後の純粋な能力に対して、正しく No.1 〜 No.N を割り当てる
                 const abilities = detectedItems.slice(0, 9).map((text, index) => {
                     return {
                         no: index + 1,
