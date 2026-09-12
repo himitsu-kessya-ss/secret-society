@@ -3,14 +3,8 @@
  * SS解析・OCR処理および特殊能力補正ロジック
  */
 
-// 特殊能力マスター辞書
-export const MASTER_ABILITIES = [
-    "フェイズシフト装甲", "PS装甲", "VPS装甲", "大気圏適正", "EN回復",
-    "近距離戦闘強化", "中距離戦闘強化", "遠距離戦闘強化", "分身", "強化機",
-    "ビームシールド", "Iフィールド", "チョバムアーマー", "耐熱フィルム",
-    "ステルス", "ハイパーモード", "TRANS-AM", "サイコフレーム", "バイオセンサー",
-    "ニュートロンジャマーキャンセラー", "NJC", "リペアハンガー", "プロペラントタンク"
-];
+// 外部化したマスター辞書およびNGキーワードを読み込み
+import { MASTER_ABILITIES, NG_KEYWORDS } from "./ability-master.js";
 
 // 文字列の似ている度合い（レーベンシュタイン距離）を計算
 export function levenshteinDistance(str1, str2) {
@@ -41,11 +35,10 @@ export function levenshteinDistance(str1, str2) {
 export function getBestMatchingAbility(rawText) {
     if (!rawText) return null;
 
-    // 余計な記号を削除
-    let cleanText = rawText.replace(/[\s\t\n|:._\-「」]/g, '');
+    let cleanText = rawText.replace(/[\s\t\n|:._\-「」,、]/g, '');
     if (cleanText.length === 0) return null;
 
-    // --- 近・中・遠距離戦闘強化の強制補正判定 ---
+    // 近・中・遠距離戦闘強化の補正判定
     if (cleanText.includes('近') && (cleanText.includes('強化') || cleanText.includes('戦') || cleanText.includes('離'))) {
         return '近距離戦闘強化';
     }
@@ -126,22 +119,14 @@ export async function analyzeImageAbilities(file) {
             const trimmedLine = line.trim();
             if (!trimmedLine) continue;
 
-            // UIテキストやセリフを除外
-            if (
-                trimmedLine.includes("こいつ") || 
-                trimmedLine.includes("こんな所") || 
-                trimmedLine.includes("特殊能力") || 
-                trimmedLine.includes("改造先") || 
-                trimmedLine.includes("知りたい") || 
-                trimmedLine.includes("解説") ||
-                trimmedLine.includes("ヒント") ||
-                trimmedLine.length < 2
-            ) {
+            // NGキーワードが含まれていないかチェック
+            const containsNG = NG_KEYWORDS.some(keyword => trimmedLine.includes(keyword));
+            if (containsNG || trimmedLine.length < 2) {
                 continue;
             }
 
             let cleanLine = trimmedLine.replace(/^[Nn][o01-9\s._:]*/i, '').trim();
-            cleanLine = cleanLine.replace(/[|│┃_\]\[\}\{`’'":;・.（）()「」]/g, '').trim();
+            cleanLine = cleanLine.replace(/[|│┃_\]\[\}\{`’'":;・.（）()「」、,]/g, '').trim();
 
             if (!cleanLine) continue;
 
