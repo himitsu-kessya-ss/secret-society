@@ -118,7 +118,6 @@
 <script>
     // ページ読み込み時にデータを自動でHTMLに展開する処理
     window.addEventListener('DOMContentLoaded', () => {
-        // 各カテゴリごとにループを回してHTMLを生成
         const categories = ['serious', 'internal', 'exchange', 'tournament'];
 
         categories.forEach(catId => {
@@ -130,8 +129,8 @@
                 return;
             }
 
-            // public: true のものだけをフィルターして表示（falseのものは保管用として非表示に）
-            const publicItems = items.filter(item => item.public !== false);
+            // public: true のものだけをフィルター（falseのものは保管用として非表示）
+            const publicItems = items.filter(item => item.public === true);
 
             if (publicItems.length === 0) {
                 container.innerHTML = '<div style="padding: 20px; color: #666; text-align: center;">記録待ち...</div>';
