@@ -30,11 +30,12 @@ export function levenshteinDistance(str1, str2) {
     return dp[m][n];
 }
 
-// マスター辞書との高度な照合関数（完全一致優先＆適度な許容誤差）
+// マスター辞書との高度な照合関数（完全一致優先＆プラス記号・数値保護）
 export function getBestMatchingAbility(rawText) {
     if (!rawText) return null;
 
-    let cleanText = rawText.replace(/[\s\t\n|:._\-「」,、]/g, '');
+    // 全角の「＋」を半角の「+」に変換し、不要なスペース等を除去
+    let cleanText = rawText.replace(/＋/g, '+').replace(/[\s\t\n|:._\-「」,、]/g, '');
     if (cleanText.length === 0) return null;
 
     // 1. 完全一致するものがマスターに存在すれば、即座にそれを採用（最優先）
@@ -53,6 +54,12 @@ export function getBestMatchingAbility(rawText) {
         return '遠距離戦闘強化';
     }
 
+    // 移動力+10 / +15 の誤認保護判定
+    if (cleanText.includes('移動') || cleanText.includes('動')) {
+        if (cleanText.includes('15') || cleanText.includes('5')) return '移動力+15';
+        if (cleanText.includes('10') || cleanText.includes('0')) return '移動力+10';
+    }
+
     // 2. あいまい補正（類似度判定）
     let bestMatch = null;
     let lowestDistance = Infinity;
@@ -60,7 +67,6 @@ export function getBestMatchingAbility(rawText) {
     for (const master of MASTER_ABILITIES) {
         const dist = levenshteinDistance(cleanText, master);
         
-        // 4文字以上なら誤差2文字まで許容しつつ、短い単語の誤認を防ぐ
         let maxAllowedDist = 1;
         if (master.length >= 4) {
             maxAllowedDist = 2;
@@ -138,8 +144,9 @@ export async function analyzeImageAbilities(file) {
                 continue;
             }
 
-            // 行頭記号やノイズの除去
-            let cleanLine = trimmedLine.replace(/^[Nn][o01-9\s._:]*/i, '').trim();
+            // 行頭の「No.1」などのナンバリングのみをピンポイントで除去（+記号や能力数値は残す）
+            let cleanLine = trimmedLine.replace(/^No\s*[\.\s\d:]*/i, '').trim();
+            // 枠線や鉤括弧などのノイズ記号のみ除去（「+」は絶対保持）
             cleanLine = cleanLine.replace(/[|│┃_\]\[\}\{`’'":;・.（）()「」、,]/g, '').trim();
 
             if (!cleanLine) continue;
