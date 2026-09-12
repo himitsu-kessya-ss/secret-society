@@ -30,18 +30,24 @@ export function levenshteinDistance(str1, str2) {
     return dp[m][n];
 }
 
-// マスター辞書との高度な照合関数（完全一致優先＆プラス記号・数値保護）
+// マスター辞書との照合関数（完全一致優先＆文字化け救済）
 export function getBestMatchingAbility(rawText) {
     if (!rawText) return null;
 
-    // 全角の「＋」を半角の「+」に変換し、不要なスペース等を除去
+    // 全角「＋」の半角化および不要記号の除去
     let cleanText = rawText.replace(/＋/g, '+').replace(/[\s\t\n|:._\-「」,、]/g, '');
     if (cleanText.length === 0) return null;
 
-    // 1. 完全一致するものがマスターに存在すれば、即座にそれを採用（最優先）
+    // 1. 完全一致するものがマスターに存在すれば即座に採用
     if (MASTER_ABILITIES.includes(cleanText)) {
         return cleanText;
     }
+
+    // 「適性」「適正」の読み取りズレを「大気圏適正」等へ確実に補正
+    if (cleanText.includes('大気圏')) return '大気圏適正';
+    if (cleanText.includes('砂漠')) return '砂漠適正';
+    if (cleanText.includes('月面')) return '月面適正';
+    if (cleanText.includes('森林')) return '森林適正';
 
     // 近・中・遠距離戦闘強化の強制補正判定
     if (cleanText.includes('近') && (cleanText.includes('強化') || cleanText.includes('戦') || cleanText.includes('離'))) {
@@ -144,9 +150,9 @@ export async function analyzeImageAbilities(file) {
                 continue;
             }
 
-            // 行頭の「No.1」などのナンバリングのみをピンポイントで除去（+記号や能力数値は残す）
+            // 行頭の「No.1」などのナンバリングのみ除去
             let cleanLine = trimmedLine.replace(/^No\s*[\.\s\d:]*/i, '').trim();
-            // 枠線や鉤括弧などのノイズ記号のみ除去（「+」は絶対保持）
+            // 枠線や不要記号の除去（+記号は保持）
             cleanLine = cleanLine.replace(/[|│┃_\]\[\}\{`’'":;・.（）()「」、,]/g, '').trim();
 
             if (!cleanLine) continue;
