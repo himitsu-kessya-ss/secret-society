@@ -13,6 +13,7 @@
             --text-color: #e0e0e0;
             --sub-text: #a0a0a0;
             --header-height: 60px;
+            --border-color: #333;
         }
 
         body {
@@ -107,10 +108,6 @@
             margin-bottom: 6px;
         }
 
-        .guide-list li:last-child {
-            margin-bottom: 0;
-        }
-
         .guide-highlight {
             color: #ffd700;
             font-weight: bold;
@@ -177,27 +174,83 @@
             box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
         }
 
-        .table-embed-area {
+        /* 登録済み機体データ一覧（自動生成テーブルのスタイル） */
+        .registered-units-area {
             margin-bottom: 35px;
         }
 
-        .table-embed-title {
+        .section-title {
             font-size: 1.1rem;
             color: var(--text-color);
-            margin-bottom: 10px;
+            margin-bottom: 12px;
             display: flex;
             align-items: center;
             gap: 8px;
         }
 
-        .table-iframe {
+        .table-container {
             width: 100%;
-            height: 250px;
-            border: none;
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
             border-radius: 8px;
             background: var(--card-bg);
+            max-height: 280px;
+            overflow-y: auto;
         }
 
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: rgba(0, 212, 255, 0.1);
+            color: var(--accent-color);
+            font-weight: bold;
+            border-bottom: 2px solid var(--accent-color);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        tr:hover {
+            background-color: rgba(255, 255, 255, 0.03);
+        }
+
+        .unit-no-badge {
+            background: rgba(0, 212, 255, 0.15);
+            color: var(--accent-color);
+            border: 1px solid var(--accent-color);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-family: monospace;
+        }
+
+        .img-link-btn {
+            color: var(--accent-color);
+            text-decoration: none;
+            border: 1px solid var(--accent-color);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            transition: 0.2s;
+            display: inline-block;
+        }
+
+        .img-link-btn:hover {
+            background: rgba(0, 212, 255, 0.2);
+            box-shadow: 0 0 8px rgba(0, 212, 255, 0.4);
+        }
+
+        /* 投稿一覧エリア */
         .list-header-area {
             display: flex;
             justify-content: space-between;
@@ -355,6 +408,7 @@
             </ul>
         </div>
 
+        <!-- 投稿フォーム -->
         <div class="upload-form-card">
             <form id="upload-form">
                 <div class="form-row">
@@ -388,12 +442,28 @@
             </form>
         </div>
 
-        <!-- 登録済み機体一覧表（埋め込み） -->
-        <div class="table-embed-area">
-            <h2 class="table-embed-title">📋 登録済み機体データー一覧</h2>
-            <iframe src="unit_table.html" class="table-iframe" title="登録機体一覧"></iframe>
+        <!-- 登録済み機体データー一覧（自動作成テーブル） -->
+        <div class="registered-units-area">
+            <h2 class="section-title">📋 登録済み機体データー一覧</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>機体 No.</th>
+                            <th>機体名</th>
+                            <th>画像リンク</th>
+                        </tr>
+                    </thead>
+                    <tbody id="registered-table-body">
+                        <tr>
+                            <td colspan="3" style="text-align: center; color: var(--sub-text);">データを読み込み中...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
+        <!-- 投稿一覧エリア -->
         <div class="list-header-area">
             <h2 style="margin: 0;">投稿一覧</h2>
             <input type="text" id="search-input" class="search-box" placeholder="🔍 投稿No.・機体名・機体No.で検索...">
@@ -428,10 +498,11 @@
         const postList = document.getElementById('post-list');
         const loadingMsg = document.getElementById('loading-msg');
         const searchInput = document.getElementById('search-input');
+        const tableBody = document.getElementById('registered-table-body');
 
         let allPosts = [];
 
-        // 投稿一覧を取得する関数
+        // 投稿データおよび登録機体表を取得・描画する関数
         async function loadPosts() {
             try {
                 postList.innerHTML = '';
@@ -447,13 +518,51 @@
                     allPosts.push({ id: docSnap.id, ...docSnap.data() });
                 });
 
+                // ① 投稿一覧カードの描画
                 renderPosts(allPosts);
+
+                // ② 上部の「登録済み機体データー一覧」表の自動生成
+                renderRegisteredTable(allPosts);
+
             } catch (error) {
                 console.error("読み込みエラー:", error);
                 loadingMsg.textContent = 'データの読み込みに失敗しました。画面を再読み込みしてください。';
+                tableBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--danger-color);">データの読み込みに失敗しました。</td></tr>';
             }
         }
 
+        // 上部の「登録済み機体データー一覧」を表として組み立てる関数
+        function renderRegisteredTable(posts) {
+            tableBody.innerHTML = '';
+
+            if (posts.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--sub-text);">登録された機体データはありません。</td></tr>';
+                return;
+            }
+
+            // 機体ナンバー順に並び替え（昇順）
+            const sortedPosts = [...posts].sort((a, b) => {
+                const numA = parseInt(a.unitNumber, 10) || 0;
+                const numB = parseInt(b.unitNumber, 10) || 0;
+                return numA - numB;
+            });
+
+            sortedPosts.forEach(data => {
+                const tr = document.createElement('tr');
+                const unitNo = escapeHTML(data.unitNumber || '----');
+                const unitName = escapeHTML(data.unitName || '名称未設定');
+                const imgUrl = data.imageUrl || '#';
+
+                tr.innerHTML = `
+                    <td><span class="unit-no-badge">${unitNo}</span></td>
+                    <td>${unitName}</td>
+                    <td><a href="${imgUrl}" target="_blank" rel="noopener noreferrer" class="img-link-btn">🔗 画像を見る</a></td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        // 下部の「投稿一覧」を描画する関数
         function renderPosts(postsToRender) {
             postList.innerHTML = '';
 
@@ -492,6 +601,7 @@
             });
         }
 
+        // 削除処理の関数
         async function deletePost(docId, savedKey) {
             const inputKey = prompt('削除キーを入力してください：');
             if (inputKey === null) return;
@@ -530,6 +640,7 @@
             }
         }
 
+        // 検索機能
         searchInput.addEventListener('input', (e) => {
             const keyword = e.target.value.toLowerCase().trim();
 
@@ -552,6 +663,7 @@
             renderPosts(filtered);
         });
 
+        // フォーム送信処理
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -621,6 +733,8 @@
                 form.reset();
                 searchInput.value = '';
                 alert(`投稿が完了しました！（投稿 No.${newPostNo}）`);
+                
+                // 投稿完了時に一覧と表を最新情報に更新
                 await loadPosts();
 
             } catch (error) {
