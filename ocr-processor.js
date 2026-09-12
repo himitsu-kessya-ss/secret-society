@@ -3,7 +3,6 @@
  * SS解析・OCR処理および特殊能力補正ロジック
  */
 
-// 外部化したマスター辞書およびNGキーワードを読み込み
 import { MASTER_ABILITIES, NG_KEYWORDS } from "./ability-master.js";
 
 // 文字列の似ている度合い（レーベンシュタイン距離）を計算
@@ -31,14 +30,19 @@ export function levenshteinDistance(str1, str2) {
     return dp[m][n];
 }
 
-// マスター辞書との高度なあいまい照合関数
+// マスター辞書との高度な照合関数（完全一致優先＆判定の厳格化）
 export function getBestMatchingAbility(rawText) {
     if (!rawText) return null;
 
     let cleanText = rawText.replace(/[\s\t\n|:._\-「」,、]/g, '');
     if (cleanText.length === 0) return null;
 
-    // 近・中・遠距離戦闘強化の補正判定
+    // 1. 完全一致するものがマスターに存在すれば、即座にそれを採用
+    if (MASTER_ABILITIES.includes(cleanText)) {
+        return cleanText;
+    }
+
+    // 近・中・遠距離戦闘強化の強制補正判定
     if (cleanText.includes('近') && (cleanText.includes('強化') || cleanText.includes('戦') || cleanText.includes('離'))) {
         return '近距離戦闘強化';
     }
@@ -49,12 +53,20 @@ export function getBestMatchingAbility(rawText) {
         return '遠距離戦闘強化';
     }
 
+    // 2. あいまい補正（類似度判定）
     let bestMatch = null;
     let lowestDistance = Infinity;
 
     for (const master of MASTER_ABILITIES) {
         const dist = levenshteinDistance(cleanText, master);
-        const maxAllowedDist = Math.max(3, Math.floor(master.length * 0.6));
+        
+        // 許容誤差をより厳格に設定（短い単語での誤判定を防止）
+        let maxAllowedDist = 1;
+        if (master.length >= 6) {
+            maxAllowedDist = 2;
+        } else if (master.length >= 10) {
+            maxAllowedDist = 3;
+        }
 
         if (dist < lowestDistance && dist <= maxAllowedDist) {
             lowestDistance = dist;
@@ -62,7 +74,6 @@ export function getBestMatchingAbility(rawText) {
         }
     }
 
-    // マスター辞書に一致しなかった場合はそのまま返さず、厳格にnull（除外）にする
     return bestMatch;
 }
 
@@ -120,26 +131,24 @@ export async function analyzeImageAbilities(file) {
             const trimmedLine = line.trim();
             if (!trimmedLine) continue;
 
-            // 【判定強化】少しでもNGキーワードが含まれていたら即座に無視して次の行へ
+            // NGキーワードの判定
             const isNG = NG_KEYWORDS.some(keyword => trimmedLine.includes(keyword));
             if (isNG || trimmedLine.length < 2) {
                 continue;
             }
 
-            // 行頭の「No.1」などのノイズを除去
+            // 行頭記号やノイズの除去
             let cleanLine = trimmedLine.replace(/^[Nn][o01-9\s._:]*/i, '').trim();
             cleanLine = cleanLine.replace(/[|│┃_\]\[\}\{`’'":;・.（）()「」、,]/g, '').trim();
 
             if (!cleanLine) continue;
 
-            // 再度クリーン後の文字でもNG判定
             if (NG_KEYWORDS.some(keyword => cleanLine.includes(keyword))) {
                 continue;
             }
 
             const matchedAbility = getBestMatchingAbility(cleanLine);
             
-            // 辞書にヒットし、かつ重複していない場合のみ採用
             if (matchedAbility && !detectedItems.includes(matchedAbility)) {
                 detectedItems.push(matchedAbility);
             }
