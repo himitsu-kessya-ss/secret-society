@@ -564,7 +564,7 @@
         const tableSearchInput = document.getElementById('table-search-input');
         const tableBody = document.getElementById('registered-table-body');
 
-        // 特殊能力マスター辞書
+        // 特殊能力マスター辞書（ここにある単語と優先的に自動照合します）
         const MASTER_ABILITIES = [
             "フェイズシフト装甲", "PS装甲", "VPS装甲", "大気圏適正", "EN回復",
             "近距離戦闘強化", "中距離戦闘強化", "遠距離戦闘強化", "分身", "強化機",
@@ -695,39 +695,57 @@
             });
         }
 
-        // 類似度判定アルゴリズム（マスター辞書との部分一致・類似度チェック）
+        // 文字列同士の距離（編集距離）を計算して似ている度合いを測る関数
+        function levenshteinDistance(str1, str2) {
+            const m = str1.length;
+            const n = str2.length;
+            const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+
+            for (let i = 0; i <= m; i++) dp[i][0] = i;
+            for (let j = 0; j <= n; j++) dp[0][j] = j;
+
+            for (let i = 1; i <= m; i++) {
+                for (let j = 1; j <= n; j++) {
+                    if (str1[i - 1] === str2[j - 1]) {
+                        dp[i][j] = dp[i - 1][j - 1];
+                    } else {
+                        dp[i][j] = Math.min(
+                            dp[i - 1][j] + 1,      // 削除
+                            dp[i][j - 1] + 1,      // 挿入
+                            dp[i - 1][j - 1] + 1  // 置換
+                        );
+                    }
+                }
+            }
+            return dp[m][n];
+        }
+
+        // マスター辞書との高度なあいまい照合関数
         function getBestMatchingAbility(rawText) {
             if (!rawText) return null;
-
-            // 特殊な誤読みパターン（「e2」→「EN回復」など）を事前吸収
-            if (/e[n2]|回/i.test(rawText)) return "EN回復";
-            if (/フェイズ|PS|装甲/i.test(rawText)) return "フェイズシフト装甲";
-            if (/大気|適正|較正/i.test(rawText)) return "大気圏適正";
 
             const cleanText = rawText.replace(/[\s\t\n|:._\-]/g, '');
             if (cleanText.length === 0) return null;
 
             let bestMatch = null;
-            let maxScore = 0;
+            let lowestDistance = Infinity;
 
             for (const master of MASTER_ABILITIES) {
-                let matchCount = 0;
-                for (const char of cleanText) {
-                    if (master.includes(char)) {
-                        matchCount++;
-                    }
-                }
-                const score = matchCount / Math.max(cleanText.length, master.length);
-                if (score > maxScore && score >= 0.3) {
-                    maxScore = score;
+                const dist = levenshteinDistance(cleanText, master);
+                // 許容できる誤字の範囲（文字長さに応じて調整）
+                const maxAllowedDist = Math.max(2, Math.floor(master.length * 0.5));
+
+                if (dist < lowestDistance && dist <= maxAllowedDist) {
+                    lowestDistance = dist;
                     bestMatch = master;
                 }
             }
 
+            // マスターリストに合致するものがあればそれを採用、なければOCR結果をそのまま採用
             return bestMatch || cleanText;
         }
 
-        // 画像の下部（特殊能力表がある領域）だけをキャンバスで自動トリミング＆白黒くっきり化する関数
+        // 画像の「最下部」（特殊能力テーブルがある領域）のみを自動切り出し＆クッキリ化
         function cropAbilityRegion(file) {
             return new Promise((resolve) => {
                 const img = new Image();
@@ -735,10 +753,10 @@
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
 
-                    // 下部38%（特殊能力テーブルが存在する領域）をターゲット切り出し
-                    const cropY = Math.floor(img.height * 0.62);
-                    const cropHeight = img.height - cropY;
-                    const cropWidth = Math.floor(img.width * 0.55); // 左半分〜中央あたりを抽出
+                    // アストナージのセリフ部分を除外するため、画像の下側25%だけを抽出
+                    const cropHeight = Math.floor(img.height * 0.25);
+                    const cropY = img.height - cropHeight;
+                    const cropWidth = Math.floor(img.width * 0.45); // 左側〜中央部分
 
                     canvas.width = cropWidth;
                     canvas.height = cropHeight;
@@ -746,12 +764,12 @@
                     // 切り出し描画
                     ctx.drawImage(img, 0, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
 
-                    // 白黒化とコントラスト強調（Tesseractの視認精度を飛躍的にアップ）
+                    // 白黒2値化処理でOCR精度を最大化
                     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                     const data = imageData.data;
                     for (let i = 0; i < data.length; i += 4) {
                         const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-                        const bw = avg > 90 ? 255 : 0; // しきい値でクッキリ2値化
+                        const bw = avg > 80 ? 255 : 0;
                         data[i] = bw;
                         data[i + 1] = bw;
                         data[i + 2] = bw;
@@ -766,13 +784,13 @@
             });
         }
 
-        // 特殊能力高精度自動解析関数
+        // 特殊能力自動解析メイン関数
         async function analyzeImageAbilities(file) {
             try {
-                // 1. 特殊能力枠のみを自動切り出し（トリミング＆画像強調）
+                // 1. 特殊能力枠（最下部）のみを範囲切り出し
                 const croppedBlob = await cropAbilityRegion(file);
 
-                // 2. 切り出した部分画像だけでOCR解析を実行
+                // 2. Tesseract OCRでテキスト抽出
                 const result = await Tesseract.recognize(croppedBlob, 'jpn');
                 const rawText = result.data.text;
                 const lines = rawText.split(/\r?\n/);
@@ -783,19 +801,33 @@
                     const trimmedLine = line.trim();
                     if (!trimmedLine) continue;
 
-                    // 「No.1」などの数字やゴミ記号を取り除く
+                    // アストナージの会話や解説系テキストを確実に除外
+                    if (
+                        trimmedLine.includes("こいつ") || 
+                        trimmedLine.includes("改造先") || 
+                        trimmedLine.includes("知りたい") || 
+                        trimmedLine.includes("こんな所") || 
+                        trimmedLine.includes("特殊能力") ||
+                        trimmedLine.includes("解説") ||
+                        trimmedLine.includes("ヒント")
+                    ) {
+                        continue;
+                    }
+
+                    // 「No.1」などの数字ラベルを綺麗に取り除く
                     let cleanLine = trimmedLine.replace(/^[Nn][o01-9\s._:]*/i, '').trim();
                     cleanLine = cleanLine.replace(/[|│┃_\]\[\}\{`’'":;・.]/g, '').trim();
 
-                    if (!cleanLine || cleanLine.includes("特殊能力")) continue;
+                    if (!cleanLine) continue;
 
+                    // 99%存在するマスターリストと照合して補正
                     const matchedAbility = getBestMatchingAbility(cleanLine);
                     if (matchedAbility && !detectedItems.includes(matchedAbility)) {
                         detectedItems.push(matchedAbility);
                     }
                 }
 
-                // 上から検出された順番に No.1 〜 No.9 とナンバリング
+                // 先頭から最大9個分を No.1 〜 No.9 にセット
                 const abilities = detectedItems.slice(0, 9).map((text, index) => {
                     return {
                         no: index + 1,
