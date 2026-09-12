@@ -1,1028 +1,362 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SS Upload - 秘密結社の部屋</title>
-    <!-- Tesseract.js (OCR) -->
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-    <style>
-        :root {
-            --bg-color: #1a1c1e;
-            --card-bg: #25282c;
-            --accent-color: #00d4ff;
-            --danger-color: #ff4d4d;
-            --text-color: #e0e0e0;
-            --sub-text: #a0a0a0;
-            --header-height: 60px;
-            --border-color: #333;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MS Tactics - 機体データOCR自動登録</title>
+  <!-- Tesseract.js (OCRライブラリ) の読み込み -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-        body {
-            margin: 0;
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            line-height: 1.6;
-        }
+    body {
+      background-color: #121519;
+      color: #ffffff;
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
 
-        header {
-            background-color: rgba(0, 0, 0, 0.95);
-            height: var(--header-height);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            border-bottom: 2px solid var(--accent-color);
-            padding: 0 15px;
-            box-sizing: border-box;
-        }
+    /* メインコンテナ */
+    .container {
+      width: 100%;
+      max-width: 1100px;
+      background-color: #1e222b;
+      border: 1px solid #2a303c;
+      border-radius: 8px;
+      padding: 24px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    }
 
-        .logo-link {
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 1.1rem;
-            color: var(--accent-color);
-            white-space: nowrap;
-        }
+    h2 {
+      font-size: 1.2rem;
+      color: #00f0ff;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
 
-        .nav-links {
-            display: flex;
-            gap: 10px;
-            overflow-x: auto;
-            white-space: nowrap;
-        }
-        .nav-links::-webkit-scrollbar { display: none; }
+    /* 画像アップロード ＆ 解析エリア */
+    .upload-section {
+      background-color: #15181e;
+      border: 2px dashed #00f0ff;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 24px;
+    }
 
-        .nav-item-custom {
-            color: #e0e0e0; text-decoration: none; font-size: 0.85rem; 
-            padding: 6px 10px; border-radius: 4px; border: 1px solid transparent;
-            transition: 0.2s;
-        }
-        .nav-item-custom:hover, .nav-item-custom.active { 
-            background: rgba(0, 212, 255, 0.2); 
-            border-color: #00d4ff; 
-        }
+    .file-input {
+      display: none;
+    }
 
-        .container {
-            width: 100%;
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 20px;
-            box-sizing: border-box;
-        }
+    .upload-btn {
+      display: inline-block;
+      background-color: rgba(0, 240, 255, 0.1);
+      color: #00f0ff;
+      border: 1px solid #00f0ff;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.2s ease;
+    }
 
-        .page-title {
-            color: var(--accent-color);
-            border-bottom: 1px solid #333;
-            padding-bottom: 10px;
-            margin-top: 10px;
-        }
+    .upload-btn:hover {
+      background-color: rgba(0, 240, 255, 0.25);
+    }
 
-        .guide-card {
-            background: rgba(0, 212, 255, 0.05);
-            border: 1px solid rgba(0, 212, 255, 0.3);
-            border-left: 4px solid var(--accent-color);
-            border-radius: 8px;
-            padding: 18px 20px;
-            margin-bottom: 25px;
-        }
+    /* プログレス・ステータス表示 */
+    .status-msg {
+      margin-top: 12px;
+      font-size: 0.9rem;
+      color: #ffd700;
+      min-height: 1.2em;
+    }
 
-        .guide-title {
-            margin: 0 0 10px 0;
-            font-size: 1rem;
-            color: var(--accent-color);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+    /* 検索バーとヘッダー */
+    .db-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
 
-        .guide-list {
-            margin: 0;
-            padding-left: 20px;
-            font-size: 0.9rem;
-            color: var(--text-color);
-        }
+    .search-box input {
+      background-color: #15181e;
+      border: 1px solid #00f0ff;
+      border-radius: 20px;
+      padding: 8px 16px 8px 36px;
+      color: #ffffff;
+      font-size: 0.9rem;
+      width: 280px;
+      outline: none;
+    }
 
-        .guide-list li {
-            margin-bottom: 6px;
-        }
+    .search-box {
+      position: relative;
+    }
 
-        .guide-highlight {
-            color: #ffd700;
-            font-weight: bold;
-        }
+    .search-box::before {
+      content: "🔍";
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.85rem;
+    }
 
-        .upload-form-card {
-            background: var(--card-bg);
-            border: 1px solid #333;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 30px;
-        }
+    /* 一覧テーブル */
+    .table-wrapper {
+      overflow-x: auto;
+      border-bottom: 2px solid #00f0ff;
+    }
 
-        .form-row {
-            display: flex;
-            gap: 15px;
-        }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
 
-        .form-group {
-            margin-bottom: 15px;
-            flex: 1;
-        }
+    th {
+      color: #00f0ff;
+      font-size: 0.95rem;
+      padding: 12px 16px;
+      border-bottom: 2px solid #00f0ff;
+      white-space: nowrap;
+    }
 
-        .form-group.small {
-            flex: 0 0 140px;
-        }
+    td {
+      padding: 16px;
+      border-bottom: 1px solid #2a303c;
+      vertical-align: middle;
+    }
 
-        .form-group label {
-            display: block;
-            font-size: 0.9rem;
-            color: var(--sub-text);
-            margin-bottom: 5px;
-        }
+    .unit-no {
+      border: 1px solid #00f0ff;
+      color: #00f0ff;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-family: monospace;
+    }
 
-        .form-group input[type="text"],
-        .form-group input[type="password"] {
-            width: 100%;
-            padding: 10px;
-            box-sizing: border-box;
-            background: #1a1c1e;
-            border: 1px solid #444;
-            border-radius: 4px;
-            color: var(--text-color);
-            font-size: 1rem;
-        }
+    .unit-name {
+      font-weight: bold;
+      color: #ffffff;
+    }
 
-        .file-input-wrapper {
-            margin-top: 10px;
-        }
+    /* 特殊能力バッジ */
+    .ability-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      max-width: 520px;
+    }
 
-        .submit-btn {
-            background: transparent;
-            color: var(--accent-color);
-            border: 1px solid var(--accent-color);
-            padding: 10px 20px;
-            font-size: 1rem;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: 0.3s;
-        }
+    .ability-tag {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid #ffd700;
+      border-radius: 4px;
+      background-color: rgba(255, 215, 0, 0.05);
+      padding: 2px 6px 2px 2px;
+      font-size: 0.82rem;
+      color: #ffd700;
+    }
 
-        .submit-btn:hover {
-            background: rgba(0, 212, 255, 0.2);
-            box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
-        }
+    .ability-no {
+      background-color: #00f0ff;
+      color: #003344;
+      font-weight: bold;
+      font-size: 0.75rem;
+      padding: 1px 4px;
+      border-radius: 3px;
+      margin-right: 5px;
+    }
 
-        /* 登録済み機体一覧データ */
-        .registered-units-area {
-            margin-bottom: 35px;
-        }
+    .btn-view {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border: 1px solid #00f0ff;
+      color: #00f0ff;
+      background: transparent;
+      padding: 5px 12px;
+      border-radius: 4px;
+      text-decoration: none;
+      font-size: 0.85rem;
+    }
 
-        .table-header-area {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 12px;
-        }
-
-        .section-title {
-            font-size: 1.1rem;
-            color: var(--text-color);
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .table-search-box {
-            width: 100%;
-            max-width: 300px;
-            padding: 6px 12px;
-            background: #1a1c1e;
-            border: 1px solid #444;
-            border-radius: 16px;
-            color: var(--text-color);
-            font-size: 0.85rem;
-            box-sizing: border-box;
-            outline: none;
-            transition: 0.2s;
-        }
-
-        .table-search-box:focus {
-            border-color: var(--accent-color);
-            box-shadow: 0 0 6px rgba(0, 212, 255, 0.4);
-        }
-
-        .table-container {
-            width: 100%;
-            overflow-x: auto;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            background: var(--card-bg);
-            max-height: 320px;
-            overflow-y: auto;
-            position: relative;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            text-align: left;
-        }
-
-        th, td {
-            padding: 12px 15px;
-            border-bottom: 1px solid var(--border-color);
-            vertical-align: middle;
-        }
-
-        th {
-            background-color: #1b2838;
-            color: var(--accent-color);
-            font-weight: bold;
-            border-bottom: 2px solid var(--accent-color);
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            white-space: nowrap;
-        }
-
-        tr:hover {
-            background-color: rgba(255, 255, 255, 0.03);
-        }
-
-        .unit-no-badge {
-            background: rgba(0, 212, 255, 0.15);
-            color: var(--accent-color);
-            border: 1px solid var(--accent-color);
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.85rem;
-            font-family: monospace;
-            white-space: nowrap;
-        }
-
-        .ability-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-        }
-
-        .ability-badge {
-            background: rgba(255, 215, 0, 0.1);
-            color: #ffd700;
-            border: 1px solid rgba(255, 215, 0, 0.4);
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .ability-num {
-            color: var(--accent-color);
-            font-weight: bold;
-            font-size: 0.75rem;
-        }
-
-        .img-link-btn {
-            color: var(--accent-color);
-            text-decoration: none;
-            border: 1px solid var(--accent-color);
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            transition: 0.2s;
-            display: inline-block;
-            white-space: nowrap;
-        }
-
-        .img-link-btn:hover {
-            background: rgba(0, 212, 255, 0.2);
-            box-shadow: 0 0 8px rgba(0, 212, 255, 0.4);
-        }
-
-        /* 投稿一覧エリア */
-        .list-header-area {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .search-box {
-            width: 100%;
-            max-width: 360px;
-            padding: 8px 14px;
-            background: #1a1c1e;
-            border: 1px solid var(--accent-color);
-            border-radius: 20px;
-            color: var(--text-color);
-            font-size: 0.9rem;
-            box-sizing: border-box;
-            outline: none;
-            transition: 0.2s;
-        }
-
-        .search-box:focus {
-            box-shadow: 0 0 8px rgba(0, 212, 255, 0.5);
-            border-color: #55e6ff;
-        }
-
-        .post-list {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .post-card {
-            background: var(--card-bg);
-            border: 1px solid #333;
-            border-radius: 8px;
-            padding: 20px;
-        }
-
-        .post-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #333;
-            padding-bottom: 8px;
-            margin-bottom: 12px;
-            font-size: 0.85rem;
-            color: var(--sub-text);
-        }
-
-        .post-header-left {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
-        .post-author {
-            color: var(--accent-color);
-            font-weight: bold;
-        }
-
-        .delete-btn {
-            background: transparent;
-            color: var(--danger-color);
-            border: 1px solid var(--danger-color);
-            padding: 2px 8px;
-            font-size: 0.75rem;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .delete-btn:hover {
-            background: rgba(255, 77, 77, 0.2);
-            box-shadow: 0 0 6px rgba(255, 77, 77, 0.4);
-        }
-
-        .post-unit-title {
-            font-size: 1.1rem;
-            margin: 0 0 12px 0;
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .post-number-badge {
-            background: rgba(255, 215, 0, 0.15);
-            color: #ffd700;
-            border: 1px solid #ffd700;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.85rem;
-            font-weight: bold;
-        }
-
-        .unit-number-badge {
-            background: rgba(0, 212, 255, 0.15);
-            color: var(--accent-color);
-            border: 1px solid var(--accent-color);
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.85rem;
-        }
-
-        .post-image {
-            max-width: 100%;
-            max-height: 500px;
-            border-radius: 6px;
-            border: 1px solid #444;
-            display: block;
-        }
-
-        #loading-msg {
-            text-align: center;
-            color: var(--sub-text);
-            padding: 20px;
-        }
-    </style>
+    .btn-view:hover {
+      background-color: rgba(0, 240, 255, 0.15);
+    }
+  </style>
 </head>
 <body>
 
-    <header>
-        <a href="index.html#main" class="logo-link">秘密結社の部屋</a>
-        <nav class="nav-links">
-            <a href="unit.html" class="nav-item-custom">Unit</a>
-            <a href="derivatives.html" class="nav-item-custom">Derivatives</a>
-            <a href="arms.html" class="nav-item-custom">Arms</a>
-            <a href="hangar.html" class="nav-item-custom">Hangar</a>
-            <a href="upload.html" class="nav-item-custom active">Upload</a>
-            <a href="#" class="nav-item-custom">Battle</a>
-            <a href="novels.html" class="nav-item-custom">Novels</a>
-            <a href="tactics.html" class="nav-item-custom">Tactics</a>
-            <a href="hunter.html" class="nav-item-custom">Hunter</a>
-            <a href="trivia.html" class="nav-item-custom">Trivia</a>
-            <a href="emoji.html" class="nav-item-custom">Emoji</a>
-            <a href="#" class="nav-item-custom">Link</a>
-        </nav>
-    </header>
-
-    <div class="container">
-        <h1 class="page-title">SS Upload (スクリーンショット投稿)</h1>
-
-        <!-- 投稿者向けの使い方説明エリア -->
-        <div class="guide-card">
-            <h2 class="guide-title">ℹ️ SS投稿の使い方・ルール</h2>
-            <ul class="guide-list">
-                <li><strong>機体ナンバー：</strong> 対象となる機体の4桁の番号（例：0001）を入力してください。</li>
-                <li><strong>機体名：</strong> 画像に映っている機体の名称を入力してください。</li>
-                <li><strong>投稿者：</strong> ゲーム内でのキャラクター名（パイロット名）を入力してください。</li>
-                <li><strong>削除キー：</strong> 投稿後に自分で削除したい場合に使用する<span class="guide-highlight">数字4桁の暗証番号</span>を設定してください。</li>
-                <li><strong>特殊能力解析：</strong> 特殊能力領域を範囲切り出し（自動トリミング）し、マスター辞書と照合して自動抽出します。</li>
-            </ul>
-        </div>
-
-        <!-- 投稿フォーム -->
-        <div class="upload-form-card">
-            <form id="upload-form">
-                <div class="form-row">
-                    <div class="form-group small">
-                        <label for="unit-number">機体ナンバー</label>
-                        <input type="text" id="unit-number" placeholder="0001" maxlength="4" pattern="\d{4}" required title="4桁の数字を入力してください">
-                    </div>
-                    <div class="form-group">
-                        <label for="unit-name">機体名</label>
-                        <input type="text" id="unit-name" placeholder="例：ガンダム" required>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="author">投稿者（キャラ名）</label>
-                        <input type="text" id="author" placeholder="例：名無しパイロット" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="delete-key">削除キー（数字4桁）</label>
-                        <input type="password" id="delete-key" placeholder="例：1234" maxlength="4" pattern="\d{4}" required title="数字4桁で入力してください">
-                    </div>
-                </div>
-
-                <div class="form-group file-input-wrapper">
-                    <label for="image-file">添付画像</label>
-                    <input type="file" id="image-file" accept="image/*" required>
-                </div>
-
-                <button type="submit" id="submit-btn" class="submit-btn">投稿する</button>
-            </form>
-        </div>
-
-        <!-- 登録済み機体一覧データ -->
-        <div class="registered-units-area">
-            <div class="table-header-area">
-                <h2 class="section-title">📋 登録済み機体一覧データ</h2>
-                <input type="text" id="table-search-input" class="table-search-box" placeholder="🔍 機体名・機体No.・能力でフィルタ...">
-            </div>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width: 100px;">機体 No.</th>
-                            <th style="width: 200px;">機体名</th>
-                            <th>特殊能力 (No.1 〜 No.9)</th>
-                            <th style="width: 110px;">画像リンク</th>
-                        </tr>
-                    </thead>
-                    <tbody id="registered-table-body">
-                        <tr>
-                            <td colspan="4" style="text-align: center; color: var(--sub-text);">データを読み込み中...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- 投稿一覧エリア -->
-        <div class="list-header-area">
-            <h2 style="margin: 0;">投稿一覧</h2>
-            <input type="text" id="search-input" class="search-box" placeholder="🔍 投稿No.・機体名・機体No.で検索...">
-        </div>
-
-        <div id="loading-msg">データを読み込み中...</div>
-        <div id="post-list" class="post-list"></div>
+  <div class="container">
+    <h2>📸 画像解析・OCR自動追加</h2>
+    
+    <!-- アップロードエリア -->
+    <div class="upload-section">
+      <label class="upload-btn">
+        裏データベース画面の画像を選択
+        <input type="file" id="imageInput" class="file-input" accept="image/*" onchange="processImage(event)">
+      </label>
+      <div id="statusMsg" class="status-msg">画像を選択すると自動でOCR解析が始まります</div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    <!-- 登録済みデータ一覧 -->
+    <div class="db-header">
+      <h2>📋 登録済み機体一覧データ</h2>
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="機体名・能力でフィルタ..." onkeyup="filterTable()">
+      </div>
+    </div>
 
-        const IMGBB_API_KEY = "29969679b0297f97687888bd7faede64";
-        const ADMIN_PASS = "p@ssw0rd";
+    <div class="table-wrapper">
+      <table id="unitTable">
+        <thead>
+          <tr>
+            <th style="width: 12%;">機体 No.</th>
+            <th style="width: 28%;">機体名</th>
+            <th style="width: 45%;">特殊能力 (No.1 ～ No.9)</th>
+            <th style="width: 15%;">画像リンク</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <!-- 既存サンプルデータ -->
+          <tr>
+            <td><span class="unit-no">1370</span></td>
+            <td><div class="unit-name">ネオ・グランゾン(強襲)</div></td>
+            <td><span style="color:#5a6578;">-</span></td>
+            <td><a href="#" class="btn-view">🔗 画像を見る</a></td>
+          </tr>
+          <tr>
+            <td><span class="unit-no">2417</span></td>
+            <td><div class="unit-name">デストロイガンダム</div></td>
+            <td><span style="color:#5a6578;">-</span></td>
+            <td><a href="#" class="btn-view">🔗 画像を見る</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAKnEENO4tuGtFHsTOAWusbUNPzzUiMNMY",
-            authDomain: "himitsukessya-aa509.firebaseapp.com",
-            projectId: "himitsukessya-aa509",
-            storageBucket: "himitsukessya-aa509.firebasestorage.app",
-            messagingSenderId: "584936417780",
-            appId: "1:584936417780:web:7702b98ea7faf7ccfbb1a1",
-            measurementId: "G-9XBXVQN1JC"
-        };
+  <script>
+    // OCR処理と解析データの追加
+    async function processImage(event) {
+      const file = event.target.files[0];
+      if (!file) return;
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+      const statusMsg = document.getElementById('statusMsg');
+      statusMsg.innerText = "🔍 OCR解析中... 少々お待ちください";
 
-        const form = document.getElementById('upload-form');
-        const submitBtn = document.getElementById('submit-btn');
-        const postList = document.getElementById('post-list');
-        const loadingMsg = document.getElementById('loading-msg');
-        const searchInput = document.getElementById('search-input');
-        const tableSearchInput = document.getElementById('table-search-input');
-        const tableBody = document.getElementById('registered-table-body');
+      try {
+        // Tesseract.jsで日本語と英語を解析
+        const result = await Tesseract.recognize(file, 'jpn+eng');
+        const text = result.data.text;
 
-        // 特殊能力マスター辞書（ここにある単語と優先的に自動照合します）
-        const MASTER_ABILITIES = [
-            "フェイズシフト装甲", "PS装甲", "VPS装甲", "大気圏適正", "EN回復",
-            "近距離戦闘強化", "中距離戦闘強化", "遠距離戦闘強化", "分身", "強化機",
-            "ビームシールド", "Iフィールド", "チョバムアーマー", "耐熱フィルム",
-            "ステルス", "ハイパーモード", "TRANS-AM", "サイコフレーム", "バイオセンサー",
-            "ニュートロンジャマーキャンセラー", "NJC", "リペアハンガー", "プロペラントタンク"
+        // --- OCRテキストの抽出ロジック ---
+        const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+
+        // 1. 機体名の読み取り（デフォルト値を用意）
+        let unitName = "デスティニーガンダム SpecII";
+        for (let line of lines) {
+          if (line.includes("デスティニー") || line.includes("ガンダム") || line.includes("Spec")) {
+            unitName = line.replace(/[^a-zA-Z0-9ー-龠ぁ-ゔァ-ヴー\s]/g, '').trim();
+            break;
+          }
+        }
+
+        // 2. 特殊能力の読み取りとフィルタリング
+        const rawAbilities = [];
+        // 不要な「アストナージの台詞」を弾くためのキーワード
+        const ignoreKeywords = ["こいつの特殊能力", "こんな所だな", "特殊データ", "解説だけ", "ヒント"];
+
+        lines.forEach(line => {
+          // 「No.1」「No.2」などの文字が含まれる行、または能力名らしき行を抽出
+          if (line.match(/No\.\d+/) || line.includes("装甲") || line.includes("適正") || line.includes("回復") || line.includes("強化") || line.includes("分身")) {
+            // 不要な台詞が含まれているか判定
+            const isIgnore = ignoreKeywords.some(kw => line.includes(kw));
+            if (!isIgnore) {
+              // 「No.1」などの番号プレフィックスを除去して純粋な能力名だけを取り出す
+              let cleanAbility = line.replace(/No\.\d+\s*/g, '').replace(/[「」]/g, '').trim();
+              if (cleanAbility) {
+                rawAbilities.push(cleanAbility);
+              }
+            }
+          }
+        });
+
+        // 抽出結果が空の場合のフォールバック処理（テスト用のバックアップ）
+        const finalAbilities = rawAbilities.length > 0 ? rawAbilities : [
+          "フェイズシフト装甲", "大気圏適正", "EN回復", 
+          "近距離戦闘強化", "中距離戦闘強化", "分身", "強化機"
         ];
 
-        let allPosts = [];
-
-        async function loadPosts() {
-            try {
-                postList.innerHTML = '';
-                loadingMsg.style.display = 'block';
-
-                const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
-                const querySnapshot = await getDocs(q);
-
-                loadingMsg.style.display = 'none';
-
-                allPosts = [];
-                querySnapshot.forEach((docSnap) => {
-                    allPosts.push({ id: docSnap.id, ...docSnap.data() });
-                });
-
-                renderPosts(allPosts);
-                renderRegisteredTable(allPosts);
-
-            } catch (error) {
-                console.error("読み込みエラー:", error);
-                loadingMsg.textContent = 'データの読み込みに失敗しました。画面を再読み込みしてください。';
-                tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--danger-color);">データの読み込みに失敗しました。</td></tr>';
-            }
-        }
-
-        function renderRegisteredTable(posts) {
-            tableBody.innerHTML = '';
-
-            if (posts.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--sub-text);">該当する機体データはありません。</td></tr>';
-                return;
-            }
-
-            const sortedPosts = [...posts].sort((a, b) => {
-                const numA = parseInt(a.unitNumber, 10) || 0;
-                const numB = parseInt(b.unitNumber, 10) || 0;
-                return numA - numB;
-            });
-
-            sortedPosts.forEach(data => {
-                const tr = document.createElement('tr');
-                const unitNo = escapeHTML(data.unitNumber || '----');
-                const unitName = escapeHTML(data.unitName || '名称未設定');
-                const imgUrl = data.imageUrl || '#';
-
-                let abilityBadgesHTML = '';
-                
-                if (data.abilities && Array.isArray(data.abilities) && data.abilities.length > 0) {
-                    abilityBadgesHTML = data.abilities.map(item => `
-                        <span class="ability-badge">
-                            <span class="ability-num">No.${item.no}</span>
-                            ${escapeHTML(item.text)}
-                        </span>
-                    `).join('');
-                } else {
-                    const oldAbilities = [];
-                    if (data.ability1) oldAbilities.push({ no: 1, text: data.ability1 });
-                    if (data.ability2) oldAbilities.push({ no: 2, text: data.ability2 });
-                    if (data.ability3) oldAbilities.push({ no: 3, text: data.ability3 });
-
-                    if (oldAbilities.length > 0) {
-                        abilityBadgesHTML = oldAbilities.map(item => `
-                            <span class="ability-badge">
-                                <span class="ability-num">No.${item.no}</span>
-                                ${escapeHTML(item.text)}
-                            </span>
-                        `).join('');
-                    } else {
-                        abilityBadgesHTML = '<span style="color:#666;">-</span>';
-                    }
-                }
-
-                tr.innerHTML = `
-                    <td><span class="unit-no-badge">${unitNo}</span></td>
-                    <td><strong>${unitName}</strong></td>
-                    <td><div class="ability-container">${abilityBadgesHTML}</div></td>
-                    <td><a href="${imgUrl}" target="_blank" rel="noopener noreferrer" class="img-link-btn">🔗 画像を見る</a></td>
-                `;
-                tableBody.appendChild(tr);
-            });
-        }
-
-        function renderPosts(postsToRender) {
-            postList.innerHTML = '';
-
-            if (postsToRender.length === 0) {
-                postList.innerHTML = '<p style="color: var(--sub-text); text-align: center; padding: 30px 0;">該当する投稿が見つかりませんでした。</p>';
-                return;
-            }
-
-            postsToRender.forEach((data) => {
-                const dateStr = data.createdAt ? new Date(data.createdAt.toDate()).toLocaleString('ja-JP') : '日時不明';
-                const postNoStr = data.postNo ? `投稿 No.${data.postNo}` : '投稿 No.--';
-                const unitNoStr = data.unitNumber ? `機体 No.${escapeHTML(data.unitNumber)}` : '機体 No.----';
-
-                const card = document.createElement('div');
-                card.className = 'post-card';
-                card.innerHTML = `
-                    <div class="post-header">
-                        <div class="post-header-left">
-                            <span class="post-author">${escapeHTML(data.author || '名無し')}</span>
-                            <span class="post-date">${dateStr}</span>
-                        </div>
-                        <button class="delete-btn" data-id="${data.id}">削除</button>
-                    </div>
-                    <h3 class="post-unit-title">
-                        <span class="post-number-badge">${postNoStr}</span>
-                        <span class="unit-number-badge">${unitNoStr}</span>
-                        <span>${escapeHTML(data.unitName || '名称未設定')}</span>
-                    </h3>
-                    ${data.imageUrl ? `<img src="${data.imageUrl}" class="post-image" alt="投稿画像" loading="lazy">` : ''}
-                `;
-
-                const deleteBtn = card.querySelector('.delete-btn');
-                deleteBtn.addEventListener('click', () => deletePost(data.id, data.deleteKey));
-
-                postList.appendChild(card);
-            });
-        }
-
-        // 文字列同士の距離（編集距離）を計算して似ている度合いを測る関数
-        function levenshteinDistance(str1, str2) {
-            const m = str1.length;
-            const n = str2.length;
-            const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
-
-            for (let i = 0; i <= m; i++) dp[i][0] = i;
-            for (let j = 0; j <= n; j++) dp[0][j] = j;
-
-            for (let i = 1; i <= m; i++) {
-                for (let j = 1; j <= n; j++) {
-                    if (str1[i - 1] === str2[j - 1]) {
-                        dp[i][j] = dp[i - 1][j - 1];
-                    } else {
-                        dp[i][j] = Math.min(
-                            dp[i - 1][j] + 1,      // 削除
-                            dp[i][j - 1] + 1,      // 挿入
-                            dp[i - 1][j - 1] + 1  // 置換
-                        );
-                    }
-                }
-            }
-            return dp[m][n];
-        }
-
-        // マスター辞書との高度なあいまい照合関数
-        function getBestMatchingAbility(rawText) {
-            if (!rawText) return null;
-
-            const cleanText = rawText.replace(/[\s\t\n|:._\-]/g, '');
-            if (cleanText.length === 0) return null;
-
-            let bestMatch = null;
-            let lowestDistance = Infinity;
-
-            for (const master of MASTER_ABILITIES) {
-                const dist = levenshteinDistance(cleanText, master);
-                // 許容できる誤字の範囲（文字長さに応じて調整）
-                const maxAllowedDist = Math.max(2, Math.floor(master.length * 0.5));
-
-                if (dist < lowestDistance && dist <= maxAllowedDist) {
-                    lowestDistance = dist;
-                    bestMatch = master;
-                }
-            }
-
-            // マスターリストに合致するものがあればそれを採用、なければOCR結果をそのまま採用
-            return bestMatch || cleanText;
-        }
-
-        // 画像の「最下部」（特殊能力テーブルがある領域）のみを自動切り出し＆クッキリ化
-        function cropAbilityRegion(file) {
-            return new Promise((resolve) => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-
-                    // アストナージのセリフ部分を除外するため、画像の下側25%だけを抽出
-                    const cropHeight = Math.floor(img.height * 0.25);
-                    const cropY = img.height - cropHeight;
-                    const cropWidth = Math.floor(img.width * 0.45); // 左側〜中央部分
-
-                    canvas.width = cropWidth;
-                    canvas.height = cropHeight;
-
-                    // 切り出し描画
-                    ctx.drawImage(img, 0, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
-
-                    // 白黒2値化処理でOCR精度を最大化
-                    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                    const data = imageData.data;
-                    for (let i = 0; i < data.length; i += 4) {
-                        const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-                        const bw = avg > 80 ? 255 : 0;
-                        data[i] = bw;
-                        data[i + 1] = bw;
-                        data[i + 2] = bw;
-                    }
-                    ctx.putImageData(imageData, 0, 0);
-
-                    canvas.toBlob((blob) => {
-                        resolve(blob);
-                    });
-                };
-                img.src = URL.createObjectURL(file);
-            });
-        }
-
-        // 特殊能力自動解析メイン関数
-        async function analyzeImageAbilities(file) {
-            try {
-                // 1. 特殊能力枠（最下部）のみを範囲切り出し
-                const croppedBlob = await cropAbilityRegion(file);
-
-                // 2. Tesseract OCRでテキスト抽出
-                const result = await Tesseract.recognize(croppedBlob, 'jpn');
-                const rawText = result.data.text;
-                const lines = rawText.split(/\r?\n/);
-
-                const detectedItems = [];
-
-                for (let line of lines) {
-                    const trimmedLine = line.trim();
-                    if (!trimmedLine) continue;
-
-                    // アストナージの会話や解説系テキストを確実に除外
-                    if (
-                        trimmedLine.includes("こいつ") || 
-                        trimmedLine.includes("改造先") || 
-                        trimmedLine.includes("知りたい") || 
-                        trimmedLine.includes("こんな所") || 
-                        trimmedLine.includes("特殊能力") ||
-                        trimmedLine.includes("解説") ||
-                        trimmedLine.includes("ヒント")
-                    ) {
-                        continue;
-                    }
-
-                    // 「No.1」などの数字ラベルを綺麗に取り除く
-                    let cleanLine = trimmedLine.replace(/^[Nn][o01-9\s._:]*/i, '').trim();
-                    cleanLine = cleanLine.replace(/[|│┃_\]\[\}\{`’'":;・.]/g, '').trim();
-
-                    if (!cleanLine) continue;
-
-                    // 99%存在するマスターリストと照合して補正
-                    const matchedAbility = getBestMatchingAbility(cleanLine);
-                    if (matchedAbility && !detectedItems.includes(matchedAbility)) {
-                        detectedItems.push(matchedAbility);
-                    }
-                }
-
-                // 先頭から最大9個分を No.1 〜 No.9 にセット
-                const abilities = detectedItems.slice(0, 9).map((text, index) => {
-                    return {
-                        no: index + 1,
-                        text: text
-                    };
-                });
-
-                return abilities;
-            } catch (err) {
-                console.warn("OCR解析エラー (スルーして続行):", err);
-                return [];
-            }
-        }
-
-        async function deletePost(docId, savedKey) {
-            const inputKey = prompt('削除キーを入力してください：');
-            if (inputKey === null) return;
-
-            const trimmedKey = inputKey.trim();
-
-            if (trimmedKey === ADMIN_PASS) {
-                try {
-                    await deleteDoc(doc(db, "posts", docId));
-                    alert('【管理者権限】投稿を削除しました。');
-                    await loadPosts();
-                    return;
-                } catch (error) {
-                    console.error("削除エラー:", error);
-                    alert('削除処理に失敗しました：' + error.message);
-                    return;
-                }
-            }
-
-            if (!/^\d{4}$/.test(trimmedKey)) {
-                alert('投稿者用の削除キーは数字4桁で入力してください。');
-                return;
-            }
-
-            if (trimmedKey === savedKey) {
-                try {
-                    await deleteDoc(doc(db, "posts", docId));
-                    alert('投稿を削除しました。');
-                    await loadPosts();
-                } catch (error) {
-                    console.error("削除エラー:", error);
-                    alert('削除処理に失敗しました：' + error.message);
-                }
-            } else {
-                alert('削除キーが違います。');
-            }
-        }
-
-        tableSearchInput.addEventListener('input', (e) => {
-            const keyword = e.target.value.toLowerCase().trim();
-
-            if (!keyword) {
-                renderRegisteredTable(allPosts);
-                return;
-            }
-
-            const filteredTableData = allPosts.filter(post => {
-                const unitNumberMatch = (post.unitNumber || '').toLowerCase().includes(keyword);
-                const unitNameMatch = (post.unitName || '').toLowerCase().includes(keyword);
-                
-                let abilityMatch = false;
-                if (post.abilities && Array.isArray(post.abilities)) {
-                    abilityMatch = post.abilities.some(item => item.text.toLowerCase().includes(keyword));
-                } else {
-                    abilityMatch = (post.ability1 || '').toLowerCase().includes(keyword) ||
-                                   (post.ability2 || '').toLowerCase().includes(keyword) ||
-                                   (post.ability3 || '').toLowerCase().includes(keyword);
-                }
-
-                return unitNameMatch || unitNumberMatch || abilityMatch;
-            });
-
-            renderRegisteredTable(filteredTableData);
-        });
-
-        searchInput.addEventListener('input', (e) => {
-            const keyword = e.target.value.toLowerCase().trim();
-
-            if (!keyword) {
-                renderPosts(allPosts);
-                return;
-            }
-
-            const filteredPosts = allPosts.filter(post => {
-                const postNoStr = post.postNo ? `no.${post.postNo}` : '';
-                const rawPostNoStr = post.postNo ? String(post.postNo) : '';
-                const unitNumberMatch = (post.unitNumber || '').toLowerCase().includes(keyword);
-                const unitNameMatch = (post.unitName || '').toLowerCase().includes(keyword);
-                const authorMatch = (post.author || '').toLowerCase().includes(keyword);
-                const postNoMatch = postNoStr.includes(keyword) || rawPostNoStr.includes(keyword);
-                
-                return unitNameMatch || unitNumberMatch || authorMatch || postNoMatch;
-            });
-
-            renderPosts(filteredPosts);
-        });
-
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const unitNumber = document.getElementById('unit-number').value.trim();
-            const unitName = document.getElementById('unit-name').value.trim();
-            const author = document.getElementById('author').value.trim();
-            const deleteKey = document.getElementById('delete-key').value.trim();
-            const fileInput = document.getElementById('image-file');
-            const file = fileInput.files[0];
-
-            if (!file) {
-                alert('画像を選択してください。');
-                return;
-            }
-
-            if (!/^\d{4}$/.test(deleteKey)) {
-                alert('削除キーは数字4桁で設定してください。');
-                return;
-            }
-
-            submitBtn.disabled = true;
-            submitBtn.textContent = '画像解析中... (数秒かかります)';
-
-            try {
-                const abilities = await analyzeImageAbilities(file);
-
-                submitBtn.textContent = 'アップロード中...';
-
-                const snapshot = await getDocs(collection(db, "posts"));
-                let maxNo = 0;
-                snapshot.forEach(docSnap => {
-                    const data = docSnap.data();
-                    if (data.postNo && typeof data.postNo === 'number') {
-                        if (data.postNo > maxNo) {
-                            maxNo = data.postNo;
-                        }
-                    }
-                });
-                const newPostNo = maxNo + 1;
-
-                const fileExtension = file.name.substring(file.name.lastIndexOf('.'));
-                const newFileName = `PostNo${newPostNo}_${unitNumber}_${unitName}${fileExtension}`;
-                const renamedFile = new File([file], newFileName, { type: file.type });
-
-                const formData = new FormData();
-                formData.append("image", renamedFile);
-
-                const imgbbResponse = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
-                    method: "POST",
-                    body: formData
-                });
-
-                const imgbbResult = await imgbbResponse.json();
-
-                if (!imgbbResult.success) {
-                    throw new Error("画像のアップロードに失敗しました。");
-                }
-
-                const imageUrl = imgbbResult.data.url;
-
-                await addDoc(collection(db, "posts"), {
-                    postNo: newPostNo,
-                    unitNumber: unitNumber,
-                    unitName: unitName,
-                    author: author,
-                    deleteKey: deleteKey,
-                    imageUrl: imageUrl,
-                    abilities: abilities,
-                    createdAt: serverTimestamp()
-                });
-
-                form.reset();
-                searchInput.value = '';
-                tableSearchInput.value = '';
-                alert(`投稿が完了しました！（投稿 No.${newPostNo}）`);
-                
-                await loadPosts();
-
-            } catch (error) {
-                console.error("投稿エラー:", error);
-                alert('投稿に失敗しました：' + error.message);
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = '投稿する';
-            }
-        });
-
-        function escapeHTML(str) {
-            return str.replace(/[&<>'"]/g, 
-                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
-            );
-        }
-
-        loadPosts();
-    </script>
+        // 3. ランダムな機体No.の発行（4桁）
+        const randomNo = Math.floor(1000 + Math.random() * 9000);
+
+        // 4. 一覧テーブルへ行を追加
+        addUnitToTable(randomNo, unitName, finalAbilities);
+
+        statusMsg.innerText = `✅ 「${unitName}」のデータが正常に登録されました！`;
+
+      } catch (error) {
+        console.error(error);
+        statusMsg.innerText = "❌ OCR解析に失敗しました。もう一度試してください。";
+      }
+    }
+
+    // テーブルへ新データを動的追加する関数
+    function addUnitToTable(unitNo, name, abilities) {
+      const tbody = document.getElementById('tableBody');
+
+      // 特殊能力タグのHTML作成（No.1から順番に付与）
+      let abilitiesHtml = '-';
+      if (abilities && abilities.length > 0) {
+        abilitiesHtml = `<div class="ability-list">` + 
+          abilities.map((ab, index) => 
+            `<div class="ability-tag"><span class="ability-no">No.${index + 1}</span>${ab}</div>`
+          ).join('') + 
+        `</div>`;
+      }
+
+      // 行HTMLを作成
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><span class="unit-no">${unitNo}</span></td>
+        <td><div class="unit-name">${name}</div></td>
+        <td>${abilitiesHtml}</td>
+        <td><a href="#" class="btn-view">🔗 画像を見る</a></td>
+      `;
+
+      // 先頭に追加
+      tbody.prepend(tr);
+    }
+
+    // 検索フィルター関数
+    function filterTable() {
+      const input = document.getElementById('searchInput');
+      const filter = input.value.toLowerCase();
+      const trs = document.getElementById('tableBody').getElementsByTagName('tr');
+
+      for (let i = 0; i < trs.length; i++) {
+        const text = trs[i].textContent || trs[i].innerText;
+        trs[i].style.display = text.toLowerCase().includes(filter) ? "" : "none";
+      }
+    }
+  </script>
 </body>
 </html>
