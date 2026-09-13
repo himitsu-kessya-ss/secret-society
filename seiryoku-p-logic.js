@@ -12,7 +12,7 @@ function loadData(key, fallback) {
 
 let membersData = loadData('seiryoku_members_v7', members);
 let historyRecord = loadData('seiryoku_history_v5', historyData);
-let logsData = loadData('seiryoku_logs_v3', eventLogs);
+let logsData = loadData('seiryoku_logs_v4', eventLogs);
 
 function switchTab(tabNum) {
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -111,6 +111,7 @@ function renderHistoryTables() {
     });
 }
 
+// ログ追加フォームにメンバーごとの個別入力欄を生成
 function renderLogInputsContainer() {
     const container = document.getElementById('log-member-inputs');
     if (!container) return;
@@ -118,32 +119,46 @@ function renderLogInputsContainer() {
 
     membersData.forEach((m, index) => {
         const div = document.createElement('div');
-        div.style.cssText = "display: flex; flex-direction: column; align-items: center; background: #25282c; padding: 8px; border-radius: 4px; border: 1px solid #333; min-width: 90px;";
+        div.style.cssText = "display: flex; flex-direction: column; align-items: center; background: #1a1c1e; padding: 6px; border-radius: 4px; border: 1px solid #333; min-width: 80px;";
         div.innerHTML = `
-            <span style="font-size: 0.75rem; color: var(--sub-text); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 85px;" title="${m.name}">${m.name}</span>
-            <input type="number" class="log-member-val" data-member-index="${index}" value="0" style="width: 70px; text-align: center;">
+            <span style="font-size: 0.75rem; color: var(--sub-text); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 75px;" title="${m.name}">${m.name}</span>
+            <input type="number" class="log-member-val" data-member-index="${index}" value="0" style="width: 60px; text-align: center;">
         `;
         container.appendChild(div);
     });
 }
 
 function renderLogsTable() {
+    const thead = document.getElementById('logs-thead');
     const tbody = document.getElementById('logs-tbody');
-    if (!tbody) return;
+    if (!thead || !tbody) return;
+
+    // ヘッダーにメンバー名を横一列に並べる（一番右にmemo欄）
+    let memberHeadersHtml = membersData.map(m => `<th style="text-align: center; min-width: 90px;">${m.name}</th>`).join('');
+    thead.innerHTML = `
+        <tr>
+            <th style="width: 100px;">日付</th>
+            ${memberHeadersHtml}
+            <th style="min-width: 150px; text-align: left;">memo</th>
+        </tr>
+    `;
+
     tbody.innerHTML = '';
 
     logsData.forEach(log => {
-        let valuesSummary = "";
-        if (log.values && Array.isArray(log.values)) {
-            valuesSummary = log.values.map(v => `<span>${v}</span>`).join(' / ');
-        }
+        let memberCellsHtml = "";
+        membersData.forEach((_, idx) => {
+            const val = log.values && log.values[idx] !== undefined ? log.values[idx] : 0;
+            const displayVal = val !== 0 ? val : "";
+            const colorStyle = val > 0 ? "color: #99ff99;" : (val < 0 ? "color: #ff8080;" : "color: #888;");
+            memberCellsHtml += `<td style="text-align: center; ${colorStyle} font-weight: bold;">${displayVal}</td>`;
+        });
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${log.date}</td>
-            <td style="color: var(--accent-color); font-weight: bold;">${log.reason}</td>
-            <td>${log.details}</td>
-            <td style="font-size: 0.8rem; color: #aaa; max-width: 400px; overflow-x: auto;">${valuesSummary}</td>
+            <td style="white-space: nowrap; color: var(--sub-text);">${log.date}</td>
+            ${memberCellsHtml}
+            <td style="color: var(--accent-color); font-weight: bold;">${log.memo || ""}</td>
         `;
         tbody.appendChild(tr);
     });
@@ -151,11 +166,10 @@ function renderLogsTable() {
 
 function addEventLog() {
     const dateInput = document.getElementById('log-date').value;
-    const reasonInput = document.getElementById('log-reason').value;
-    const detailsInput = document.getElementById('log-details').value;
+    const memoInput = document.getElementById('log-memo').value;
 
-    if (!dateInput || !reasonInput) {
-        alert("日付と理由は必ず入力してください。");
+    if (!dateInput || !memoInput) {
+        alert("日付とmemo（理由）は必ず入力してください。");
         return;
     }
 
@@ -167,13 +181,12 @@ function addEventLog() {
 
     logsData.unshift({
         date: dateInput,
-        reason: reasonInput,
-        details: detailsInput,
+        memo: memoInput,
         values: memberValues
     });
 
     renderLogsTable();
-    alert("個別数値を記録したログを追加しました。「変更を保存する」を押して保存してください。");
+    alert("イベントログを追加しました。「変更を保存する」を押して保存してください。");
 }
 
 function gatherInputData() {
@@ -234,7 +247,7 @@ function saveData() {
     gatherInputData();
     localStorage.setItem('seiryoku_members_v7', JSON.stringify(membersData));
     localStorage.setItem('seiryoku_history_v5', JSON.stringify(historyRecord));
-    localStorage.setItem('seiryoku_logs_v3', JSON.stringify(logsData));
+    localStorage.setItem('seiryoku_logs_v4', JSON.stringify(logsData));
     alert('パスワード認証成功：変更を保存しました！');
     renderTable();
 }
@@ -251,7 +264,7 @@ function resetData() {
     if (confirm('本当に初期データに戻しますか？')) {
         localStorage.removeItem('seiryoku_members_v7');
         localStorage.removeItem('seiryoku_history_v5');
-        localStorage.removeItem('seiryoku_logs_v3');
+        localStorage.removeItem('seiryoku_logs_v4');
         membersData = JSON.parse(JSON.stringify(members));
         historyRecord = JSON.parse(JSON.stringify(historyData));
         logsData = JSON.parse(JSON.stringify(eventLogs));
