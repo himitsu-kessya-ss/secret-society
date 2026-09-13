@@ -14,11 +14,11 @@ let members = [
     { id: 7, name: "Yggdrasill", lastMonth: 327, thisMonth: 63742, total: 64069, adjustment: 0 },
     { id: 8, name: "ボブ", lastMonth: 2900, thisMonth: 21214, total: 24114, adjustment: 0 },
     { id: 9, name: "Marc", lastMonth: 5722, thisMonth: 198, total: 5920, adjustment: 0 },
-    { id: 10, name: "ヴォルド", lastMonth: 106, thisMonth: 21936, total: 22042, adjustment: 0 },
+    { id: 10, name: "ヴォルド", lastMonth: 106, thisMonth: 22010, total: 22116, adjustment: 0 },
     { id: 11, name: "Freddie", lastMonth: 14491, thisMonth: 34059, total: 48550, adjustment: 0 },
     { id: 12, name: "アルヴィス", lastMonth: 29, thisMonth: 73, total: 102, adjustment: 0 },
     { id: 13, name: "京乃 まどか", lastMonth: 21, thisMonth: 87, total: 108, adjustment: 0 },
-    { id: 14, name: "シン・アスカ", lastMonth: 1263, thisMonth: 55671, total: 56934, adjustment: 0 },
+    { id: 14, name: "シン・アスカ", lastMonth: 1263, thisMonth: 55745, total: 57008, adjustment: 0 },
     { id: 15, name: "ライナセロス", lastMonth: 5, thisMonth: 81, total: 86, adjustment: 0 },
     { id: 16, name: "キッド", lastMonth: 37, thisMonth: 129, total: 166, adjustment: 0 },
     { id: 17, name: "アラン", lastMonth: 3456, thisMonth: 544, total: 4000, adjustment: 0 },
@@ -39,14 +39,26 @@ let historyData = [
     },
     { 
         year: 2026, 
-        date: "9/30", 
-        totalP: 432607, 
-        monthlyP: 311612, 
+        date: "9/13", 
+        totalP: 413113, 
+        monthlyP: 312537, 
         rate: 100.0, 
-        members: [96271, 41587, 7338, 575, 29808, 182, 63742, 21214, 198, 21936, 34059, 73, 87, 55671, 81, 129, 544, 19292, 747, 88, 18] 
+        members: [96271, 41587, 7338, 575, 29808, 182, 63742, 21214, 198, 22010, 34059, 73, 87, 57008, 81, 129, 544, 19292, 747, 88, 18] 
     }
 ];
 
 let eventLogs = [
-    { date: "2026-09-01", reason: "8月度月一括配布", details: "全員一律配分（サンプル）" }
+    { 
+        date: "2026-09-01", 
+        reason: "8月分配布", 
+        details: "個別一括配布", 
+        // メンバー全員分の個別数値を設定（インデックス順に対応）
+        values: [40, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10] 
+    },
+    { 
+        date: "2026-09-05", 
+        reason: "勢力内戦", 
+        details: "ポイント増減調整", 
+        values: [-264, -58, -17, -125, -11, -102, -70, -56, -11, -20, -10, -10, -38, -11, -10, 0, 0, 0, 0, 0, 0] 
+    }
 ];
