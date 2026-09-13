@@ -10,9 +10,9 @@ function loadData(key, fallback) {
     return fallback;
 }
 
-let membersData = loadData('seiryoku_members_v5', members);
-let historyRecord = loadData('seiryoku_history_v3', historyData);
-let logsData = loadData('seiryoku_logs_v1', eventLogs);
+let membersData = loadData('seiryoku_members_v7', members);
+let historyRecord = loadData('seiryoku_history_v5', historyData);
+let logsData = loadData('seiryoku_logs_v3', eventLogs);
 
 function switchTab(tabNum) {
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -54,13 +54,11 @@ function renderTable() {
         tbody.appendChild(tr);
     });
 
-    // サマリー計算と表示更新
     document.getElementById('total-seiryoku-p').innerText = totalSeiryokuPAll.toLocaleString() + ' P';
     document.getElementById('total-reisei').innerText = `基準名声換算: ${Math.floor(totalSeiryokuPAll * 0.008).toLocaleString()} 名声`;
     document.getElementById('total-this-month').innerText = totalThisMonthAll.toLocaleString() + ' P';
     document.getElementById('total-company-fee').innerText = `運営費プール(20%): ${Math.floor(totalThisMonthAll * 0.20).toLocaleString()} P`;
 
-    // 余剰資産計算：(勢力総ポイント * 0.008) - 各メンバーの名声残高総計
     const totalSeiryokuPoolReisei = totalSeiryokuPAll * 0.008;
     const surplusReisei = totalSeiryokuPoolReisei - totalReiseiAll;
     const surplusElement = document.getElementById('surplus-reisei');
@@ -70,6 +68,7 @@ function renderTable() {
 
     renderHistoryTables();
     renderLogsTable();
+    renderLogInputsContainer();
 }
 
 function renderHistoryTables() {
@@ -112,17 +111,41 @@ function renderHistoryTables() {
     });
 }
 
+// ログ追加フォームにメンバーごとの個別入力欄を生成
+function renderLogInputsContainer() {
+    const container = document.getElementById('log-member-inputs');
+    if (!container) return;
+    container.innerHTML = '';
+
+    membersData.forEach((m, index) => {
+        const div = document.createElement('div');
+        div.style.cssText = "display: flex; flex-direction: column; align-items: center; background: #25282c; padding: 8px; border-radius: 4px; border: 1px solid #333; min-width: 90px;";
+        div.innerHTML = `
+            <span style="font-size: 0.75rem; color: var(--sub-text); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 85px;" title="${m.name}">${m.name}</span>
+            <input type="number" class="log-member-val" data-member-index="${index}" value="0" style="width: 70px; text-align: center;">
+        `;
+        container.appendChild(div);
+    });
+}
+
 function renderLogsTable() {
     const tbody = document.getElementById('logs-tbody');
     if (!tbody) return;
     tbody.innerHTML = '';
 
     logsData.forEach(log => {
+        // 各メンバーの個別数値を「明細」として横並び表示用の文字列に変換
+        let valuesSummary = "";
+        if (log.values && Array.isArray(log.values)) {
+            valuesSummary = log.values.map(v => `<span>${v}</span>`).join(' / ');
+        }
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${log.date}</td>
             <td style="color: var(--accent-color); font-weight: bold;">${log.reason}</td>
             <td>${log.details}</td>
+            <td style="font-size: 0.8rem; color: #aaa; max-width: 400px; overflow-x: auto;">${valuesSummary}</td>
         `;
         tbody.appendChild(tr);
     });
@@ -138,14 +161,22 @@ function addEventLog() {
         return;
     }
 
+    // 各メンバーの個別入力値を取得
+    const valueInputs = document.querySelectorAll('.log-member-val');
+    let memberValues = [];
+    valueInputs.forEach(input => {
+        memberValues.push(Number(input.value) || 0);
+    });
+
     logsData.unshift({
         date: dateInput,
         reason: reasonInput,
-        details: detailsInput
+        details: detailsInput,
+        values: memberValues
     });
 
     renderLogsTable();
-    alert("ログを追加しました。「変更を保存する」を押して保存してください。");
+    alert("個別数値を記録したログを追加しました。「変更を保存する」を押して保存してください。");
 }
 
 function gatherInputData() {
@@ -204,9 +235,9 @@ function saveData() {
     }
 
     gatherInputData();
-    localStorage.setItem('seiryoku_members_v5', JSON.stringify(membersData));
-    localStorage.setItem('seiryoku_history_v3', JSON.stringify(historyRecord));
-    localStorage.setItem('seiryoku_logs_v1', JSON.stringify(logsData));
+    localStorage.setItem('seiryoku_members_v7', JSON.stringify(membersData));
+    localStorage.setItem('seiryoku_history_v5', JSON.stringify(historyRecord));
+    localStorage.setItem('seiryoku_logs_v3', JSON.stringify(logsData));
     alert('パスワード認証成功：変更を保存しました！');
     renderTable();
 }
@@ -221,9 +252,9 @@ function resetData() {
     }
 
     if (confirm('本当に初期データに戻しますか？')) {
-        localStorage.removeItem('seiryoku_members_v5');
-        localStorage.removeItem('seiryoku_history_v3');
-        localStorage.removeItem('seiryoku_logs_v1');
+        localStorage.removeItem('seiryoku_members_v7');
+        localStorage.removeItem('seiryoku_history_v5');
+        localStorage.removeItem('seiryoku_logs_v3');
         membersData = JSON.parse(JSON.stringify(members));
         historyRecord = JSON.parse(JSON.stringify(historyData));
         logsData = JSON.parse(JSON.stringify(eventLogs));
@@ -233,7 +264,6 @@ function resetData() {
 }
 
 window.onload = function() {
-    // ログ追加フォームの初期日付に今日の日付を設定
     const today = new Date();
     const yyyy = today.getFullYear();
     const mm = String(today.getMonth() + 1).padStart(2, '0');
