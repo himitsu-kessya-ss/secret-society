@@ -10,8 +10,8 @@ function loadData(key, fallback) {
     return fallback;
 }
 
-let members = loadData('seiryoku_members_v3', initialMembers);
-let historyData = loadData('seiryoku_history_v1', initialHistory);
+let members = loadData('seiryoku_members_v4', initialMembers);
+let historyData = loadData('seiryoku_history_v2', initialHistory);
 
 function switchTab(tabNum) {
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -33,7 +33,8 @@ function renderTable() {
         const total = Number(m.total) || 0;
         const adjustment = Number(m.adjustment) || 0;
 
-        const calculatedReisei = Math.floor((total * 0.8) + adjustment);
+        // 勢力Pから名声への換算は 0.008倍
+        const calculatedReisei = Math.floor((total * 0.008) + adjustment);
 
         totalThisMonthAll += thisMonth;
         totalSeiryokuPAll += total;
@@ -41,9 +42,7 @@ function renderTable() {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td>${index + 1}</td>
-            <td><input type="text" value="${m.badge}" data-index="${index}" style="width: 70px;"></td>
-            <td><input type="text" value="${m.name}" data-index="${index}"></td>
-            <td><input type="text" value="${m.machine}" data-index="${index}" style="width: 140px;"></td>
+            <td><input type="text" value="${m.name}" data-index="${index}" style="width: 150px;"></td>
             <td><input type="number" value="${m.lastMonth}" data-index="${index}"></td>
             <td><input type="number" value="${m.thisMonth}" data-index="${index}" oninput="updateCalculations()"></td>
             <td><input type="number" value="${m.total}" data-index="${index}" oninput="updateCalculations()"></td>
@@ -54,7 +53,7 @@ function renderTable() {
     });
 
     document.getElementById('total-seiryoku-p').innerText = totalSeiryokuPAll.toLocaleString() + ' P';
-    document.getElementById('total-reisei').innerText = `基準名声換算: ${Math.floor(totalSeiryokuPAll * 0.8).toLocaleString()} 名声`;
+    document.getElementById('total-reisei').innerText = `基準名声換算: ${Math.floor(totalSeiryokuPAll * 0.008).toLocaleString()} 名声`;
     document.getElementById('total-this-month').innerText = totalThisMonthAll.toLocaleString() + ' P';
     document.getElementById('total-company-fee').innerText = `運営費プール(20%): ${Math.floor(totalThisMonthAll * 0.20).toLocaleString()} P`;
 
@@ -71,7 +70,6 @@ function renderHistoryTables() {
     const rateThead = document.getElementById('history-rate-thead');
     const rateTbody = document.getElementById('history-rate-tbody');
 
-    // メンバー名からヘッダーのHTML（21人分）を動的に作成する
     const memberHeadersHtml = members.map(m => `<th>${m.name}</th>`).join('');
 
     totalThead.innerHTML = `<tr><th>年</th><th>確認日</th><th>全合計</th>${memberHeadersHtml}</tr>`;
@@ -108,17 +106,15 @@ function gatherInputData() {
     const rows = document.querySelectorAll('#member-tbody tr');
     rows.forEach((row, index) => {
         const inputs = row.querySelectorAll('input');
-        members[index].badge = inputs[0].value;
-        members[index].name = inputs[1].value;
-        members[index].machine = inputs[2].value;
-        members[index].lastMonth = Number(inputs[3].value) || 0;
-        members[index].thisMonth = Number(inputs[4].value) || 0;
-        members[index].total = Number(inputs[5].value) || 0;
-        members[index].adjustment = Number(inputs[6].value) || 0;
+        members[index].name = inputs[0].value;
+        members[index].lastMonth = Number(inputs[1].value) || 0;
+        members[index].thisMonth = Number(inputs[2].value) || 0;
+        members[index].total = Number(inputs[3].value) || 0;
+        members[index].adjustment = Number(inputs[4].value) || 0;
 
         const total = members[index].total;
         const adj = members[index].adjustment;
-        const calc = Math.floor((total * 0.8) + adj);
+        const calc = Math.floor((total * 0.008) + adj);
         document.getElementById(`reisei-${index}`).innerText = calc.toLocaleString() + ' 名声';
     });
 }
@@ -134,7 +130,7 @@ function updateCalculations() {
     });
 
     document.getElementById('total-seiryoku-p').innerText = totalSeiryokuPAll.toLocaleString() + ' P';
-    document.getElementById('total-reisei').innerText = `基準名声換算: ${Math.floor(totalSeiryokuPAll * 0.8).toLocaleString()} 名声`;
+    document.getElementById('total-reisei').innerText = `基準名声換算: ${Math.floor(totalSeiryokuPAll * 0.008).toLocaleString()} 名声`;
     document.getElementById('total-this-month').innerText = totalThisMonthAll.toLocaleString() + ' P';
     document.getElementById('total-company-fee').innerText = `運営費プール(20%): ${Math.floor(totalThisMonthAll * 0.20).toLocaleString()} P`;
 }
@@ -149,8 +145,8 @@ function saveData() {
     }
 
     gatherInputData();
-    localStorage.setItem('seiryoku_members_v3', JSON.stringify(members));
-    localStorage.setItem('seiryoku_history_v1', JSON.stringify(historyData));
+    localStorage.setItem('seiryoku_members_v4', JSON.stringify(members));
+    localStorage.setItem('seiryoku_history_v2', JSON.stringify(historyData));
     alert('パスワード認証成功：変更を保存しました！');
     renderTable();
 }
@@ -165,8 +161,8 @@ function resetData() {
     }
 
     if (confirm('本当に初期データに戻しますか？')) {
-        localStorage.removeItem('seiryoku_members_v3');
-        localStorage.removeItem('seiryoku_history_v1');
+        localStorage.removeItem('seiryoku_members_v4');
+        localStorage.removeItem('seiryoku_history_v2');
         members = [...initialMembers];
         historyData = [...initialHistory];
         renderTable();
