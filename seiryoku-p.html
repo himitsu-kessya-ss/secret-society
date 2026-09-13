@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>勢力P管理 - 秘密結社の部屋</title>
+    <style>
+        :root {
+            --bg-color: #1a1c1e;
+            --card-bg: #25282c;
+            --accent-color: #00d4ff;
+            --text-color: #e0e0e0;
+            --sub-text: #a0a0a0;
+            --header-height: 60px;
+            --border-color: #333;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        header {
+            background-color: rgba(0, 0, 0, 0.95);
+            height: var(--header-height);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 2px solid var(--accent-color);
+            padding: 0 15px;
+            box-sizing: border-box;
+        }
+
+        .logo-link {
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: var(--accent-color);
+            white-space: nowrap;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        .nav-links::-webkit-scrollbar { display: none; }
+
+        .nav-item-custom {
+            color: #e0e0e0; text-decoration: none; font-size: 0.85rem; 
+            padding: 6px 10px; border-radius: 4px; border: 1px solid transparent;
+            transition: 0.2s;
+        }
+        .nav-item-custom:hover { background: rgba(0, 212, 255, 0.2); border-color: #00d4ff; }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        h2 {
+            font-size: 1.3rem;
+            border-left: 4px solid var(--accent-color);
+            padding-left: 10px;
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: var(--accent-color);
+        }
+
+        .summary-box {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        .card h3 {
+            margin-top: 0;
+            font-size: 0.95rem;
+            color: var(--sub-text);
+        }
+
+        .card .value {
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .card .sub-value {
+            font-size: 0.9rem;
+            color: var(--accent-color);
+            margin-top: 5px;
+        }
+
+        .table-container {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow-x: auto;
+            padding: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        th, td {
+            padding: 12px 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: #1e2124;
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        tr:hover {
+            background-color: rgba(255, 255, 255, 0.03);
+        }
+
+        input[type="number"], input[type="text"] {
+            background-color: #1a1c1e;
+            border: 1px solid #444;
+            color: #fff;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        input[type="number"] { width: 100px; }
+        input[type="text"] { width: 130px; }
+
+        input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .btn {
+            background-color: transparent;
+            color: var(--accent-color);
+            border: 1px solid var(--accent-color);
+            padding: 10px 20px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn:hover {
+            background-color: rgba(0, 212, 255, 0.1);
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+        }
+
+        .btn-secondary {
+            border-color: #666;
+            color: #aaa;
+        }
+        .btn-secondary:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            box-shadow: none;
+        }
+
+        .actions {
+            margin-top: 20px;
+            display: flex;
+            gap: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <header id="main-header">
+        <a href="index.html#main" class="logo-link">秘密結社の部屋</a>
+        <nav class="nav-links">
+            <a href="unit.html" class="nav-item-custom">Unit</a>
+            <a href="derivatives.html" class="nav-item-custom">Derivatives</a>
+            <a href="arms.html" class="nav-item-custom">Arms</a>
+            <a href="hangar.html" class="nav-item-custom">Hangar</a>
+            <a href="seiryoku-p.html" class="nav-item-custom" style="color: var(--accent-color); border-color: var(--accent-color);">勢力P管理</a>
+            <a href="upload.html" class="nav-item-custom">Upload</a>
+            <a href="novels.html" class="nav-item-custom">Novels</a>
+            <a href="tactics.html" class="nav-item-custom">Tactics</a>
+            <a href="hunter.html" class="nav-item-custom">Hunter</a>
+            <a href="trivia.html" class="nav-item-custom">Trivia</a>
+            <a href="emoji.html" class="nav-item-custom">Emoji</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <div class="summary-box">
+            <div class="card">
+                <h3>勢力総ポイント（累計残高）</h3>
+                <div class="value" id="total-seiryoku-p">0 P</div>
+                <div class="sub-value" id="total-reisei">名声換算: 0 名声 (100P = 1名声)</div>
+            </div>
+            <div class="card">
+                <h3>今月の総稼ぎ値</h3>
+                <div class="value" id="total-this-month">0 P</div>
+                <div class="sub-value" id="total-company-fee">運営費プール(20%): 0 P</div>
+            </div>
+            <div class="card">
+                <h3>所属状況</h3>
+                <div class="value">20 / 30 名</div>
+                <div class="sub-value">結成: 2025/04/22 (勢力P: 4,008,434)</div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <h2>勢力メンバー 資産・稼ぎ記録シート</h2>
+            <p style="font-size: 0.85rem; color: var(--sub-text);">※各項目の数値を変更すると、運営費(20%)と取り分(80%)が自動計算されます。「変更を保存する」を押すとブラウザに保存されます。</p>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>称号・アイコン</th>
+                        <th>メンバー名</th>
+                        <th>機体</th>
+                        <th>前月稼ぎ値</th>
+                        <th>当月稼ぎ値</th>
+                        <th>当月運営費(20%)</th>
+                        <th>当月取り分(80%)</th>
+                        <th>勢力内累計稼ぎ値</th>
+                    </tr>
+                </thead>
+                <tbody id="member-tbody">
+                    </tbody>
+            </table>
+
+            <div class="actions">
+                <button class="btn" onclick="saveData()">💾 変更を保存する</button>
+                <button class="btn btn-secondary" onclick="resetData()">🔄 初期データに戻す</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // 初期メンバーデータ（20名分）
+    const initialMembers = [
+        { id: 1, badge: "🔴🌠🕶️", name: "オロ🍉ミン", machine: "至高神Zオロ〇ミン", lastMonth: 869723, thisMonth: 42866, total: 3584057 },
+        { id: 2, badge: "🌏X", name: "ライナセロス", machine: "νガンダム(イボルブ)", lastMonth: 0, thisMonth: 0, total: 85486 },
+        { id: 3, badge: "🚢提督", name: "カイジン", machine: "晴れ着仕様香取ヒューペリオン", lastMonth: 67296, thisMonth: 928, total: 1100924 },
+        { id: 4, badge: "🔥⚡️", name: "炎のナイト", machine: "サタンガンダムBLAZE", lastMonth: 41304, thisMonth: 1328, total: 903432 },
+        { id: 5, badge: "📡⚔️", name: "Net", machine: "【秘書】地球連邦軍女性兵士", lastMonth: 398781, thisMonth: 27842, total: 1409545 },
+        { id: 6, badge: "🎩🦯", name: "なぎさ", machine: "ハルファスベーゼなぎさ", lastMonth: 22384, thisMonth: 178, total: 366267 },
+        { id: 7, badge: "🐈🐩", name: "オズナ", machine: "C装備仕様ナラティブガンダム", lastMonth: 276786, thisMonth: 1501, total: 544820 },
+        { id: 8, badge: "👑💜", name: "エル・シエル", machine: "グレタ・ガリーエル・シエル", lastMonth: 33267, thisMonth: 178, total: 64238 },
+        { id: 9, badge: "💤🫏", name: "nightmare", machine: "ラクシャサ(格闘形態)", lastMonth: 0, thisMonth: 0, total: 77310 },
+        { id: 10, badge: "👿🦹‍♀️", name: "則・天・武・后", machine: "アイナ専用ゲルググM", lastMonth: 0, thisMonth: 0, total: 709415 },
+        { id: 11, badge: "🥷⚔️", name: "紅蓮", machine: "アルケウスRSASS", lastMonth: 0, thisMonth: 0, total: 875883 },
+        { id: 12, badge: "🔰", name: "ガイウス", machine: "パース改Ψガイウス", lastMonth: 0, thisMonth: 0, total: 61530 },
+        { id: 13, badge: "👑🗡️", name: "アルトリア", machine: "ガンダム・バエル碧依", lastMonth: 31644, thisMonth: 394, total: 135566 },
+        { id: 14, badge: "❗❔", name: "でびるん", machine: "Ex-Sガンダムなーる", lastMonth: 1863, thisMonth: 411, total: 645049 },
+        { id: 15, badge: "🈲", name: "禁色", machine: "ストライクフリーダム禁色", lastMonth: 0, thisMonth: 0, total: 135650 },
+        { id: 16, badge: "🎯🔫", name: "ボブ", machine: "ガルベルス(C)ゴブ", lastMonth: 7217, thisMonth: 126, total: 190461 },
+        { id: 17, badge: "⚛️👑", name: "ナメレス", machine: "ソーラーアクエリオンナメレス", lastMonth: 0, thisMonth: 0, total: 104012 },
+        { id: 18, badge: "🔰🌏🌲", name: "\"Yggdrasill\"", machine: "ジャスティスガンダム(FF)", lastMonth: 72, thisMonth: 125, total: 197 },
+        { id: 19, badge: "🤡🃏", name: "マルク", machine: "ネリー・ブレンNightmare", lastMonth: 68447, thisMonth: 7469, total: 367425 },
+        { id: 20, badge: "🔰🎸", name: "ヨハネ・クラウザーⅡ世", machine: "伊504みおん", lastMonth: 88493, thisMonth: 63, total: 379329 }
+    ];
+
+    function loadMembers() {
+        const saved = localStorage.getItem('seiryoku_members_v1');
+        if (saved) {
+            try { return JSON.parse(saved); } catch (e) { return initialMembers; }
+        }
+        return initialMembers;
+    }
+
+    let members = loadMembers();
+
+    function renderTable() {
+        const tbody = document.getElementById('member-tbody');
+        tbody.innerHTML = '';
+
+        let totalThisMonthAll = 0;
+        let totalSeiryokuPAll = 0;
+
+        members.forEach((m, index) => {
+            const thisMonth = Number(m.thisMonth) || 0;
+            const companyFee = Math.floor(thisMonth * 0.20);
+            const memberShare = Math.floor(thisMonth * 0.80);
+            const total = Number(m.total) || 0;
+
+            totalThisMonthAll += thisMonth;
+            totalSeiryokuPAll += total;
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${index + 1}</td>
+                <td><input type="text" value="${m.badge}" data-index="${index}" style="width: 70px;"></td>
+                <td><input type="text" value="${m.name}" data-index="${index}"></td>
+                <td><input type="text" value="${m.machine}" data-index="${index}" style="width: 150px;"></td>
+                <td><input type="number" value="${m.lastMonth}" data-index="${index}"></td>
+                <td><input type="number" value="${m.thisMonth}" data-index="${index}" oninput="updateCalculations()"></td>
+                <td style="color: #ff9999; font-weight: bold;">${companyFee.toLocaleString()} P</td>
+                <td style="color: #99ff99; font-weight: bold;">${memberShare.toLocaleString()} P</td>
+                <td><input type="number" value="${m.total}" data-index="${index}" oninput="updateCalculations()"></td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        document.getElementById('total-seiryoku-p').innerText = totalSeiryokuPAll.toLocaleString() + ' P';
+        document.getElementById('total-reisei').innerText = `名声換算: ${Math.floor(totalSeiryokuPAll / 100).toLocaleString()} 名声 (100P = 1名声)`;
+        document.getElementById('total-this-month').innerText = totalThisMonthAll.toLocaleString() + ' P';
+        document.getElementById('total-company-fee').innerText = `運営費プール(20%): ${Math.floor(totalThisMonthAll * 0.20).toLocaleString()} P`;
+    }
+
+    function gatherInputData() {
+        const rows = document.querySelectorAll('#member-tbody tr');
+        rows.forEach((row, index) => {
+            const inputs = row.querySelectorAll('input');
+            members[index].badge = inputs[0].value;
+            members[index].name = inputs[1].value;
+            members[index].machine = inputs[2].value;
+            members[index].lastMonth = Number(inputs[3].value) || 0;
+            members[index].thisMonth = Number(inputs[4].value) || 0;
+            members[index].total = Number(inputs[5].value) || 0;
+        });
+    }
+
+    function updateCalculations() {
+        gatherInputData();
+        let totalThisMonthAll = 0;
+        let totalSeiryokuPAll = 0;
+
+        members.forEach(m => {
+            totalThisMonthAll += Number(m.thisMonth) || 0;
+            totalSeiryokuPAll += Number(m.total) || 0;
+        });
+
+        document.getElementById('total-seiryoku-p').innerText = totalSeiryokuPAll.toLocaleString() + ' P';
+        document.getElementById('total-reisei').innerText = `名声換算: ${Math.floor(totalSeiryokuPAll / 100).toLocaleString()} 名声 (100P = 1名声)`;
+        document.getElementById('total-this-month').innerText = totalThisMonthAll.toLocaleString() + ' P';
+        document.getElementById('total-company-fee').innerText = `運営費プール(20%): ${Math.floor(totalThisMonthAll * 0.20).toLocaleString()} P`;
+    }
+
+    function saveData() {
+        gatherInputData();
+        localStorage.setItem('seiryoku_members_v1', JSON.stringify(members));
+        alert('変更を保存しました！');
+        renderTable();
+    }
+
+    function resetData() {
+        if (confirm('初期データに戻しますか？')) {
+            localStorage.removeItem('seiryoku_members_v1');
+            members = [...initialMembers];
+            renderTable();
+            alert('初期データにリセットしました。');
+        }
+    }
+
+    window.onload = renderTable;
+</script>
+</body>
+</html>
