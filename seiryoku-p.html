@@ -212,6 +212,7 @@
     </header>
 
     <div class="container">
+        <!-- 勢力全体サマリー -->
         <div class="summary-box">
             <div class="card">
                 <h3>勢力総ポイント（累計残高）</h3>
@@ -225,13 +226,14 @@
             </div>
             <div class="card">
                 <h3>所属状況</h3>
-                <div class="value">20 / 30 名</div>
-                <div class="sub-value">結成: 2025/04/22 (勢力P: 4,008,434)</div>
+                <div class="value">21 / 30 名</div>
+                <div class="sub-value">結成: 2026/08/27 (勢力ポイント: 412,188)</div>
             </div>
         </div>
 
+        <!-- メンバー別詳細テーブル -->
         <div class="table-container">
-            <h2>勢力メンバー 資産・稼ぎ記録シート</h2>
+            <h2>-Secret Society- メンバー 資産・稼ぎ記録シート</h2>
             <p style="font-size: 0.85rem; color: var(--sub-text);">※各項目の数値を変更すると、運営費(20%)と取り分(80%)が自動計算されます。「変更を保存する」を押すとブラウザに保存されます。</p>
             
             <table>
@@ -249,7 +251,8 @@
                     </tr>
                 </thead>
                 <tbody id="member-tbody">
-                    </tbody>
+                    <!-- 動的挿入 -->
+                </tbody>
             </table>
 
             <div class="actions">
@@ -260,32 +263,33 @@
     </div>
 
 <script>
-    // 初期メンバーデータ（20名分）
+    // 最新のメンバーデータ（21名分）
     const initialMembers = [
-        { id: 1, badge: "🔴🌠🕶️", name: "オロ🍉ミン", machine: "至高神Zオロ〇ミン", lastMonth: 869723, thisMonth: 42866, total: 3584057 },
-        { id: 2, badge: "🌏X", name: "ライナセロス", machine: "νガンダム(イボルブ)", lastMonth: 0, thisMonth: 0, total: 85486 },
-        { id: 3, badge: "🚢提督", name: "カイジン", machine: "晴れ着仕様香取ヒューペリオン", lastMonth: 67296, thisMonth: 928, total: 1100924 },
-        { id: 4, badge: "🔥⚡️", name: "炎のナイト", machine: "サタンガンダムBLAZE", lastMonth: 41304, thisMonth: 1328, total: 903432 },
-        { id: 5, badge: "📡⚔️", name: "Net", machine: "【秘書】地球連邦軍女性兵士", lastMonth: 398781, thisMonth: 27842, total: 1409545 },
-        { id: 6, badge: "🎩🦯", name: "なぎさ", machine: "ハルファスベーゼなぎさ", lastMonth: 22384, thisMonth: 178, total: 366267 },
-        { id: 7, badge: "🐈🐩", name: "オズナ", machine: "C装備仕様ナラティブガンダム", lastMonth: 276786, thisMonth: 1501, total: 544820 },
-        { id: 8, badge: "👑💜", name: "エル・シエル", machine: "グレタ・ガリーエル・シエル", lastMonth: 33267, thisMonth: 178, total: 64238 },
-        { id: 9, badge: "💤🫏", name: "nightmare", machine: "ラクシャサ(格闘形態)", lastMonth: 0, thisMonth: 0, total: 77310 },
-        { id: 10, badge: "👿🦹‍♀️", name: "則・天・武・后", machine: "アイナ専用ゲルググM", lastMonth: 0, thisMonth: 0, total: 709415 },
-        { id: 11, badge: "🥷⚔️", name: "紅蓮", machine: "アルケウスRSASS", lastMonth: 0, thisMonth: 0, total: 875883 },
-        { id: 12, badge: "🔰", name: "ガイウス", machine: "パース改Ψガイウス", lastMonth: 0, thisMonth: 0, total: 61530 },
-        { id: 13, badge: "👑🗡️", name: "アルトリア", machine: "ガンダム・バエル碧依", lastMonth: 31644, thisMonth: 394, total: 135566 },
-        { id: 14, badge: "❗❔", name: "でびるん", machine: "Ex-Sガンダムなーる", lastMonth: 1863, thisMonth: 411, total: 645049 },
-        { id: 15, badge: "🈲", name: "禁色", machine: "ストライクフリーダム禁色", lastMonth: 0, thisMonth: 0, total: 135650 },
-        { id: 16, badge: "🎯🔫", name: "ボブ", machine: "ガルベルス(C)ゴブ", lastMonth: 7217, thisMonth: 126, total: 190461 },
-        { id: 17, badge: "⚛️👑", name: "ナメレス", machine: "ソーラーアクエリオンナメレス", lastMonth: 0, thisMonth: 0, total: 104012 },
-        { id: 18, badge: "🔰🌏🌲", name: "\"Yggdrasill\"", machine: "ジャスティスガンダム(FF)", lastMonth: 72, thisMonth: 125, total: 197 },
-        { id: 19, badge: "🤡🃏", name: "マルク", machine: "ネリー・ブレンNightmare", lastMonth: 68447, thisMonth: 7469, total: 367425 },
-        { id: 20, badge: "🔰🎸", name: "ヨハネ・クラウザーⅡ世", machine: "伊504みおん", lastMonth: 88493, thisMonth: 63, total: 379329 }
+        { id: 1, badge: "❄️🦊", name: "Oro🍊min", machine: "ブリッツガンダム虚無空間", lastMonth: 36319, thisMonth: 96271, total: 132590 },
+        { id: 2, badge: "🚢🚢", name: "キュゥべえ（提督）", machine: "ガンダイバー", lastMonth: 22615, thisMonth: 41587, total: 64202 },
+        { id: 3, badge: "🔥⚡️", name: "炎のナイト", machine: "96式艦戦BLAZE", lastMonth: 4115, thisMonth: 7338, total: 11453 },
+        { id: 4, badge: "🌱🐱", name: "ニャオハ", machine: "ソードインパルスSpecIIなーる", lastMonth: 668, thisMonth: 575, total: 1243 },
+        { id: 5, badge: "🐈🐩", name: "ハチワレ", machine: "バンシィ・ノルン(DM)おずな", lastMonth: 8406, thisMonth: 29808, total: 38214 },
+        { id: 6, badge: "👑🗡️", name: "リーア", machine: "インフィニットジャスティスアルトリア", lastMonth: 73, thisMonth: 182, total: 255 },
+        { id: 7, badge: "🌏🌲", name: "Yggdrasill", machine: "デスティニーガンダムSpecIIYggdrasill", lastMonth: 327, thisMonth: 63742, total: 64069 },
+        { id: 8, badge: "🎯🔫", name: "ボブ", machine: "アルトアイゼンbob", lastMonth: 2900, thisMonth: 21214, total: 24114 },
+        { id: 9, badge: "🤡🃏", name: "Marc", machine: "ボールNightmare", lastMonth: 5722, thisMonth: 198, total: 5920 },
+        { id: 10, badge: "🌙⚔️", name: "ヴォルド", machine: "ボール竜騎将", lastMonth: 106, thisMonth: 21936, total: 22042 },
+        { id: 11, badge: "📡⚔️", name: "Freddie", machine: "ブリッツガンダムFreddie", lastMonth: 14491, thisMonth: 34059, total: 48550 },
+        { id: 12, badge: "🌌🕸️", name: "アルヴィス", machine: "ペイルライダー・デュラハンアルヴィス", lastMonth: 29, thisMonth: 73, total: 102 },
+        { id: 13, badge: "🌊💚", name: "京乃 まどか", machine: "ガンダイバーLast Emperor", lastMonth: 21, thisMonth: 87, total: 108 },
+        { id: 14, badge: "🔥💥", name: "シン・アスカ", machine: "フォビドゥンブルー(強襲形態)あんこう", lastMonth: 1263, thisMonth: 55153, total: 56416 },
+        { id: 15, badge: "🌏X", name: "ライナセロス", machine: "ゴールドフレーム天ミナCライナセロス", lastMonth: 5, thisMonth: 81, total: 86 },
+        { id: 16, badge: "🎩🦯", name: "キッド", machine: "パワードジムカーディガンアル", lastMonth: 37, thisMonth: 129, total: 166 },
+        { id: 17, badge: "🦊🔥", name: "アラン", machine: "ボールアラン = マクベイン", lastMonth: 3456, thisMonth: 544, total: 4000 },
+        { id: 18, badge: "南軍の魂", name: "アイアンサウス", machine: "ルッグン古い鉄", lastMonth: 23, thisMonth: 19292, total: 19315 },
+        { id: 19, badge: "💧🪨", name: "スパイク", machine: "ジム・ガードカスタムパブロ・ハニー", lastMonth: 0, thisMonth: 747, total: 747 },
+        { id: 20, badge: "🚢🫡", name: "カイジン", machine: "ボールカイジン", lastMonth: 0, thisMonth: 88, total: 88 },
+        { id: 21, badge: "🔰🔰", name: "Halbert", machine: "ガンダイバーHalbert", lastMonth: 0, thisMonth: 18, total: 18 }
     ];
 
     function loadMembers() {
-        const saved = localStorage.getItem('seiryoku_members_v1');
+        const saved = localStorage.getItem('seiryoku_members_v2');
         if (saved) {
             try { return JSON.parse(saved); } catch (e) { return initialMembers; }
         }
@@ -362,14 +366,14 @@
 
     function saveData() {
         gatherInputData();
-        localStorage.setItem('seiryoku_members_v1', JSON.stringify(members));
+        localStorage.setItem('seiryoku_members_v2', JSON.stringify(members));
         alert('変更を保存しました！');
         renderTable();
     }
 
     function resetData() {
         if (confirm('初期データに戻しますか？')) {
-            localStorage.removeItem('seiryoku_members_v1');
+            localStorage.removeItem('seiryoku_members_v2');
             members = [...initialMembers];
             renderTable();
             alert('初期データにリセットしました。');
