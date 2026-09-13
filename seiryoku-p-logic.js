@@ -12,7 +12,7 @@ function loadData(key, fallback) {
 
 let membersData = loadData('seiryoku_members_v7', members);
 let historyRecord = loadData('seiryoku_history_v5', historyData);
-let logsData = loadData('seiryoku_logs_v4', eventLogs);
+let logsData = loadData('seiryoku_logs_v5', eventLogs);
 
 function switchTab(tabNum) {
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -111,7 +111,6 @@ function renderHistoryTables() {
     });
 }
 
-// ログ追加フォームにメンバーごとの個別入力欄を生成
 function renderLogInputsContainer() {
     const container = document.getElementById('log-member-inputs');
     if (!container) return;
@@ -133,37 +132,43 @@ function renderLogsTable() {
     const tbody = document.getElementById('logs-tbody');
     if (!thead || !tbody) return;
 
-    // ヘッダーにメンバー名を横一列に並べる（一番右にmemo欄）
     let memberHeadersHtml = membersData.map(m => `<th style="text-align: center; min-width: 90px;">${m.name}</th>`).join('');
     thead.innerHTML = `
         <tr>
-            <th style="width: 100px;">日付</th>
+            <th style="width: 110px;">日付</th>
             ${memberHeadersHtml}
             <th style="min-width: 150px; text-align: left;">memo</th>
+            <th style="width: 110px; text-align: center;">操作</th>
         </tr>
     `;
 
     tbody.innerHTML = '';
 
-    logsData.forEach(log => {
+    logsData.forEach((log, logIndex) => {
         let memberCellsHtml = "";
         membersData.forEach((_, idx) => {
             const val = log.values && log.values[idx] !== undefined ? log.values[idx] : 0;
             const displayVal = val !== 0 ? val : "";
             const colorStyle = val > 0 ? "color: #99ff99;" : (val < 0 ? "color: #ff8080;" : "color: #888;");
-            memberCellsHtml += `<td style="text-align: center; ${colorStyle} font-weight: bold;">${displayVal}</td>`;
+            memberCellsHtml += `<td style="text-align: center; ${colorStyle} font-weight: bold;" class="log-cell-${logIndex}" data-col="${idx}">${displayVal}</td>`;
         });
 
         const tr = document.createElement('tr');
+        tr.id = `log-row-${logIndex}`;
         tr.innerHTML = `
-            <td style="white-space: nowrap; color: var(--sub-text);">${log.date}</td>
+            <td style="white-space: nowrap; color: var(--sub-text);" class="log-date-cell">${log.date}</td>
             ${memberCellsHtml}
-            <td style="color: var(--accent-color); font-weight: bold;">${log.memo || ""}</td>
+            <td style="color: var(--accent-color); font-weight: bold;" class="log-memo-cell">${log.memo || ""}</td>
+            <td style="text-align: center; white-space: nowrap;">
+                <button class="btn-small" onclick="editLog(${logIndex})" id="edit-btn-${logIndex}" style="padding: 3px 8px; font-size: 0.75rem; background: #333; color: #fff; border: 1px solid #555; border-radius: 3px; cursor: pointer; margin-right: 4px;">編集</button>
+                <button class="btn-small" onclick="deleteLog(${logIndex})" style="padding: 3px 8px; font-size: 0.75rem; background: #4a1515; color: #ff9999; border: 1px solid #662222; border-radius: 3px; cursor: pointer;">削除</button>
+            </td>
         `;
         tbody.appendChild(tr);
     });
 }
 
+// ログの追加
 function addEventLog() {
     const dateInput = document.getElementById('log-date').value;
     const memoInput = document.getElementById('log-memo').value;
@@ -187,6 +192,69 @@ function addEventLog() {
 
     renderLogsTable();
     alert("イベントログを追加しました。「変更を保存する」を押して保存してください。");
+}
+
+// ログの削除
+function deleteLog(logIndex) {
+    if (confirm(`「${logsData[logIndex].memo}（${logsData[logIndex].date}）」のログを本当に削除しますか？`)) {
+        logsData.splice(logIndex, 1);
+        renderLogsTable();
+        alert("ログを削除しました。「変更を保存する」を押して確定してください。");
+    }
+}
+
+// ログの編集モード切り替え & 保存
+function editLog(logIndex) {
+    const row = document.getElementById(`log-row-${logIndex}`);
+    const editBtn = document.getElementById(`edit-btn-${logIndex}`);
+    const log = logsData[logIndex];
+
+    if (editBtn.innerText === "編集") {
+        // --- 編集モードへ切替 ---
+        editBtn.innerText = "保存";
+        editBtn.style.background = "#005c8a";
+        editBtn.style.borderColor = "#00d4ff";
+
+        // 日付セルをinputに
+        const dateCell = row.querySelector('.log-date-cell');
+        dateCell.innerHTML = `<input type="date" id="edit-date-${logIndex}" value="${log.date}" style="width: 110px;">`;
+
+        // Memoセルをinputに
+        const memoCell = row.querySelector('.log-memo-cell');
+        memoCell.innerHTML = `<input type="text" id="edit-memo-${logIndex}" value="${log.memo}" style="width: 140px;">`;
+
+        // メンバー数値セルをすべてinputに
+        membersData.forEach((_, idx) => {
+            const cell = row.querySelector(`.log-cell-${logIndex}[data-col="${idx}"]`);
+            const currentVal = log.values && log.values[idx] !== undefined ? log.values[idx] : 0;
+            cell.innerHTML = `<input type="number" class="edit-val-${logIndex}" data-col="${idx}" value="${currentVal}" style="width: 60px; text-align: center;">`;
+        });
+
+    } else {
+        // --- 編集内容を保存 ---
+        const newDate = document.getElementById(`edit-date-${logIndex}`).value;
+        const newMemo = document.getElementById(`edit-memo-${logIndex}`).value;
+
+        if (!newDate || !newMemo) {
+            alert("日付とmemoは空にできません。");
+            return;
+        }
+
+        let newValues = [];
+        membersData.forEach((_, idx) => {
+            const inputVal = row.querySelector(`.edit-val-${logIndex}[data-col="${idx}"]`).value;
+            newValues.push(Number(inputVal) || 0);
+        });
+
+        logsData[logIndex] = {
+            date: newDate,
+            memo: newMemo,
+            values: newValues
+        };
+
+        renderLogsTable();
+        alert("ログを更新しました。「変更を保存する」を押して保存してください。");
+    }
 }
 
 function gatherInputData() {
@@ -247,7 +315,7 @@ function saveData() {
     gatherInputData();
     localStorage.setItem('seiryoku_members_v7', JSON.stringify(membersData));
     localStorage.setItem('seiryoku_history_v5', JSON.stringify(historyRecord));
-    localStorage.setItem('seiryoku_logs_v4', JSON.stringify(logsData));
+    localStorage.setItem('seiryoku_logs_v5', JSON.stringify(logsData));
     alert('パスワード認証成功：変更を保存しました！');
     renderTable();
 }
@@ -264,7 +332,7 @@ function resetData() {
     if (confirm('本当に初期データに戻しますか？')) {
         localStorage.removeItem('seiryoku_members_v7');
         localStorage.removeItem('seiryoku_history_v5');
-        localStorage.removeItem('seiryoku_logs_v4');
+        localStorage.removeItem('seiryoku_logs_v5');
         membersData = JSON.parse(JSON.stringify(members));
         historyRecord = JSON.parse(JSON.stringify(historyData));
         logsData = JSON.parse(JSON.stringify(eventLogs));
