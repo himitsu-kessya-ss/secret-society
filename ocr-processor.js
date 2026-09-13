@@ -34,12 +34,12 @@ export function levenshteinDistance(str1, str2) {
 export function getBestMatchingAbility(rawText) {
     if (!rawText) return null;
 
-    // 全角「＋」の半角化および不要記号の除去（読点や中黒も一時的に慣らす）
+    // 全角「＋」の半角化および不要記号の除去
     let cleanText = rawText.replace(/＋/g, '+').replace(/[\s\t\n|:._\-「」,、]/g, '');
     if (cleanText.length === 0) return null;
 
-    // 【最優先救済1】「中遠距離のビーム防御、実弾ダメージ軽減」系の長文ゆらぎ救済
-    if ((cleanText.includes('中遠距離') || cleanText.includes('中遠')) && (cleanText.includes('ビーム防御') || cleanText.includes('ビーム')) && (cleanText.includes('実弾') || cleanText.includes('軽減'))) {
+    // 【最優先救済1】長文ビーム防御系（キーワードの断片からでも確実にヒットさせる）
+    if ((cleanText.includes('中遠距離') || cleanText.includes('中遠') || cleanText.includes('ビーム防御')) && (cleanText.includes('実弾') || cleanText.includes('軽減') || cleanText.includes('ダメージ'))) {
         return '中遠距離のビーム防御、実弾ダメージ軽減';
     }
 
@@ -89,9 +89,8 @@ export function getBestMatchingAbility(rawText) {
         if (master.length >= 8) {
             maxAllowedDist = 3;
         }
-        // 特別に長いマスター文字列（15文字以上）の場合は少し広めに許容
         if (master.length >= 15) {
-            maxAllowedDist = 5;
+            maxAllowedDist = 6; // 長文はさらに広めに許容
         }
 
         if (dist < lowestDistance && dist <= maxAllowedDist) {
@@ -113,7 +112,8 @@ export function cropAbilityRegion(file) {
 
             const cropHeight = Math.floor(img.height * 0.22);
             const cropY = img.height - cropHeight;
-            const cropWidth = Math.floor(img.width * 0.40);
+            // 【変更】長文スキルが途中で切れないよう、切り出し幅を画面幅の「40%」から「75%」へと大きく拡張しました
+            const cropWidth = Math.floor(img.width * 0.75);
 
             canvas.width = cropWidth;
             canvas.height = cropHeight;
