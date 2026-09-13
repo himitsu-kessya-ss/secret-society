@@ -77,7 +77,6 @@
             color: var(--accent-color);
         }
 
-        /* --- タブ切り替えボタン --- */
         .tab-menu {
             display: flex;
             gap: 10px;
@@ -104,12 +103,8 @@
             border-color: var(--accent-color);
         }
 
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
-        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
 
         .summary-box {
             display: grid;
@@ -176,9 +171,7 @@
             z-index: 10;
         }
 
-        tr:hover {
-            background-color: rgba(255, 255, 255, 0.03);
-        }
+        tr:hover { background-color: rgba(255, 255, 255, 0.03); }
 
         input[type="number"], input[type="text"], input[type="date"] {
             background-color: #1a1c1e;
@@ -191,11 +184,7 @@
 
         input[type="number"] { width: 90px; }
         input[type="text"] { width: 140px; }
-
-        input:focus {
-            outline: none;
-            border-color: var(--accent-color);
-        }
+        input:focus { outline: none; border-color: var(--accent-color); }
 
         .btn {
             background-color: transparent;
@@ -213,21 +202,10 @@
             box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
         }
 
-        .btn-secondary {
-            border-color: #666;
-            color: #aaa;
-        }
-        .btn-secondary:hover {
-            background-color: rgba(255, 255, 255, 0.05);
-            color: #fff;
-            box-shadow: none;
-        }
+        .btn-secondary { border-color: #666; color: #aaa; }
+        .btn-secondary:hover { background-color: rgba(255, 255, 255, 0.05); color: #fff; box-shadow: none; }
 
-        .actions {
-            margin-top: 20px;
-            display: flex;
-            gap: 15px;
-        }
+        .actions { margin-top: 20px; display: flex; gap: 15px; }
 
         .form-group {
             display: flex;
@@ -241,7 +219,6 @@
         }
     </style>
 
-    <!-- 外部スクリプトの読み込み -->
     <script src="seiryoku-p-data.js"></script>
     <script src="seiryoku-p-logic.js" defer></script>
 </head>
@@ -265,7 +242,7 @@
     </header>
 
     <div class="container">
-        <!-- 勢力全体サマリー（上部に余剰資産カードを追加） -->
+        <!-- サマリーカード -->
         <div class="summary-box">
             <div class="card" style="border-color: #ffeb3b;">
                 <h3>運営費・余剰資産 (名声)</h3>
@@ -285,21 +262,21 @@
             <div class="card">
                 <h3>所属状況</h3>
                 <div class="value">21 / 22 名</div>
-                <div class="sub-value">結成: 2026/08/27 (勢力ポイント: 412,706)</div>
+                <div class="sub-value">確認日: 2026/09/13 (総勢力P: 413,113)</div>
             </div>
         </div>
 
-        <!-- タブボタン -->
+        <!-- タブメニュー -->
         <div class="tab-menu">
             <button class="tab-btn active" onclick="switchTab(1)">📊 1. 名声残高</button>
             <button class="tab-btn" onclick="switchTab(2)">📅 2. 各月勢力P記録</button>
         </div>
 
-        <!-- ================= タブ1：名声残高 ================= -->
+        <!-- タブ1 -->
         <div id="tab-1" class="tab-content active">
             <div class="table-container">
                 <h2>-Secret Society- メンバー 名声残高管理シート</h2>
-                <p style="font-size: 0.85rem; color: var(--sub-text);">※「名声調整±」にイベント追加や配布分のマイナス値を入力することで、実際の「名声残高」を自由に調整できます。</p>
+                <p style="font-size: 0.85rem; color: var(--sub-text);">※「名声調整±」にイベント追加やマイナス値を入力することで、実際の「名声残高」を自由に調整できます。</p>
                 
                 <table>
                     <thead>
@@ -313,9 +290,7 @@
                             <th>名声残高</th>
                         </tr>
                     </thead>
-                    <tbody id="member-tbody">
-                        <!-- JSで自動生成されます -->
-                    </tbody>
+                    <tbody id="member-tbody"></tbody>
                 </table>
 
                 <div class="actions">
@@ -324,68 +299,65 @@
                 </div>
             </div>
 
-            <!-- 内部イベント・名声ログ管理セクション -->
+            <!-- イベントログ管理 (メンバー個別入力対応) -->
             <div class="table-container" style="margin-top: 30px;">
-                <h2>▽ 内部イベント・名声ログ管理</h2>
-                <p style="font-size: 0.85rem; color: var(--sub-text);">イベント付与や月一括配布などの理由と詳細を記録できます。</p>
+                <h2>▽ 内部イベント・名声ログ管理（個別数値対応）</h2>
+                <p style="font-size: 0.85rem; color: var(--sub-text);">日付と理由を入力し、下部のメンバーごとの入力欄にそれぞれの増減数値を記入して「ログ追加」を押してください。</p>
                 
-                <div class="form-group">
-                    <input type="date" id="log-date">
-                    <input type="text" id="log-reason" placeholder="理由 (例: 8月度月一括配布)" style="width: 200px;">
-                    <input type="text" id="log-details" placeholder="詳細・備考 (例: 全員一律配分)" style="flex-grow: 1; min-width: 200px;">
-                    <button class="btn" onclick="addEventLog()">➕ ログ追加</button>
+                <div class="form-group" style="flex-direction: column; align-items: stretch; gap: 12px;">
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                        <input type="date" id="log-date">
+                        <input type="text" id="log-reason" placeholder="理由 (例: 勢力内戦)" style="width: 200px;">
+                        <input type="text" id="log-details" placeholder="詳細・備考 (例: ポイント増減調整)" style="flex-grow: 1; min-width: 200px;">
+                        <button class="btn" onclick="addEventLog()">➕ ログ追加</button>
+                    </div>
+
+                    <!-- メンバーごとの個別数値を入力するエリア（自動生成） -->
+                    <div style="border-top: 1px dashed #444; padding-top: 10px;">
+                        <span style="font-size: 0.85rem; color: var(--accent-color); font-weight: bold; display: block; margin-bottom: 8px;">▼ メンバーごとの個別増減値入力</span>
+                        <div id="log-member-inputs" style="display: flex; flex-wrap: wrap; gap: 8px; max-height: 200px; overflow-y: auto; padding: 4px;">
+                            <!-- JSでメンバー全員分の入力欄が自動生成されます -->
+                        </div>
+                    </div>
                 </div>
 
                 <table>
                     <thead>
                         <tr>
-                            <th style="width: 120px;">日付</th>
-                            <th style="width: 200px;">理由</th>
-                            <th>詳細・メンバー増減メモ</th>
+                            <th style="width: 100px;">日付</th>
+                            <th style="width: 150px;">理由</th>
+                            <th style="width: 180px;">詳細</th>
+                            <th>メンバー別明細</th>
                         </tr>
                     </thead>
-                    <tbody id="logs-tbody">
-                        <!-- JSで自動生成されます -->
-                    </tbody>
+                    <tbody id="logs-tbody"></tbody>
                 </table>
             </div>
         </div>
 
-        <!-- ================= タブ2：各月勢力P記録 ================= -->
+        <!-- タブ2 -->
         <div id="tab-2" class="tab-content">
             <div class="table-container">
                 <h2>表_各月総獲得勢力P控え</h2>
                 <table>
-                    <thead id="history-total-thead">
-                        <!-- JSで21人分のヘッダーが自動生成されます -->
-                    </thead>
-                    <tbody id="history-total-tbody">
-                        <!-- JSで自動生成されます -->
-                    </tbody>
+                    <thead id="history-total-thead"></thead>
+                    <tbody id="history-total-tbody"></tbody>
                 </table>
             </div>
 
             <div class="table-container">
                 <h2>表_各月獲得値</h2>
                 <table>
-                    <thead id="history-monthly-thead">
-                        <!-- JSで21人分のヘッダーが自動生成されます -->
-                    </thead>
-                    <tbody id="history-monthly-tbody">
-                        <!-- JSで自動生成されます -->
-                    </tbody>
+                    <thead id="history-monthly-thead"></thead>
+                    <tbody id="history-monthly-tbody"></tbody>
                 </table>
             </div>
 
             <div class="table-container">
                 <h2>表_各月獲得率 (%)</h2>
                 <table>
-                    <thead id="history-rate-thead">
-                        <!-- JSで21人分のヘッダーが自動生成されます -->
-                    </thead>
-                    <tbody id="history-rate-tbody">
-                        <!-- JSで自動生成されます -->
-                    </tbody>
+                    <thead id="history-rate-thead"></thead>
+                    <tbody id="history-rate-tbody"></tbody>
                 </table>
             </div>
         </div>
