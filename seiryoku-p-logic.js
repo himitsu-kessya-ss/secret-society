@@ -10,8 +10,9 @@ function loadData(key, fallback) {
     return fallback;
 }
 
-let members = loadData('seiryoku_members_v4', initialMembers);
-let historyData = loadData('seiryoku_history_v2', initialHistory);
+let membersData = loadData('seiryoku_members_v5', members);
+let historyRecord = loadData('seiryoku_history_v3', historyData);
+let logsData = loadData('seiryoku_logs_v1', eventLogs);
 
 function switchTab(tabNum) {
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -27,14 +28,15 @@ function renderTable() {
 
     let totalThisMonthAll = 0;
     let totalSeiryokuPAll = 0;
+    let totalReiseiAll = 0;
 
-    members.forEach((m, index) => {
+    membersData.forEach((m, index) => {
         const thisMonth = Number(m.thisMonth) || 0;
         const total = Number(m.total) || 0;
         const adjustment = Number(m.adjustment) || 0;
 
-        // 勢力Pから名声への換算は 0.008倍
         const calculatedReisei = Math.floor((total * 0.008) + adjustment);
+        totalReiseiAll += calculatedReisei;
 
         totalThisMonthAll += thisMonth;
         totalSeiryokuPAll += total;
@@ -52,25 +54,33 @@ function renderTable() {
         tbody.appendChild(tr);
     });
 
+    // サマリー計算と表示更新
     document.getElementById('total-seiryoku-p').innerText = totalSeiryokuPAll.toLocaleString() + ' P';
     document.getElementById('total-reisei').innerText = `基準名声換算: ${Math.floor(totalSeiryokuPAll * 0.008).toLocaleString()} 名声`;
     document.getElementById('total-this-month').innerText = totalThisMonthAll.toLocaleString() + ' P';
     document.getElementById('total-company-fee').innerText = `運営費プール(20%): ${Math.floor(totalThisMonthAll * 0.20).toLocaleString()} P`;
 
+    // 余剰資産計算：(勢力総ポイント * 0.008) - 各メンバーの名声残高総計
+    const totalSeiryokuPoolReisei = totalSeiryokuPAll * 0.008;
+    const surplusReisei = totalSeiryokuPoolReisei - totalReiseiAll;
+    const surplusElement = document.getElementById('surplus-reisei');
+    if (surplusElement) {
+        surplusElement.innerText = `${Math.floor(surplusReisei).toLocaleString()} 名声`;
+    }
+
     renderHistoryTables();
+    renderLogsTable();
 }
 
 function renderHistoryTables() {
     const totalThead = document.getElementById('history-total-thead');
     const totalTbody = document.getElementById('history-total-tbody');
-    
     const monthlyThead = document.getElementById('history-monthly-thead');
     const monthlyTbody = document.getElementById('history-monthly-tbody');
-    
     const rateThead = document.getElementById('history-rate-thead');
     const rateTbody = document.getElementById('history-rate-tbody');
 
-    const memberHeadersHtml = members.map(m => `<th>${m.name}</th>`).join('');
+    const memberHeadersHtml = membersData.map(m => `<th>${m.name}</th>`).join('');
 
     totalThead.innerHTML = `<tr><th>年</th><th>確認日</th><th>全合計</th>${memberHeadersHtml}</tr>`;
     monthlyThead.innerHTML = `<tr><th>年</th><th>確認日</th><th>当月獲得値</th>${memberHeadersHtml}</tr>`;
@@ -80,7 +90,7 @@ function renderHistoryTables() {
     monthlyTbody.innerHTML = '';
     rateTbody.innerHTML = '';
 
-    historyData.forEach(h => {
+    historyRecord.forEach(h => {
         let tr1 = document.createElement('tr');
         tr1.innerHTML = `<td>${h.year}</td><td>${h.date}</td><td style="font-weight:bold; color:var(--accent-color);">${h.totalP.toLocaleString()}</td>` +
             h.members.map(val => `<td>${(Number(val) || 0).toLocaleString()}</td>`).join('');
@@ -102,21 +112,70 @@ function renderHistoryTables() {
     });
 }
 
+function renderLogsTable() {
+    const tbody = document.getElementById('logs-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    logsData.forEach(log => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${log.date}</td>
+            <td style="color: var(--accent-color); font-weight: bold;">${log.reason}</td>
+            <td>${log.details}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function addEventLog() {
+    const dateInput = document.getElementById('log-date').value;
+    const reasonInput = document.getElementById('log-reason').value;
+    const detailsInput = document.getElementById('log-details').value;
+
+    if (!dateInput || !reasonInput) {
+        alert("日付と理由は必ず入力してください。");
+        return;
+    }
+
+    logsData.unshift({
+        date: dateInput,
+        reason: reasonInput,
+        details: detailsInput
+    });
+
+    renderLogsTable();
+    alert("ログを追加しました。「変更を保存する」を押して保存してください。");
+}
+
 function gatherInputData() {
     const rows = document.querySelectorAll('#member-tbody tr');
+    let totalReiseiAll = 0;
+    let totalSeiryokuPAll = 0;
+
     rows.forEach((row, index) => {
         const inputs = row.querySelectorAll('input');
-        members[index].name = inputs[0].value;
-        members[index].lastMonth = Number(inputs[1].value) || 0;
-        members[index].thisMonth = Number(inputs[2].value) || 0;
-        members[index].total = Number(inputs[3].value) || 0;
-        members[index].adjustment = Number(inputs[4].value) || 0;
+        membersData[index].name = inputs[0].value;
+        membersData[index].lastMonth = Number(inputs[1].value) || 0;
+        membersData[index].thisMonth = Number(inputs[2].value) || 0;
+        membersData[index].total = Number(inputs[3].value) || 0;
+        membersData[index].adjustment = Number(inputs[4].value) || 0;
 
-        const total = members[index].total;
-        const adj = members[index].adjustment;
+        const total = membersData[index].total;
+        const adj = membersData[index].adjustment;
         const calc = Math.floor((total * 0.008) + adj);
+        
+        totalReiseiAll += calc;
+        totalSeiryokuPAll += total;
         document.getElementById(`reisei-${index}`).innerText = calc.toLocaleString() + ' 名声';
     });
+
+    const totalSeiryokuPoolReisei = totalSeiryokuPAll * 0.008;
+    const surplusReisei = totalSeiryokuPoolReisei - totalReiseiAll;
+    const surplusElement = document.getElementById('surplus-reisei');
+    if (surplusElement) {
+        surplusElement.innerText = `${Math.floor(surplusReisei).toLocaleString()} 名声`;
+    }
 }
 
 function updateCalculations() {
@@ -124,7 +183,7 @@ function updateCalculations() {
     let totalThisMonthAll = 0;
     let totalSeiryokuPAll = 0;
 
-    members.forEach(m => {
+    membersData.forEach(m => {
         totalThisMonthAll += Number(m.thisMonth) || 0;
         totalSeiryokuPAll += Number(m.total) || 0;
     });
@@ -145,8 +204,9 @@ function saveData() {
     }
 
     gatherInputData();
-    localStorage.setItem('seiryoku_members_v4', JSON.stringify(members));
-    localStorage.setItem('seiryoku_history_v2', JSON.stringify(historyData));
+    localStorage.setItem('seiryoku_members_v5', JSON.stringify(membersData));
+    localStorage.setItem('seiryoku_history_v3', JSON.stringify(historyRecord));
+    localStorage.setItem('seiryoku_logs_v1', JSON.stringify(logsData));
     alert('パスワード認証成功：変更を保存しました！');
     renderTable();
 }
@@ -161,13 +221,25 @@ function resetData() {
     }
 
     if (confirm('本当に初期データに戻しますか？')) {
-        localStorage.removeItem('seiryoku_members_v4');
-        localStorage.removeItem('seiryoku_history_v2');
-        members = [...initialMembers];
-        historyData = [...initialHistory];
+        localStorage.removeItem('seiryoku_members_v5');
+        localStorage.removeItem('seiryoku_history_v3');
+        localStorage.removeItem('seiryoku_logs_v1');
+        membersData = JSON.parse(JSON.stringify(members));
+        historyRecord = JSON.parse(JSON.stringify(historyData));
+        logsData = JSON.parse(JSON.stringify(eventLogs));
         renderTable();
         alert('初期データにリセットしました。');
     }
 }
 
-window.onload = renderTable;
+window.onload = function() {
+    // ログ追加フォームの初期日付に今日の日付を設定
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    const dateField = document.getElementById('log-date');
+    if(dateField) dateField.value = `${yyyy}-${mm}-${dd}`;
+
+    renderTable();
+};
