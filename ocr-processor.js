@@ -30,15 +30,20 @@ export function levenshteinDistance(str1, str2) {
     return dp[m][n];
 }
 
-// マスター辞書との照合関数（強力な強制救済ルール付き）
+// マスター辞書との照合関数（長文・特殊能力の強力救済ルール付き）
 export function getBestMatchingAbility(rawText) {
     if (!rawText) return null;
 
-    // 全角「＋」の半角化および不要記号の除去
+    // 全角「＋」の半角化および不要記号の除去（読点や中黒も一時的に慣らす）
     let cleanText = rawText.replace(/＋/g, '+').replace(/[\s\t\n|:._\-「」,、]/g, '');
     if (cleanText.length === 0) return null;
 
-    // 【最優先救済】「大気圏」が含まれていれば無条件で「大気圏適正」に確定させる
+    // 【最優先救済1】「中遠距離のビーム防御、実弾ダメージ軽減」系の長文ゆらぎ救済
+    if ((cleanText.includes('中遠距離') || cleanText.includes('中遠')) && (cleanText.includes('ビーム防御') || cleanText.includes('ビーム')) && (cleanText.includes('実弾') || cleanText.includes('軽減'))) {
+        return '中遠距離のビーム防御、実弾ダメージ軽減';
+    }
+
+    // 【最優先救済2】「大気圏」系の救済
     if (cleanText.includes('大気圏') || cleanText.includes('気圏') || cleanText.includes('大気')) {
         return '大気圏適正';
     }
@@ -83,6 +88,10 @@ export function getBestMatchingAbility(rawText) {
         }
         if (master.length >= 8) {
             maxAllowedDist = 3;
+        }
+        // 特別に長いマスター文字列（15文字以上）の場合は少し広めに許容
+        if (master.length >= 15) {
+            maxAllowedDist = 5;
         }
 
         if (dist < lowestDistance && dist <= maxAllowedDist) {
