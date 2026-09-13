@@ -113,7 +113,7 @@
 
         .summary-box {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
@@ -133,13 +133,13 @@
         }
 
         .card .value {
-            font-size: 1.6rem;
+            font-size: 1.5rem;
             font-weight: bold;
             color: #fff;
         }
 
         .card .sub-value {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: var(--accent-color);
             margin-top: 5px;
         }
@@ -180,7 +180,7 @@
             background-color: rgba(255, 255, 255, 0.03);
         }
 
-        input[type="number"], input[type="text"] {
+        input[type="number"], input[type="text"], input[type="date"] {
             background-color: #1a1c1e;
             border: 1px solid #444;
             color: #fff;
@@ -228,6 +228,17 @@
             display: flex;
             gap: 15px;
         }
+
+        .form-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+            background: #1e2124;
+            padding: 12px;
+            border-radius: 6px;
+        }
     </style>
 
     <!-- 外部スクリプトの読み込み -->
@@ -254,12 +265,17 @@
     </header>
 
     <div class="container">
-        <!-- 勢力全体サマリー -->
+        <!-- 勢力全体サマリー（上部に余剰資産カードを追加） -->
         <div class="summary-box">
+            <div class="card" style="border-color: #ffeb3b;">
+                <h3>運営費・余剰資産 (名声)</h3>
+                <div class="value" id="surplus-reisei" style="color: #ffeb3b;">0 名声</div>
+                <div class="sub-value">(勢力総P × 0.008) - 各メンバー残高合計</div>
+            </div>
             <div class="card">
                 <h3>勢力総ポイント（累計残高）</h3>
                 <div class="value" id="total-seiryoku-p">0 P</div>
-                <div class="sub-value" id="total-reisei">基準名声換算: 0 名声 (10000P = 80名声 / 0.008倍)</div>
+                <div class="sub-value" id="total-reisei">基準名声換算: 0 名声 (0.008倍)</div>
             </div>
             <div class="card">
                 <h3>今月の総稼ぎ値</h3>
@@ -268,8 +284,8 @@
             </div>
             <div class="card">
                 <h3>所属状況</h3>
-                <div class="value">21 / 30 名</div>
-                <div class="sub-value">結成: 2026/08/27 (勢力ポイント: 412,188)</div>
+                <div class="value">21 / 22 名</div>
+                <div class="sub-value">結成: 2026/08/27 (勢力ポイント: 412,706)</div>
             </div>
         </div>
 
@@ -306,6 +322,32 @@
                     <button class="btn" onclick="saveData()">💾 変更を保存する</button>
                     <button class="btn btn-secondary" onclick="resetData()">🔄 初期データに戻す</button>
                 </div>
+            </div>
+
+            <!-- 内部イベント・名声ログ管理セクション -->
+            <div class="table-container" style="margin-top: 30px;">
+                <h2>▽ 内部イベント・名声ログ管理</h2>
+                <p style="font-size: 0.85rem; color: var(--sub-text);">イベント付与や月一括配布などの理由と詳細を記録できます。</p>
+                
+                <div class="form-group">
+                    <input type="date" id="log-date">
+                    <input type="text" id="log-reason" placeholder="理由 (例: 8月度月一括配布)" style="width: 200px;">
+                    <input type="text" id="log-details" placeholder="詳細・備考 (例: 全員一律配分)" style="flex-grow: 1; min-width: 200px;">
+                    <button class="btn" onclick="addEventLog()">➕ ログ追加</button>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 120px;">日付</th>
+                            <th style="width: 200px;">理由</th>
+                            <th>詳細・メンバー増減メモ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logs-tbody">
+                        <!-- JSで自動生成されます -->
+                    </tbody>
+                </table>
             </div>
         </div>
 
