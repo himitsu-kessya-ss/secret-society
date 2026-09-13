@@ -10,6 +10,16 @@ const IMGBB_API_KEY = "29969679b0297f97687888bd7faede64";
 const ADMIN_PASS = "p@ssw0rd";
 
 /**
+ * ブラウザに保存された前回の入力情報（投稿者名・削除キー）を読み込む関数
+ */
+export function loadSavedPostCredentials() {
+    return {
+        author: localStorage.getItem('last_post_author') || '',
+        deleteKey: localStorage.getItem('last_post_deleteKey') || ''
+    };
+}
+
+/**
  * 画像をImgBBにアップロードする処理
  */
 export async function uploadImageToImgBB(file, newPostNo, unitNumber, unitName) {
@@ -83,6 +93,10 @@ export async function handlePostSubmit({ db, file, unitNumber, unitName, author,
             abilities: abilities,
             createdAt: serverTimestamp()
         });
+
+        // ★【追加】投稿が成功したら、次回の入力の手間を省くためブラウザに保持する
+        localStorage.setItem('last_post_author', author);
+        localStorage.setItem('last_post_deleteKey', deleteKey);
 
         alert(`投稿が完了しました！（投稿 No.${newPostNo}）`);
         return true;
