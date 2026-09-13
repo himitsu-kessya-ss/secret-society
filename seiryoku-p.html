@@ -62,7 +62,7 @@
 
         .container {
             width: 100%;
-            max-width: 1200px;
+            max-width: 1300px;
             margin: 0 auto;
             padding: 20px;
             box-sizing: border-box;
@@ -75,6 +75,40 @@
             margin-top: 0;
             margin-bottom: 15px;
             color: var(--accent-color);
+        }
+
+        /* --- タブ切り替えボタン --- */
+        .tab-menu {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .tab-btn {
+            background-color: var(--card-bg);
+            color: var(--sub-text);
+            border: 1px solid var(--border-color);
+            padding: 10px 20px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            border-radius: 6px 6px 0 0;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .tab-btn.active {
+            background-color: var(--accent-color);
+            color: #1a1c1e;
+            border-color: var(--accent-color);
+        }
+
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
         }
 
         .summary-box {
@@ -117,6 +151,7 @@
             overflow-x: auto;
             padding: 15px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
         }
 
         table {
@@ -136,6 +171,9 @@
             background-color: #1e2124;
             color: var(--accent-color);
             font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
 
         tr:hover {
@@ -151,8 +189,8 @@
             font-size: 0.9rem;
         }
 
-        input[type="number"] { width: 100px; }
-        input[type="text"] { width: 130px; }
+        input[type="number"] { width: 90px; }
+        input[type="text"] { width: 120px; }
 
         input:focus {
             outline: none;
@@ -191,6 +229,10 @@
             gap: 15px;
         }
     </style>
+
+    <!-- 外部スクリプトの読み込み（順番に注意） -->
+    <script src="seiryoku-p-data.js"></script>
+    <script src="seiryoku-p-logic.js" defer></script>
 </head>
 <body>
 
@@ -217,7 +259,7 @@
             <div class="card">
                 <h3>勢力総ポイント（累計残高）</h3>
                 <div class="value" id="total-seiryoku-p">0 P</div>
-                <div class="sub-value" id="total-reisei">名声換算: 0 名声 (100P = 1名声)</div>
+                <div class="sub-value" id="total-reisei">基準名声換算: 0 名声 (100P = 1名声)</div>
             </div>
             <div class="card">
                 <h3>今月の総稼ぎ値</h3>
@@ -231,156 +273,119 @@
             </div>
         </div>
 
-        <!-- メンバー別詳細テーブル -->
-        <div class="table-container">
-            <h2>-Secret Society- メンバー 資産・稼ぎ記録シート</h2>
-            <p style="font-size: 0.85rem; color: var(--sub-text);">※各項目の数値を変更すると、運営費(20%)と取り分(80%)が自動計算されます。「変更を保存する」を押すとブラウザに保存されます。</p>
-            
-            <table>
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>称号・アイコン</th>
-                        <th>メンバー名</th>
-                        <th>機体</th>
-                        <th>前月稼ぎ値</th>
-                        <th>当月稼ぎ値</th>
-                        <th>当月運営費(20%)</th>
-                        <th>当月取り分(80%)</th>
-                        <th>勢力内累計稼ぎ値</th>
-                    </tr>
-                </thead>
-                <tbody id="member-tbody">
-                    <!-- 動的挿入 -->
-                </tbody>
-            </table>
+        <!-- タブボタン -->
+        <div class="tab-menu">
+            <button class="tab-btn active" onclick="switchTab(1)">📊 1. メンバー資産・名声残高管理</button>
+            <button class="tab-btn" onclick="switchTab(2)">📅 2. 各月獲得履歴・統計（控え）</button>
+        </div>
 
-            <div class="actions">
-                <button class="btn" onclick="saveData()">💾 変更を保存する</button>
-                <button class="btn btn-secondary" onclick="resetData()">🔄 初期データに戻す</button>
+        <!-- ================= タブ1：メンバー資産・名声管理 ================= -->
+        <div id="tab-1" class="tab-content active">
+            <div class="table-container">
+                <h2>-Secret Society- メンバー 資産・名声残高管理シート</h2>
+                <p style="font-size: 0.85rem; color: var(--sub-text);">※「名声調整±」にイベント追加や配布分のマイナス値を入力することで、実際の「名声残高」を自由に調整できます。</p>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>称号</th>
+                            <th>メンバー名</th>
+                            <th>機体</th>
+                            <th>前月稼ぎ値</th>
+                            <th>当月稼ぎ値</th>
+                            <th>勢力内累計</th>
+                            <th>名声調整±</th>
+                            <th>名声残高</th>
+                        </tr>
+                    </thead>
+                    <tbody id="member-tbody">
+                        <!-- JSで自動生成されます -->
+                    </tbody>
+                </table>
+
+                <div class="actions">
+                    <button class="btn" onclick="saveData()">💾 変更を保存する</button>
+                    <button class="btn btn-secondary" onclick="resetData()">🔄 初期データに戻す</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= タブ2：各月獲得履歴・統計 ================= -->
+        <div id="tab-2" class="tab-content">
+            <div class="table-container">
+                <h2>表_各月総獲得勢力P控え</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>年</th>
+                            <th>確認日</th>
+                            <th>全合計</th>
+                            <th>Oro🍊min</th>
+                            <th>キュゥべえ（提督）</th>
+                            <th>炎のナイト</th>
+                            <th>ニャオハ</th>
+                            <th>ハチワレ</th>
+                            <th>リーア</th>
+                            <th>Yggdrasill</th>
+                            <th>ボブ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-total-tbody">
+                        <!-- JSで自動生成されます -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="table-container">
+                <h2>表_各月獲得値</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>年</th>
+                            <th>確認日</th>
+                            <th>当月獲得値</th>
+                            <th>Oro🍊min</th>
+                            <th>キュゥべえ（提督）</th>
+                            <th>炎のナイト</th>
+                            <th>ニャオハ</th>
+                            <th>ハチワレ</th>
+                            <th>リーア</th>
+                            <th>Yggdrasill</th>
+                            <th>ボブ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-monthly-tbody">
+                        <!-- JSで自動生成されます -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="table-container">
+                <h2>表_各月獲得率 (%)</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>年</th>
+                            <th>確認日</th>
+                            <th>列 1</th>
+                            <th>Oro🍊min</th>
+                            <th>キュゥべえ（提督）</th>
+                            <th>炎のナイト</th>
+                            <th>ニャオハ</th>
+                            <th>ハチワレ</th>
+                            <th>リーア</th>
+                            <th>Yggdrasill</th>
+                            <th>ボブ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-rate-tbody">
+                        <!-- JSで自動生成されます -->
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
 
-<script>
-    // 最新のメンバーデータ（21名分）
-    const initialMembers = [
-        { id: 1, badge: "❄️🦊", name: "Oro🍊min", machine: "ブリッツガンダム虚無空間", lastMonth: 36319, thisMonth: 96271, total: 132590 },
-        { id: 2, badge: "🚢🚢", name: "キュゥべえ（提督）", machine: "ガンダイバー", lastMonth: 22615, thisMonth: 41587, total: 64202 },
-        { id: 3, badge: "🔥⚡️", name: "炎のナイト", machine: "96式艦戦BLAZE", lastMonth: 4115, thisMonth: 7338, total: 11453 },
-        { id: 4, badge: "🌱🐱", name: "ニャオハ", machine: "ソードインパルスSpecIIなーる", lastMonth: 668, thisMonth: 575, total: 1243 },
-        { id: 5, badge: "🐈🐩", name: "ハチワレ", machine: "バンシィ・ノルン(DM)おずな", lastMonth: 8406, thisMonth: 29808, total: 38214 },
-        { id: 6, badge: "👑🗡️", name: "リーア", machine: "インフィニットジャスティスアルトリア", lastMonth: 73, thisMonth: 182, total: 255 },
-        { id: 7, badge: "🌏🌲", name: "Yggdrasill", machine: "デスティニーガンダムSpecIIYggdrasill", lastMonth: 327, thisMonth: 63742, total: 64069 },
-        { id: 8, badge: "🎯🔫", name: "ボブ", machine: "アルトアイゼンbob", lastMonth: 2900, thisMonth: 21214, total: 24114 },
-        { id: 9, badge: "🤡🃏", name: "Marc", machine: "ボールNightmare", lastMonth: 5722, thisMonth: 198, total: 5920 },
-        { id: 10, badge: "🌙⚔️", name: "ヴォルド", machine: "ボール竜騎将", lastMonth: 106, thisMonth: 21936, total: 22042 },
-        { id: 11, badge: "📡⚔️", name: "Freddie", machine: "ブリッツガンダムFreddie", lastMonth: 14491, thisMonth: 34059, total: 48550 },
-        { id: 12, badge: "🌌🕸️", name: "アルヴィス", machine: "ペイルライダー・デュラハンアルヴィス", lastMonth: 29, thisMonth: 73, total: 102 },
-        { id: 13, badge: "🌊💚", name: "京乃 まどか", machine: "ガンダイバーLast Emperor", lastMonth: 21, thisMonth: 87, total: 108 },
-        { id: 14, badge: "🔥💥", name: "シン・アスカ", machine: "フォビドゥンブルー(強襲形態)あんこう", lastMonth: 1263, thisMonth: 55153, total: 56416 },
-        { id: 15, badge: "🌏X", name: "ライナセロス", machine: "ゴールドフレーム天ミナCライナセロス", lastMonth: 5, thisMonth: 81, total: 86 },
-        { id: 16, badge: "🎩🦯", name: "キッド", machine: "パワードジムカーディガンアル", lastMonth: 37, thisMonth: 129, total: 166 },
-        { id: 17, badge: "🦊🔥", name: "アラン", machine: "ボールアラン = マクベイン", lastMonth: 3456, thisMonth: 544, total: 4000 },
-        { id: 18, badge: "南軍の魂", name: "アイアンサウス", machine: "ルッグン古い鉄", lastMonth: 23, thisMonth: 19292, total: 19315 },
-        { id: 19, badge: "💧🪨", name: "スパイク", machine: "ジム・ガードカスタムパブロ・ハニー", lastMonth: 0, thisMonth: 747, total: 747 },
-        { id: 20, badge: "🚢🫡", name: "カイジン", machine: "ボールカイジン", lastMonth: 0, thisMonth: 88, total: 88 },
-        { id: 21, badge: "🔰🔰", name: "Halbert", machine: "ガンダイバーHalbert", lastMonth: 0, thisMonth: 18, total: 18 }
-    ];
-
-    function loadMembers() {
-        const saved = localStorage.getItem('seiryoku_members_v2');
-        if (saved) {
-            try { return JSON.parse(saved); } catch (e) { return initialMembers; }
-        }
-        return initialMembers;
-    }
-
-    let members = loadMembers();
-
-    function renderTable() {
-        const tbody = document.getElementById('member-tbody');
-        tbody.innerHTML = '';
-
-        let totalThisMonthAll = 0;
-        let totalSeiryokuPAll = 0;
-
-        members.forEach((m, index) => {
-            const thisMonth = Number(m.thisMonth) || 0;
-            const companyFee = Math.floor(thisMonth * 0.20);
-            const memberShare = Math.floor(thisMonth * 0.80);
-            const total = Number(m.total) || 0;
-
-            totalThisMonthAll += thisMonth;
-            totalSeiryokuPAll += total;
-
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${index + 1}</td>
-                <td><input type="text" value="${m.badge}" data-index="${index}" style="width: 70px;"></td>
-                <td><input type="text" value="${m.name}" data-index="${index}"></td>
-                <td><input type="text" value="${m.machine}" data-index="${index}" style="width: 150px;"></td>
-                <td><input type="number" value="${m.lastMonth}" data-index="${index}"></td>
-                <td><input type="number" value="${m.thisMonth}" data-index="${index}" oninput="updateCalculations()"></td>
-                <td style="color: #ff9999; font-weight: bold;">${companyFee.toLocaleString()} P</td>
-                <td style="color: #99ff99; font-weight: bold;">${memberShare.toLocaleString()} P</td>
-                <td><input type="number" value="${m.total}" data-index="${index}" oninput="updateCalculations()"></td>
-            `;
-            tbody.appendChild(tr);
-        });
-
-        document.getElementById('total-seiryoku-p').innerText = totalSeiryokuPAll.toLocaleString() + ' P';
-        document.getElementById('total-reisei').innerText = `名声換算: ${Math.floor(totalSeiryokuPAll / 100).toLocaleString()} 名声 (100P = 1名声)`;
-        document.getElementById('total-this-month').innerText = totalThisMonthAll.toLocaleString() + ' P';
-        document.getElementById('total-company-fee').innerText = `運営費プール(20%): ${Math.floor(totalThisMonthAll * 0.20).toLocaleString()} P`;
-    }
-
-    function gatherInputData() {
-        const rows = document.querySelectorAll('#member-tbody tr');
-        rows.forEach((row, index) => {
-            const inputs = row.querySelectorAll('input');
-            members[index].badge = inputs[0].value;
-            members[index].name = inputs[1].value;
-            members[index].machine = inputs[2].value;
-            members[index].lastMonth = Number(inputs[3].value) || 0;
-            members[index].thisMonth = Number(inputs[4].value) || 0;
-            members[index].total = Number(inputs[5].value) || 0;
-        });
-    }
-
-    function updateCalculations() {
-        gatherInputData();
-        let totalThisMonthAll = 0;
-        let totalSeiryokuPAll = 0;
-
-        members.forEach(m => {
-            totalThisMonthAll += Number(m.thisMonth) || 0;
-            totalSeiryokuPAll += Number(m.total) || 0;
-        });
-
-        document.getElementById('total-seiryoku-p').innerText = totalSeiryokuPAll.toLocaleString() + ' P';
-        document.getElementById('total-reisei').innerText = `名声換算: ${Math.floor(totalSeiryokuPAll / 100).toLocaleString()} 名声 (100P = 1名声)`;
-        document.getElementById('total-this-month').innerText = totalThisMonthAll.toLocaleString() + ' P';
-        document.getElementById('total-company-fee').innerText = `運営費プール(20%): ${Math.floor(totalThisMonthAll * 0.20).toLocaleString()} P`;
-    }
-
-    function saveData() {
-        gatherInputData();
-        localStorage.setItem('seiryoku_members_v2', JSON.stringify(members));
-        alert('変更を保存しました！');
-        renderTable();
-    }
-
-    function resetData() {
-        if (confirm('初期データに戻しますか？')) {
-            localStorage.removeItem('seiryoku_members_v2');
-            members = [...initialMembers];
-            renderTable();
-            alert('初期データにリセットしました。');
-        }
-    }
-
-    window.onload = renderTable;
-</script>
 </body>
 </html>
