@@ -49,7 +49,7 @@ function renderTable() {
             <td><input type="number" value="${m.thisMonth}" data-index="${index}" oninput="updateCalculations()"></td>
             <td><input type="number" value="${m.total}" data-index="${index}" oninput="updateCalculations()"></td>
             <td><input type="number" value="${m.adjustment}" data-index="${index}" oninput="updateCalculations()" style="width: 80px; color: #ffeb3b;"></td>
-            <td style="color: #00d4ff; font-weight: bold; text-align: center;" id="reisei-${index}">${calculatedReisei.toLocaleString()} 名声</td>
+            <td class="highlight-column" id="reisei-${index}">${calculatedReisei.toLocaleString()} 名声</td>
         `;
         tbody.appendChild(tr);
     });
@@ -111,7 +111,6 @@ function renderHistoryTables() {
     });
 }
 
-// ログ追加フォームにメンバーごとの個別入力欄を生成
 function renderLogInputsContainer() {
     const container = document.getElementById('log-member-inputs');
     if (!container) return;
@@ -134,7 +133,6 @@ function renderLogsTable() {
     tbody.innerHTML = '';
 
     logsData.forEach(log => {
-        // 各メンバーの個別数値を「明細」として横並び表示用の文字列に変換
         let valuesSummary = "";
         if (log.values && Array.isArray(log.values)) {
             valuesSummary = log.values.map(v => `<span>${v}</span>`).join(' / ');
@@ -161,7 +159,6 @@ function addEventLog() {
         return;
     }
 
-    // 各メンバーの個別入力値を取得
     const valueInputs = document.querySelectorAll('.log-member-val');
     let memberValues = [];
     valueInputs.forEach(input => {
