@@ -190,7 +190,7 @@
         }
 
         input[type="number"] { width: 90px; }
-        input[type="text"] { width: 120px; }
+        input[type="text"] { width: 140px; }
 
         input:focus {
             outline: none;
@@ -259,7 +259,7 @@
             <div class="card">
                 <h3>勢力総ポイント（累計残高）</h3>
                 <div class="value" id="total-seiryoku-p">0 P</div>
-                <div class="sub-value" id="total-reisei">基準名声換算: 0 名声 (100P = 1名声)</div>
+                <div class="sub-value" id="total-reisei">基準名声換算: 0 名声 (10000P = 80名声 / 0.008倍)</div>
             </div>
             <div class="card">
                 <h3>今月の総稼ぎ値</h3>
@@ -275,23 +275,21 @@
 
         <!-- タブボタン -->
         <div class="tab-menu">
-            <button class="tab-btn active" onclick="switchTab(1)">📊 1. メンバー資産・名声残高管理</button>
-            <button class="tab-btn" onclick="switchTab(2)">📅 2. 各月獲得履歴・統計（控え）</button>
+            <button class="tab-btn active" onclick="switchTab(1)">📊 1. 名声残高</button>
+            <button class="tab-btn" onclick="switchTab(2)">📅 2. 各月勢力P記録</button>
         </div>
 
-        <!-- ================= タブ1：メンバー資産・名声管理 ================= -->
+        <!-- ================= タブ1：名声残高 ================= -->
         <div id="tab-1" class="tab-content active">
             <div class="table-container">
-                <h2>-Secret Society- メンバー 資産・名声残高管理シート</h2>
+                <h2>-Secret Society- メンバー 名声残高管理シート</h2>
                 <p style="font-size: 0.85rem; color: var(--sub-text);">※「名声調整±」にイベント追加や配布分のマイナス値を入力することで、実際の「名声残高」を自由に調整できます。</p>
                 
                 <table>
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>称号</th>
                             <th>メンバー名</th>
-                            <th>機体</th>
                             <th>前月稼ぎ値</th>
                             <th>当月稼ぎ値</th>
                             <th>勢力内累計</th>
@@ -311,7 +309,7 @@
             </div>
         </div>
 
-        <!-- ================= タブ2：各月獲得履歴・統計 ================= -->
+        <!-- ================= タブ2：各月勢力P記録 ================= -->
         <div id="tab-2" class="tab-content">
             <div class="table-container">
                 <h2>表_各月総獲得勢力P控え</h2>
