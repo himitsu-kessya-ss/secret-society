@@ -13,6 +13,10 @@
             --sub-text: #a0a0a0;
             --header-height: 60px;
             --border-color: #333;
+            /* 名声残高強調用の専用カラー */
+            --highlight-bg: rgba(0, 212, 255, 0.12);
+            --highlight-border: #00d4ff;
+            --highlight-text: #33f3ff;
         }
 
         body {
@@ -171,6 +175,23 @@
             z-index: 10;
         }
 
+        /* メンバーが一番気になる「名声残高」の列を目立たせる強調スタイル */
+        th.highlight-header {
+            background-color: #00384d;
+            color: #33f3ff;
+            border-bottom: 2px solid var(--highlight-border);
+            font-size: 0.95rem;
+        }
+
+        td.highlight-column {
+            background-color: var(--highlight-bg);
+            color: var(--highlight-text);
+            font-weight: bold;
+            text-align: center;
+            border-left: 1px dashed rgba(0, 212, 255, 0.4);
+            border-right: 1px dashed rgba(0, 212, 255, 0.4);
+        }
+
         tr:hover { background-color: rgba(255, 255, 255, 0.03); }
 
         input[type="number"], input[type="text"], input[type="date"] {
@@ -287,7 +308,7 @@
                             <th>当月稼ぎ値</th>
                             <th>勢力内累計</th>
                             <th>名声調整±</th>
-                            <th>名声残高</th>
+                            <th class="highlight-header">★ 名声残高</th>
                         </tr>
                     </thead>
                     <tbody id="member-tbody"></tbody>
