@@ -2,10 +2,8 @@
 // 秘密結社の部屋 - 勢力P管理データ (seiryoku-p-data.js)
 // ==========================================
 
-// 管理者認証パスワード
 const ADMIN_PASSWORD = "p@ssw0rd";
 
-// 初期メンバーデータ（21名分）
 const initialMembers = [
     { id: 1, badge: "❄️🦊", name: "Oro🍊min", machine: "ブリッツガンダム虚無空間", lastMonth: 36319, thisMonth: 96271, total: 132590, adjustment: 0 },
     { id: 2, badge: "🚢🚢", name: "キュゥべえ（提督）", machine: "ガンダイバー", lastMonth: 22615, thisMonth: 41587, total: 64202, adjustment: 0 },
@@ -30,7 +28,6 @@ const initialMembers = [
     { id: 21, badge: "🔰🔰", name: "Halbert", machine: "ガンダイバーHalbert", lastMonth: 0, thisMonth: 18, total: 18, adjustment: 0 }
 ];
 
-// タブ2用の履歴データ
 const initialHistory = [
     { year: 2026, date: "8/31", totalP: 100576, monthlyP: 100576, rate: 100.0, members: [36319, 22615, 4115, 668, 8406, 73, 327, 2900] },
     { year: 2026, date: "9/30", totalP: 155210, monthlyP: 54634, rate: 100.0, members: [50678, 31736, 6060, 575, 29808, 182, 63742, 21214] }
