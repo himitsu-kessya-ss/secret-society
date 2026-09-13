@@ -62,9 +62,21 @@ function renderTable() {
 }
 
 function renderHistoryTables() {
+    const totalThead = document.getElementById('history-total-thead');
     const totalTbody = document.getElementById('history-total-tbody');
+    
+    const monthlyThead = document.getElementById('history-monthly-thead');
     const monthlyTbody = document.getElementById('history-monthly-tbody');
+    
+    const rateThead = document.getElementById('history-rate-thead');
     const rateTbody = document.getElementById('history-rate-tbody');
+
+    // メンバー名からヘッダーのHTML（21人分）を動的に作成する
+    const memberHeadersHtml = members.map(m => `<th>${m.name}</th>`).join('');
+
+    totalThead.innerHTML = `<tr><th>年</th><th>確認日</th><th>全合計</th>${memberHeadersHtml}</tr>`;
+    monthlyThead.innerHTML = `<tr><th>年</th><th>確認日</th><th>当月獲得値</th>${memberHeadersHtml}</tr>`;
+    rateThead.innerHTML = `<tr><th>年</th><th>確認日</th><th>列 1</th>${memberHeadersHtml}</tr>`;
 
     totalTbody.innerHTML = '';
     monthlyTbody.innerHTML = '';
@@ -73,17 +85,21 @@ function renderHistoryTables() {
     historyData.forEach(h => {
         let tr1 = document.createElement('tr');
         tr1.innerHTML = `<td>${h.year}</td><td>${h.date}</td><td style="font-weight:bold; color:var(--accent-color);">${h.totalP.toLocaleString()}</td>` +
-            h.members.map(val => `<td>${val.toLocaleString()}</td>`).join('');
+            h.members.map(val => `<td>${(Number(val) || 0).toLocaleString()}</td>`).join('');
         totalTbody.appendChild(tr1);
 
         let tr2 = document.createElement('tr');
         tr2.innerHTML = `<td>${h.year}</td><td>${h.date}</td><td style="font-weight:bold; color:#99ff99;">${h.monthlyP.toLocaleString()}</td>` +
-            h.members.map(val => `<td>${val.toLocaleString()}</td>`).join('');
+            h.members.map(val => `<td>${(Number(val) || 0).toLocaleString()}</td>`).join('');
         monthlyTbody.appendChild(tr2);
 
         let tr3 = document.createElement('tr');
-        tr3.innerHTML = `<td>${h.year}</td><td>${h.date}</td><td>${h.rate.toFixed(1)}</td>` +
-            h.members.map(val => `<td>${((val / h.monthlyP) * 100).toFixed(1)}</td>`).join('');
+        let rateCells = h.members.map(val => {
+            const numVal = Number(val) || 0;
+            const percentage = h.monthlyP > 0 ? ((numVal / h.monthlyP) * 100).toFixed(1) : "0.0";
+            return `<td>${percentage}</td>`;
+        }).join('');
+        tr3.innerHTML = `<td>${h.year}</td><td>${h.date}</td><td>100.0</td>` + rateCells;
         rateTbody.appendChild(tr3);
     });
 }
