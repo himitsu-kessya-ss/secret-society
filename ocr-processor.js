@@ -30,7 +30,7 @@ export function levenshteinDistance(str1, str2) {
     return dp[m][n];
 }
 
-// マスター辞書との照合関数（長文・特殊能力の強力救済ルール付き）
+// マスター辞書との照合関数（短縮・アルファベット系特殊能力の強力救済ルール付き）
 export function getBestMatchingAbility(rawText) {
     if (!rawText) return null;
 
@@ -38,7 +38,12 @@ export function getBestMatchingAbility(rawText) {
     let cleanText = rawText.replace(/＋/g, '+').replace(/[\s\t\n|:._\-「」,、]/g, '');
     if (cleanText.length === 0) return null;
 
-    // 【最優先救済1】長文ビーム防御系（キーワードの断片からでも確実にヒットさせる）
+    // 【最優先救済0】「OT機」「NT機」「強化機」などの短縮系・属性系
+    if (cleanText.includes('OT機') || cleanText === 'OT' || cleanText.includes('OTき')) return 'OT機';
+    if (cleanText.includes('NT機') || cleanText === 'NT' || cleanText.includes('NTき')) return 'NT機';
+    if (cleanText.includes('強化機')) return '強化機';
+
+    // 【最優先救済1】長文ビーム防御系
     if ((cleanText.includes('中遠距離') || cleanText.includes('中遠') || cleanText.includes('ビーム防御')) && (cleanText.includes('実弾') || cleanText.includes('軽減') || cleanText.includes('ダメージ'))) {
         return '中遠距離のビーム防御、実弾ダメージ軽減';
     }
@@ -90,7 +95,7 @@ export function getBestMatchingAbility(rawText) {
             maxAllowedDist = 3;
         }
         if (master.length >= 15) {
-            maxAllowedDist = 6; // 長文はさらに広めに許容
+            maxAllowedDist = 6;
         }
 
         if (dist < lowestDistance && dist <= maxAllowedDist) {
@@ -112,7 +117,6 @@ export function cropAbilityRegion(file) {
 
             const cropHeight = Math.floor(img.height * 0.22);
             const cropY = img.height - cropHeight;
-            // 【変更】長文スキルが途中で切れないよう、切り出し幅を画面幅の「40%」から「75%」へと大きく拡張しました
             const cropWidth = Math.floor(img.width * 0.75);
 
             canvas.width = cropWidth;
