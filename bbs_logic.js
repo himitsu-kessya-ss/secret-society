@@ -9,23 +9,25 @@ let currentUser = {
 
 const MASTER_ADMIN_CODE = "p@ssw0rd";
 
-// ページ読み込み時の初期化処理
+// ページ読み込み時の初期化処理（アカウント情報の取得と顔アイコンの適用）
 window.onload = function() {
-    const isLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
     const loginUserId = sessionStorage.getItem('loginUserId') || 'secret';
+    const defaultAvatar = 'https://api.dicebear.com/7.x/pixel-art/svg?seed=' + loginUserId;
 
+    // アカウントストレージから最新のプレイヤー名と顔アイコンを取得
     const accountData = JSON.parse(localStorage.getItem('secret_user_account'));
     if (accountData) {
         currentUser.name = accountData.name || sessionStorage.getItem('loginUserName') || '管理人';
-        currentUser.avatar = accountData.avatar || ('https://api.dicebear.com/7.x/pixel-art/svg?seed=' + loginUserId);
+        currentUser.avatar = (accountData.avatar && accountData.avatar.trim() !== '') ? accountData.avatar : defaultAvatar;
     } else {
         currentUser.name = sessionStorage.getItem('loginUserName') || '管理人';
-        currentUser.avatar = 'https://api.dicebear.com/7.x/pixel-art/svg?seed=' + loginUserId;
+        currentUser.avatar = defaultAvatar;
     }
 
+    // 画面のログイン中バッジに名前とアイコンを反映
     document.getElementById('current-user-name').textContent = currentUser.name;
     const avatarBox = document.getElementById('current-user-avatar');
-    if (currentUser.avatar && currentUser.avatar.trim() !== '') {
+    if (currentUser.avatar) {
         avatarBox.innerHTML = `<img src="${currentUser.avatar}" alt="Avatar" onerror="this.onerror=null; this.parentNode.innerHTML='👤';">`;
     }
 
@@ -82,12 +84,12 @@ function processImages(files, callback) {
     });
 }
 
-// 新規スレッドの保存
+// 新規スレッドの保存（現在のユーザーのアバターを必ず紐づけて保存）
 function saveNewThread(username, avatar, content, images) {
     const newThread = {
         id: Date.now(),
         username,
-        avatar,
+        avatar, // 登録されている顔アイコンを保存
         content,
         images,
         timestamp: getNowDate(),
@@ -101,7 +103,7 @@ function saveNewThread(username, avatar, content, images) {
     document.getElementById('imageInput').value = '';
 }
 
-// スレッド一覧の描画（連番対応）
+// スレッド一覧の描画（顔アイコン＆連番対応）
 function renderThreads(filterText = '') {
     const threadListEl = document.getElementById('threadList');
     threadListEl.innerHTML = '';
@@ -148,13 +150,14 @@ function renderThreads(filterText = '') {
 
         const isOwner = (thread.username === currentUser.name);
         const ownerTagHtml = isOwner ? '<span class="owner-tag">あなたの投稿</span>' : '';
+        const threadAvatar = thread.avatar || 'https://api.dicebear.com/7.x/pixel-art/svg?seed=default';
 
         const card = document.createElement('div');
         card.className = 'thread-card';
         card.innerHTML = `
             <div class="post-header">
                 <div class="post-author-info">
-                    <img src="${thread.avatar}" class="avatar" alt="icon" onerror="this.src='https://api.dicebear.com/7.x/pixel-art/svg?seed=default'">
+                    <img src="${threadAvatar}" class="avatar" alt="icon" onerror="this.src='https://api.dicebear.com/7.x/pixel-art/svg?seed=default'">
                     <div class="post-meta">
                         <span class="username">${escapeHTML(thread.username)}</span>
                         <span class="timestamp">${thread.timestamp}</span>
