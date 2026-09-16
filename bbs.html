@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tactics BBS - 秘密結社の部屋</title>
+    <style>
+        :root {
+            --bg-color: #1a1c1e;
+            --card-bg: #25282c;
+            --accent-color: #00d4ff;
+            --admin-color: #ff9900;
+            --danger-color: #ff4d4d;
+            --text-color: #e0e0e0;
+            --sub-text: #a0a0a0;
+            --header-height: 60px;
+            --border-color: #333;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        /* 共通ヘッダー */
+        header {
+            background-color: rgba(0, 0, 0, 0.95);
+            height: var(--header-height);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 2px solid var(--accent-color);
+            padding: 0 15px;
+            box-sizing: border-box;
+        }
+
+        .logo-link {
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: var(--accent-color);
+            white-space: nowrap;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        .nav-links::-webkit-scrollbar { display: none; }
+
+        .nav-item-custom {
+            color: #e0e0e0; text-decoration: none; font-size: 0.85rem; 
+            padding: 6px 10px; border-radius: 4px; border: 1px solid transparent;
+            transition: 0.2s;
+        }
+        .nav-item-custom:hover, .nav-item-custom.active { 
+            background: rgba(0, 212, 255, 0.2); 
+            border-color: #00d4ff; 
+        }
+
+        /* メインコンテンツ */
+        .container {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .page-title {
+            color: var(--accent-color);
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+
+        /* コントロール・検索エリア */
+        .controls-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .search-box {
+            flex: 1;
+            padding: 10px 15px;
+            background: #1a1c1e;
+            border: 1px solid var(--accent-color);
+            border-radius: 20px;
+            color: var(--text-color);
+            font-size: 0.95rem;
+            outline: none;
+            transition: 0.2s;
+        }
+        .search-box:focus {
+            box-shadow: 0 0 8px rgba(0, 212, 255, 0.5);
+        }
+
+        /* 新規投稿カード */
+        .post-form-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .post-form-card h2 {
+            margin-top: 0;
+            font-size: 1.1rem;
+            color: var(--accent-color);
+            margin-bottom: 15px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.9rem;
+            color: var(--sub-text);
+            margin-bottom: 5px;
+        }
+        
+        /* アカウント連動表示用 */
+        .account-badge-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #1a1c1e;
+            padding: 10px 15px;
+            border-radius: 6px;
+            border: 1px solid #444;
+            margin-bottom: 15px;
+        }
+        .account-badge-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: #000;
+            border: 2px solid var(--accent-color);
+            object-fit: cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .account-badge-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .account-badge-info div {
+            font-size: 0.9rem;
+        }
+        .account-badge-info span {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            background: #1a1c1e;
+            border: 1px solid #444;
+            border-radius: 4px;
+            color: var(--text-color);
+            font-size: 1rem;
+            outline: none;
+            height: 100px;
+            resize: vertical;
+        }
+        .form-group textarea:focus {
+            border-color: var(--accent-color);
+        }
+
+        .submit-btn {
+            background: transparent;
+            color: var(--accent-color);
+            border: 1px solid var(--accent-color);
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .submit-btn:hover {
+            background: rgba(0, 212, 255, 0.2);
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+        }
+
+        /* スレッドカード */
+        .thread-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .post-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 12px;
+        }
+        .post-author-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #333;
+            object-fit: cover;
+            border: 1px solid var(--accent-color);
+        }
+        .post-meta {
+            display: flex;
+            flex-direction: column;
+        }
+        .username {
+            font-weight: bold;
+            color: var(--accent-color);
+            font-size: 0.95rem;
+        }
+        .timestamp {
+            font-size: 0.75rem;
+            color: var(--sub-text);
+        }
+        .post-content {
+            margin-bottom: 15px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            font-size: 0.95rem;
+        }
+
+        /* 画像ギャラリー */
+        .image-gallery {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .image-gallery img {
+            width: 90px;
+            height: 90px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid #444;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .image-gallery img:hover {
+            border-color: var(--accent-color);
+        }
+
+        /* アクションボタン */
+        .post-actions {
+            display: flex;
+            gap: 15px;
+            font-size: 0.85rem;
+            border-top: 1px solid #333;
+            padding-top: 10px;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .action-btns-group {
+            display: flex;
+            gap: 10px;
+        }
+        .action-btn {
+            background: none;
+            border: none;
+            color: var(--sub-text);
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .action-btn:hover {
+            color: var(--accent-color);
+        }
+        .action-btn.delete:hover {
+            color: var(--danger-color);
+        }
+        .owner-tag {
+            font-size: 0.75rem;
+            background: rgba(0, 212, 255, 0.1);
+            color: var(--accent-color);
+            border: 1px solid var(--accent-color);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        /* 返信セクション */
+        .replies-section {
+            margin-top: 15px;
+            padding-left: 15px;
+            border-left: 2px solid #333;
+        }
+        .reply-card {
+            background: #1e2125;
+            padding: 10px 12px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+        .reply-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--sub-text);
+            margin-bottom: 4px;
+        }
+        .reply-form {
+            margin-top: 10px;
+            display: flex;
+            gap: 8px;
+        }
+        .reply-form input {
+            flex: 1;
+            padding: 8px;
+            background: #1a1c1e;
+            border: 1px solid #444;
+            border-radius: 4px;
+            color: var(--text-color);
+            font-size: 0.9rem;
+            outline: none;
+        }
+        .reply-form input:focus {
+            border-color: var(--accent-color);
+        }
+        .reply-form button {
+            padding: 8px 14px;
+            background: transparent;
+            color: var(--accent-color);
+            border: 1px solid var(--accent-color);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .reply-form button:hover {
+            background: rgba(0, 212, 255, 0.2);
+        }
+        #loading-msg {
+            text-align: center;
+            color: var(--sub-text);
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 共通ヘッダー（tactics.html から bbs.html にリンクを修正済み） -->
+    <header>
+        <a href="index.html#main" class="logo-link">秘密結社の部屋</a>
+        <nav class="nav-links">
+            <a href="unit.html" class="nav-item-custom">Unit</a>
+            <a href="derivatives.html" class="nav-item-custom">Derivatives</a>
+            <a href="arms.html" class="nav-item-custom">Arms</a>
+            <a href="hangar.html" class="nav-item-custom">Hangar</a>
+            <a href="upload.html" class="nav-item-custom">Upload</a>
+            <a href="#" class="nav-item-custom">Battle</a>
+            <a href="novels.html" class="nav-item-custom">Novels</a>
+            <a href="bbs.html" class="nav-item-custom active">Tactics BBS</a>
+            <a href="hunter.html" class="nav-item-custom">Hunter</a>
+            <a href="trivia.html" class="nav-item-custom">Trivia</a>
+            <a href="emoji.html" class="nav-item-custom">Emoji</a>
+            <a href="account.html" class="nav-item-custom">Account</a>
+            <a href="#" class="nav-item-custom">Link</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <h1 class="page-title">🎮 攻略情報・戦術掲示板 (BBS)</h1>
+
+        <!-- 検索バー -->
+        <div class="controls-row">
+            <input type="text" id="searchInput" class="search-box" placeholder="🔍 過去の投稿やキーワードで検索..." oninput="filterPosts()">
+        </div>
+
+        <!-- 新規スレッド作成フォーム -->
+        <div class="post-form-card">
+            <h2>新規スレッド作成</h2>
+            
+            <div class="account-badge-box">
+                <div class="account-badge-avatar" id="current-user-avatar">👤</div>
+                <div class="account-badge-info">
+                    <div>ログイン中のキャラクター: <span id="current-user-name">読み込み中...</span></div>
+                    <div style="font-size: 0.75rem; color: var(--sub-text);">※この名前とアバターで投稿されます（<a href="account.html" style="color: var(--accent-color);">変更はこちら</a>）</div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="contentInput">投稿文（攻略法や質問など）</label>
+                <textarea id="contentInput" placeholder="例：〇〇ステージのボス攻略情報を共有します！"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="imageInput">画像を添付（複数選択可）</label>
+                <input type="file" id="imageInput" accept="image/*" multiple>
+            </div>
+            <button class="submit-btn" onclick="createPost()">スレッドを投稿する</button>
+        </div>
+
+        <!-- スレッド一覧表示エリア -->
+        <div id="loading-msg">読み込み中...</div>
+        <div id="threadList"></div>
+    </div>
+
+    <script>
+        let currentUser = {
+            name: "名無しパイロット",
+            avatar: "https://api.dicebear.com/7.x/pixel-art/svg?seed=default"
+        };
+
+        const MASTER_ADMIN_CODE = "p@ssw0rd";
+
+        window.onload = function() {
+            const isLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
+            const loginUserId = sessionStorage.getItem('loginUserId') || 'secret';
+
+            const accountData = JSON.parse(localStorage.getItem('secret_user_account'));
+            if (accountData) {
+                currentUser.name = accountData.name || sessionStorage.getItem('loginUserName') || '管理人';
+                currentUser.avatar = accountData.avatar || ('https://api.dicebear.com/7.x/pixel-art/svg?seed=' + loginUserId);
+            } else {
+                currentUser.name = sessionStorage.getItem('loginUserName') || '管理人';
+                currentUser.avatar = 'https://api.dicebear.com/7.x/pixel-art/svg?seed=' + loginUserId;
+            }
+
+            document.getElementById('current-user-name').textContent = currentUser.name;
+            const avatarBox = document.getElementById('current-user-avatar');
+            if (currentUser.avatar && currentUser.avatar.trim() !== '') {
+                avatarBox.innerHTML = `<img src="${currentUser.avatar}" alt="Avatar" onerror="this.onerror=null; this.parentNode.innerHTML='👤';">`;
+            }
+
+            document.getElementById('loading-msg').style.display = 'none';
+            renderThreads();
+        };
+
+        let threads = JSON.parse(localStorage.getItem('secret_bbs_threads')) || [
+            {
+                id: 1,
+                username: '管理人',
+                avatar: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=hero1',
+                content: '「秘密結社の部屋」戦術掲示板へようこそ！攻略のコツや編成情報を自由に共有してください。',
+                images: [],
+                timestamp: '2026/09/16 12:00:00',
+                replies: []
+            }
+        ];
+
+        function getNowDate() {
+            const d = new Date();
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const h = String(d.getHours()).padStart(2, '0');
+            const min = String(d.getMinutes()).padStart(2, '0');
+            const s = String(d.getSeconds()).padStart(2, '0');
+            return `${y}/${m}/${day} ${h}:${min}:${s}`;
+        }
+
+        function createPost() {
+            const contentInput = document.getElementById('contentInput');
+            const imageInput = document.getElementById('imageInput');
+
+            if (!contentInput.value.trim()) {
+                alert('投稿文を入力してください。');
+                return;
+            }
+
+            const files = imageInput.files;
+            if (files.length > 0) {
+                processImages(files, function(imageUrls) {
+                    saveNewThread(currentUser.name, currentUser.avatar, contentInput.value, imageUrls);
+                });
+            } else {
+                saveNewThread(currentUser.name, currentUser.avatar, contentInput.value, []);
+            }
+        }
+
+        function processImages(files, callback) {
+            let imageUrls = [];
+            let processedCount = 0;
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    imageUrls.push(e.target.result);
+                    processedCount++;
+                    if (processedCount === files.length) {
+                        callback(imageUrls);
+                    }
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function saveNewThread(username, avatar, content, images) {
+            const newThread = {
+                id: Date.now(),
+                username,
+                avatar,
+                content,
+                images,
+                timestamp: getNowDate(),
+                replies: []
+            };
+
+            threads.unshift(newThread);
+            saveAndRender();
+            
+            document.getElementById('contentInput').value = '';
+            document.getElementById('imageInput').value = '';
+        }
+
+        function renderThreads(filterText = '') {
+            const threadListEl = document.getElementById('threadList');
+            threadListEl.innerHTML = '';
+
+            const filtered = threads.filter(t => 
+                t.content.toLowerCase().includes(filterText.toLowerCase()) ||
+                t.username.toLowerCase().includes(filterText.toLowerCase())
+            );
+
+            if (filtered.length === 0) {
+                threadListEl.innerHTML = '<p style="text-align:center; color:var(--sub-text); padding: 20px;">該当するスレッドが見つかりませんでした。</p>';
+                return;
+            }
+
+            filtered.forEach(thread => {
+                let imagesHtml = '';
+                if (thread.images && thread.images.length > 0) {
+                    imagesHtml = '<div class="image-gallery">';
+                    thread.images.forEach(img => {
+                        imagesHtml += `<img src="${img}" onclick="window.open('${img}')" title="クリックして拡大">`;
+                    });
+                    imagesHtml += '</div>';
+                }
+
+                let repliesHtml = '';
+                if (thread.replies && thread.replies.length > 0) {
+                    thread.replies.forEach(reply => {
+                        repliesHtml += `
+                            <div class="reply-card">
+                                <div class="reply-meta">
+                                    <span><strong>${escapeHTML(reply.username)}</strong></span>
+                                    <span>${reply.timestamp}</span>
+                                </div>
+                                <div>${escapeHTML(reply.content)}</div>
+                            </div>
+                        `;
+                    });
+                }
+
+                const isOwner = (thread.username === currentUser.name);
+                const ownerTagHtml = isOwner ? '<span class="owner-tag">あなたの投稿</span>' : '';
+
+                const card = document.createElement('div');
+                card.className = 'thread-card';
+                card.innerHTML = `
+                    <div class="post-header">
+                        <div class="post-author-info">
+                            <img src="${thread.avatar}" class="avatar" alt="icon" onerror="this.src='https://api.dicebear.com/7.x/pixel-art/svg?seed=default'">
+                            <div class="post-meta">
+                                <span class="username">${escapeHTML(thread.username)}</span>
+                                <span class="timestamp">${thread.timestamp}</span>
+                            </div>
+                        </div>
+                        <div>${ownerTagHtml}</div>
+                    </div>
+                    <div class="post-content">${escapeHTML(thread.content)}</div>
+                    ${imagesHtml}
+                    <div class="post-actions">
+                        <div class="action-btns-group">
+                            <button class="action-btn" onclick="editThread(${thread.id}, '${escapeHTML(thread.username)}')">✏️ 編集</button>
+                            <button class="action-btn delete" onclick="deleteThread(${thread.id}, '${escapeHTML(thread.username)}')">🗑️ 削除</button>
+                        </div>
+                        <span style="font-size: 0.75rem; color: var(--sub-text);">投稿ID: ${thread.id}</span>
+                    </div>
+                    <div class="replies-section">
+                        ${repliesHtml}
+                        <div class="reply-form">
+                            <input type="text" id="replyInput_${thread.id}" placeholder="返信を入力...">
+                            <button onclick="addReply(${thread.id})">返信</button>
+                        </div>
+                    </div>
+                `;
+                threadListEl.appendChild(card);
+            });
+        }
+
+        function filterPosts() {
+            const query = document.getElementById('searchInput').value;
+            renderThreads(query);
+        }
+
+        function editThread(id, threadAuthor) {
+            const thread = threads.find(t => t.id === id);
+            if (!thread) return;
+
+            if (threadAuthor !== currentUser.name) {
+                const inputCode = prompt('この記事はあなたの投稿ではありません。\n編集するには管理者コードを入力してください：');
+                if (inputCode !== MASTER_ADMIN_CODE) {
+                    if (inputCode !== null) alert('管理者コードが違うため、編集できません。');
+                    return;
+                }
+            }
+
+            const newContent = prompt('投稿内容を編集してください:', thread.content);
+            if (newContent !== null) {
+                thread.content = newContent;
+                saveAndRender();
+                alert('投稿を更新しました！');
+            }
+        }
+
+        function deleteThread(id, threadAuthor) {
+            const thread = threads.find(t => t.id === id);
+            if (!thread) return;
+
+            if (threadAuthor !== currentUser.name) {
+                const inputCode = prompt('この記事はあなたの投稿ではありません。\n削除するには管理者コードを入力してください：');
+                if (inputCode !== MASTER_ADMIN_CODE) {
+                    if (inputCode !== null) alert('管理者コードが違うため、削除できません。');
+                    return;
+                }
+            }
+
+            if (confirm('このスレッドを削除してもよろしいですか？')) {
+                threads = threads.filter(t => t.id !== id);
+                saveAndRender();
+            }
+        }
+
+        function addReply(threadId) {
+            const inputEl = document.getElementById(`replyInput_${threadId}`);
+            const text = inputEl.value.trim();
+            if (!text) return;
+
+            const thread = threads.find(t => t.id === threadId);
+            if (thread) {
+                thread.replies.push({
+                    id: Date.now(),
+                    username: currentUser.name,
+                    content: text,
+                    timestamp: getNowDate()
+                });
+                saveAndRender();
+                inputEl.value = '';
+            }
+        }
+
+        function saveAndRender() {
+            localStorage.setItem('secret_bbs_threads', JSON.stringify(threads));
+            filterPosts();
+        }
+
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+            );
+        }
+    </script>
+</body>
+</html>
