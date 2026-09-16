@@ -1,171 +1,85 @@
 // ==========================================
-// アカウントページ用 処理ロジックファイル
+// アカウント管理 - ロジック・機能スクリプト (account_logic.js)
 // ==========================================
 
 window.onload = function() {
-    const isLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
-    if (!isLoggedIn) {
-        alert('ログインセッションが切れました。ログインしてください。');
-        window.location.href = 'index.html';
-        return;
-    }
+    const loginUserId = sessionStorage.getItem('loginUserId') || 'secret';
+    document.getElementById('current-login-id').textContent = loginUserId;
 
-    if (sessionStorage.getItem('isAdminUnlocked') === 'true') {
-        unlockPageContent();
-    } else {
-        document.getElementById('auth-overlay').style.display = 'flex';
-        document.getElementById('protected-content').style.display = 'none';
-    }
+    // データファイルからアカウント情報を取得してフォームに反映
+    const accountData = loadAccountData();
+    document.getElementById('nameInput').value = accountData.name || '';
+    document.getElementById('avatarInput').value = accountData.avatar || '';
+
+    updatePreview();
 };
 
-function verifyPageAdmin(event) {
-    event.preventDefault();
-    const inputPw = document.getElementById('page-admin-pw').value.trim();
-    const errorMsg = document.getElementById('page-auth-error');
+// 顔アイコンのプレビューをリアルタイム更新
+function updatePreview() {
+    const avatarInputVal = document.getElementById('avatarInput').value.trim();
+    const previewContainer = document.getElementById('preview-container');
+    const loginUserId = sessionStorage.getItem('loginUserId') || 'secret';
 
-    if (inputPw === ADMIN_PASSWORD_SECRET) {
-        errorMsg.style.display = 'none';
-        sessionStorage.setItem('isAdminUnlocked', 'true');
-        document.getElementById('page-admin-pw').value = '';
-        unlockPageContent();
-    } else {
-        errorMsg.style.display = 'block';
-    }
+    const defaultAvatar = 'https://api.dicebear.com/7.x/pixel-art/svg?seed=' + loginUserId;
+    const targetAvatar = avatarInputVal !== '' ? avatarInputVal : defaultAvatar;
+
+    previewContainer.innerHTML = `<img src="${targetAvatar}" alt="Avatar" onerror="this.onerror=null; this.parentNode.innerHTML='👤';">`;
 }
 
-function unlockPageContent() {
-    document.getElementById('auth-overlay').style.display = 'none';
-    document.getElementById('protected-content').style.display = 'block';
-    loadAccountList();
-}
+// プロフィール（名前・顔アイコン）の保存処理
+function saveProfileSettings() {
+    const nameVal = document.getElementById('nameInput').value.trim();
+    const avatarVal = document.getElementById('avatarInput').value.trim();
 
-function getCurrentFormattedDate() {
-    const now = new Date();
-    const yyyy = now.getFullYear();
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const dd = String(now.getDate()).padStart(2, '0');
-    const hh = String(now.getHours()).padStart(2, '0');
-    const min = String(now.getMinutes()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd} ${hh}:${min}`;
-}
-
-function getStoredAccounts() {
-    let accounts = JSON.parse(localStorage.getItem('secret_managed_accounts'));
-    if (!accounts) {
-        accounts = INITIAL_ACCOUNTS;
-        localStorage.setItem('secret_managed_accounts', JSON.stringify(accounts));
-    }
-    return accounts;
-}
-
-// 一覧テーブルを描画（並び順：ID, PW, キャラ名, 権限, メモ, 最終更新日）
-function loadAccountList() {
-    const accounts = getStoredAccounts();
-    const tbody = document.getElementById('account-list-tbody');
-    tbody.innerHTML = '';
-
-    accounts.forEach((acc, index) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><strong>${acc.id}</strong></td>
-            <td><input type="text" id="pw-${index}" value="${acc.pw}"></td>
-            <td><input type="text" id="chara-${index}" value="${acc.charaName || ''}"></td>
-            <td>
-                <select id="role-${index}">
-                    <option value="一般" ${acc.role === '一般' ? 'selected' : ''}>一般</option>
-                    <option value="管理者" ${acc.role === '管理者' ? 'selected' : ''}>管理者</option>
-                    <option value="ゲスト" ${acc.role === 'ゲスト' ? 'selected' : ''}>ゲスト</option>
-                </select>
-            </td>
-            <td><input type="text" id="memo-${index}" value="${acc.memo || ''}"></td>
-            <td style="font-size: 0.75rem; color: var(--sub-text); white-space: nowrap;">${acc.updated || '--'}</td>
-            <td>
-                <div style="display: flex; gap: 4px;">
-                    <button type="button" class="btn btn-primary" style="padding: 4px 8px; font-size: 0.75rem;" onclick="updateAccount(${index})">保存</button>
-                    <button type="button" class="btn btn-danger" style="padding: 4px 8px; font-size: 0.75rem;" onclick="deleteAccount(${index})">削除</button>
-                </div>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
-}
-
-// 新規アカウント発行
-function createAccount(event) {
-    event.preventDefault();
-    const newId = document.getElementById('new-id').value.trim();
-    const newPw = document.getElementById('new-pw').value.trim();
-    const newChara = document.getElementById('new-charaname').value.trim();
-    const newRole = document.getElementById('new-role').value;
-    const newMemo = document.getElementById('new-memo').value.trim();
-
-    let accounts = getStoredAccounts();
-
-    if (accounts.some(acc => acc.id === newId)) {
-        alert('エラー: すでに存在するアカウントIDです。');
+    if (!nameVal) {
+        alert('プレイヤー名を入力してください。');
         return;
     }
 
-    accounts.push({
-        id: newId,
-        pw: newPw,
-        charaName: newChara,
-        role: newRole,
-        memo: newMemo,
-        updated: getCurrentFormattedDate()
-    });
+    let accountData = loadAccountData();
+    accountData.name = nameVal;
+    accountData.avatar = avatarVal;
 
-    localStorage.setItem('secret_managed_accounts', JSON.stringify(accounts));
+    saveAccountData(accountData);
+    sessionStorage.setItem('loginUserName', nameVal); // セッション側も同期
 
-    document.getElementById('create-account-form').reset();
-    loadAccountList();
-    alert(`アカウント「${newId}」を発行しました！`);
+    const successMsg = document.getElementById('profileSuccessMsg');
+    successMsg.style.display = 'block';
+    setTimeout(() => {
+        successMsg.style.display = 'none';
+    }, 3000);
 }
 
-// 既存アカウントの編集・保存
-function updateAccount(index) {
-    let accounts = getStoredAccounts();
-    const pwInput = document.getElementById(`pw-${index}`).value.trim();
-    const charaInput = document.getElementById(`chara-${index}`).value.trim();
-    const roleInput = document.getElementById(`role-${index}`).value;
-    const memoInput = document.getElementById(`memo-${index}`).value.trim();
+// パスワード変更処理
+function changePassword() {
+    const currentPw = document.getElementById('currentPassword').value;
+    const newPw = document.getElementById('newPassword').value;
 
-    if (!pwInput) {
-        alert('パスワードを空にはできません。');
+    if (!currentPw || !newPw) {
+        alert('現在のパスワードと新しいパスワードの両方を入力してください。');
         return;
     }
 
-    accounts[index].pw = pwInput;
-    accounts[index].charaName = charaInput;
-    accounts[index].role = roleInput;
-    accounts[index].memo = memoInput;
-    accounts[index].updated = getCurrentFormattedDate();
+    let storedPassword = getStoredPassword();
 
-    localStorage.setItem('secret_managed_accounts', JSON.stringify(accounts));
-    loadAccountList();
-    alert(`アカウント「${accounts[index].id}」の設定を保存しました！`);
-}
-
-// アカウント削除
-function deleteAccount(index) {
-    let accounts = getStoredAccounts();
-    const targetId = accounts[index].id;
-
-    if (confirm(`本当にアカウント「${targetId}」を削除しますか？`)) {
-        accounts.splice(index, 1);
-        localStorage.setItem('secret_managed_accounts', JSON.stringify(accounts));
-        loadAccountList();
+    if (currentPw !== storedPassword) {
+        alert('現在のパスワードが間違っています。');
+        return;
     }
-}
 
-function lockAndExit() {
-    sessionStorage.removeItem('isAdminUnlocked');
-    window.location.href = 'index.html#main';
-}
-
-function logout() {
-    if (confirm('完全ログアウトしますか？')) {
-        sessionStorage.clear();
-        window.location.href = 'index.html';
+    if (newPw.length < 4) {
+        alert('新しいパスワードは4文字以上で設定してください。');
+        return;
     }
+
+    setStoredPassword(newPw);
+
+    document.getElementById('currentPassword').value = '';
+    document.getElementById('newPassword').value = '';
+
+    const pwSuccessMsg = document.getElementById('pwSuccessMsg');
+    pwSuccessMsg.style.display = 'block';
+    setTimeout(() => {
+        pwSuccessMsg.style.display = 'none';
+    }, 3000);
 }
