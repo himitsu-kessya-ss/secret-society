@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>アカウント管理 - 秘密結社の部屋</title>
+    <title>Account Management - 秘密結社の部屋</title>
     <style>
         :root {
             --bg-color: #1a1c1e;
             --card-bg: #25282c;
             --accent-color: #00d4ff;
-            --admin-color: #ff9900;
             --text-color: #e0e0e0;
             --sub-text: #a0a0a0;
             --header-height: 60px;
@@ -58,17 +57,24 @@
             padding: 6px 10px; border-radius: 4px; border: 1px solid transparent;
             transition: 0.2s;
         }
-        .nav-item-custom:hover { background: rgba(0, 212, 255, 0.2); border-color: #00d4ff; }
+        .nav-item-custom:hover, .nav-item-custom.active { 
+            background: rgba(0, 212, 255, 0.2); 
+            border-color: #00d4ff; 
+        }
 
         .container {
             width: 100%;
-            max-width: 1000px;
+            max-width: 600px;
             margin: 30px auto;
             padding: 20px;
             box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            gap: 25px;
+        }
+
+        .page-title {
+            color: var(--accent-color);
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
         }
 
         .card {
@@ -77,34 +83,20 @@
             border-radius: 12px;
             padding: 25px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-            box-sizing: border-box;
-        }
-
-        h2 {
-            color: var(--accent-color);
-            margin-top: 0;
-            font-size: 1.5rem;
-            border-bottom: 1px solid #444;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
-
-        h2.admin-title {
-            color: var(--admin-color);
         }
 
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
 
         .form-group label {
             display: block;
             font-size: 0.9rem;
             color: var(--sub-text);
-            margin-bottom: 5px;
+            margin-bottom: 8px;
         }
 
-        .form-group input, .form-group select {
+        .form-group input {
             width: 100%;
             padding: 10px;
             box-sizing: border-box;
@@ -114,244 +106,173 @@
             color: var(--text-color);
             font-size: 1rem;
             outline: none;
-            transition: border-color 0.2s;
         }
 
-        .form-group input:focus, .form-group select:focus {
+        .form-group input:focus {
             border-color: var(--accent-color);
         }
 
-        .btn {
+        /* アバタープレビュー */
+        .avatar-preview-box {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            background: #1a1c1e;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+        .avatar-img {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #000;
+            border: 2px solid var(--accent-color);
+            object-fit: cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .avatar-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .save-btn {
+            background: transparent;
+            color: var(--accent-color);
+            border: 1px solid var(--accent-color);
             padding: 10px 20px;
-            font-size: 0.95rem;
+            font-size: 1rem;
             border-radius: 4px;
             cursor: pointer;
             transition: 0.3s;
-            text-align: center;
-            border: 1px solid;
-            text-decoration: none;
-            box-sizing: border-box;
+            width: 100%;
         }
-
-        .btn-primary {
-            background: transparent;
-            color: var(--accent-color);
-            border-color: var(--accent-color);
-        }
-        .btn-primary:hover {
-            background: rgba(0, 212, 255, 0.1);
+        .save-btn:hover {
+            background: rgba(0, 212, 255, 0.2);
             box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
         }
 
-        .btn-admin {
-            background: transparent;
-            color: var(--admin-color);
-            border-color: var(--admin-color);
-        }
-        .btn-admin:hover {
-            background: rgba(255, 153, 0, 0.1);
-            box-shadow: 0 0 10px rgba(255, 153, 0, 0.3);
-        }
-
-        .btn-danger {
-            background: transparent;
-            color: #ff5555;
-            border-color: #ff5555;
-        }
-        .btn-danger:hover {
-            background: rgba(255, 85, 85, 0.1);
-            box-shadow: 0 0 10px rgba(255, 85, 85, 0.3);
-        }
-
-        .error-message {
-            color: #ff5555;
-            font-size: 0.85rem;
-            margin-top: 8px;
-            display: none;
-        }
-
-        /* アカウント一覧テーブル */
-        .account-table-container {
-            overflow-x: auto;
-            margin-top: 15px;
-        }
-
-        .account-table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: left;
-            font-size: 0.85rem;
-        }
-
-        .account-table th, .account-table td {
-            padding: 10px;
-            border-bottom: 1px solid #333;
-            vertical-align: middle;
-        }
-
-        .account-table th {
-            color: var(--sub-text);
-            background: #1a1c1e;
-            white-space: nowrap;
-        }
-
-        .account-table input, .account-table select {
-            background: #1a1c1e;
-            border: 1px solid #444;
-            color: var(--text-color);
-            padding: 6px;
-            border-radius: 4px;
-            width: 100%;
-            box-sizing: border-box;
-            font-size: 0.85rem;
-        }
-
-        /* 認証オーバーレイ */
-        #auth-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(26, 28, 30, 0.95);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-        }
-
-        .auth-card {
-            background: var(--card-bg);
-            border: 2px solid var(--admin-color);
-            border-radius: 12px;
-            padding: 30px;
-            width: 100%;
-            max-width: 380px;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7);
-            box-sizing: border-box;
+        .success-msg {
+            color: #00ffcc;
+            font-size: 0.9rem;
+            margin-top: 10px;
             text-align: center;
-        }
-
-        #protected-content {
             display: none;
         }
     </style>
 </head>
 <body>
 
-    <!-- 共通ヘッダー -->
-    <header id="main-header">
+    <header>
         <a href="index.html#main" class="logo-link">秘密結社の部屋</a>
         <nav class="nav-links">
-            <a href="unit.html" class="nav-item-custom">Unit</a>
+            <a href="unit.html" class="nav-item-custom" style="display: none;">Unit</a>
             <a href="derivatives.html" class="nav-item-custom">Derivatives</a>
             <a href="arms.html" class="nav-item-custom">Arms</a>
-            <a href="hangar.html" class="nav-item-custom">Hangar</a>
+            <a href="hangar.html" class="nav-item-custom" style="display: none;">Hangar</a>
             <a href="seiryoku-p.html" class="nav-item-custom" style="color: var(--accent-color); border-color: var(--accent-color);">勢力P管理</a>
             <a href="upload.html" class="nav-item-custom">Upload</a>
             <a href="#" class="nav-item-custom">Battle</a>
             <a href="novels.html" class="nav-item-custom">Novels</a>
-            <a href="tactics.html" class="nav-item-custom">Tactics</a>
+            <a href="bbs.html" class="nav-item-custom">秘密結社BBS</a>
             <a href="hunter.html" class="nav-item-custom">Hunter</a>
             <a href="trivia.html" class="nav-item-custom">Trivia</a>
             <a href="emoji.html" class="nav-item-custom">Emoji</a>
-            <a href="account.html" class="nav-item-custom" style="border-color: var(--accent-color);">Account</a>
+            <a href="account.html" class="nav-item-custom active">Account</a>
             <a href="#" class="nav-item-custom">Link</a>
         </nav>
     </header>
 
-    <!-- 管理者認証画面 -->
-    <div id="auth-overlay">
-        <div class="auth-card">
-            <h2 class="admin-title" style="margin-bottom: 15px; font-size: 1.3rem;">🔒 管理者認証が必要です</h2>
-            <p style="color: var(--sub-text); font-size: 0.85rem; margin-bottom: 20px;">
-                アカウント管理ページにアクセスするには、管理者パスワードの入力が必要です。
-            </p>
-            <form id="page-auth-form" onsubmit="verifyPageAdmin(event)">
-                <div class="form-group" style="text-align: left;">
-                    <label for="page-admin-pw">管理者パスワード</label>
-                    <input type="password" id="page-admin-pw" placeholder="パスワードを入力" required>
+    <div class="container">
+        <h1 class="page-title">⚙️ プレイヤーアカウント設定</h1>
+
+        <div class="card">
+            <div class="form-group">
+                <label>現在の顔アイコン プレビュー</label>
+                <div class="avatar-preview-box">
+                    <div class="avatar-img" id="preview-container">👤</div>
+                    <div style="font-size: 0.85rem; color: var(--sub-text);">
+                        ※登録された画像URL、または自動生成アイコンが表示されます。
+                    </div>
                 </div>
-                <div id="page-auth-error" class="error-message">パスワードが違います</div>
-                <button type="submit" class="btn btn-admin" style="width: 100%; margin-top: 10px;">認証して入室する</button>
-            </form>
-            <div style="margin-top: 15px;">
-                <a href="index.html#main" style="color: var(--sub-text); font-size: 0.8rem; text-decoration: none;">← トップページに戻る</a>
             </div>
+
+            <div class="form-group">
+                <label for="nameInput">プレイヤー名（キャラクター名）</label>
+                <input type="text" id="nameInput" placeholder="名前を入力">
+            </div>
+
+            <div class="form-group">
+                <label for="avatarInput">顔アイコン画像URL（任意）</label>
+                <input type="text" id="avatarInput" placeholder="https://example.com/icon.png など" oninput="updatePreview()">
+                <div style="font-size: 0.75rem; color: var(--sub-text); margin-top: 4px;">※画像のアドレスを入力すると、アイコンとして反映されます。空欄の場合は自動アイコンになります。</div>
+            </div>
+
+            <button class="save-btn" onclick="saveAccountSettings()">設定を保存する</button>
+            <div id="successMsg" class="success-msg">設定を保存しました！</div>
         </div>
     </div>
 
-    <!-- 認証成功後のメインコンテンツ -->
-    <div id="protected-content" class="container">
-        
-        <!-- 1. 新規アカウント発行カード（並び：ID, PW, キャラ名, 権限, メモ） -->
-        <div class="card">
-            <h2 class="admin-title">➕ 新規アカウント発行</h2>
-            <form id="create-account-form" onsubmit="createAccount(event)">
-                <div class="form-group">
-                    <label for="new-id">アカウント ID</label>
-                    <input type="text" id="new-id" placeholder="半角英数字など（例: pilot2）" required>
-                </div>
-                <div class="form-group">
-                    <label for="new-pw">パスワード (PW)</label>
-                    <input type="text" id="new-pw" placeholder="パスワードを入力" required>
-                </div>
-                <div class="form-group">
-                    <label for="new-charaname">キャラクター名</label>
-                    <input type="text" id="new-charaname" placeholder="ゲーム内や掲示板での表示名">
-                </div>
-                <div class="form-group">
-                    <label for="new-role">権限レベル</label>
-                    <select id="new-role">
-                        <option value="一般">一般</option>
-                        <option value="管理者">管理者</option>
-                        <option value="ゲスト">ゲスト</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="new-memo">メモ</label>
-                    <input type="text" id="new-memo" placeholder="用途や担当者名など">
-                </div>
-                <button type="submit" class="btn btn-admin">アカウントを発行する</button>
-            </form>
-        </div>
+    <script>
+        window.onload = function() {
+            const savedData = JSON.parse(localStorage.getItem('secret_user_account'));
+            const loginUserName = sessionStorage.getItem('loginUserName') || '名無しパイロット';
+            const loginUserId = sessionStorage.getItem('loginUserId') || 'secret';
 
-        <!-- 2. アカウント一覧カード（並び：ID, PW, キャラ名, 権限, メモ, 最終更新日） -->
-        <div class="card">
-            <h2>📜 登録アカウント一覧（編集・削除）</h2>
-            <p style="font-size: 0.85rem; color: var(--sub-text);">
-                各項目を直接書き換えて「保存」ボタンを押すと、最終更新日時が自動更新されます。
-            </p>
-            <div class="account-table-container">
-                <table class="account-table">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>PW</th>
-                            <th>キャラクター名</th>
-                            <th>権限レベル</th>
-                            <th>メモ</th>
-                            <th>最終更新日</th>
-                            <th>操作</th>
-                        </tr>
-                    </thead>
-                    <tbody id="account-list-tbody">
-                        <!-- JavaScriptで動的に生成されます -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
+            const nameInput = document.getElementById('nameInput');
+            const avatarInput = document.getElementById('avatarInput');
 
-        <!-- 3. 退出・ログアウトボタン -->
-        <div style="display: flex; gap: 15px; justify-content: flex-end;">
-            <button type="button" class="btn btn-primary" onclick="lockAndExit()">管理画面をロックして退出</button>
-            <button type="button" class="btn btn-danger" onclick="logout()">完全ログアウト</button>
-        </div>
-    </div>
+            if (savedData) {
+                nameInput.value = savedData.name || loginUserName;
+                avatarInput.value = savedData.avatar || '';
+            } else {
+                nameInput.value = loginUserName;
+                avatarInput.value = '';
+            }
+            updatePreview();
+        };
 
-    <!-- 外部スクリプトの読み込み -->
-    <script src="account-data.js"></script>
-    <script src="account-logic.js"></script>
-    <script data-goatcounter="https://bobs-base.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+        function updatePreview() {
+            const avatarInputVal = document.getElementById('avatarInput').value.trim();
+            const previewContainer = document.getElementById('preview-container');
+            const loginUserId = sessionStorage.getItem('loginUserId') || 'secret';
+
+            const defaultAvatar = 'https://api.dicebear.com/7.x/pixel-art/svg?seed=' + loginUserId;
+            const targetAvatar = avatarInputVal !== '' ? avatarInputVal : defaultAvatar;
+
+            previewContainer.innerHTML = `<img src="${targetAvatar}" alt="Avatar" onerror="this.onerror=null; this.parentNode.innerHTML='👤';">`;
+        }
+
+        function saveAccountSettings() {
+            const nameVal = document.getElementById('nameInput').value.trim();
+            const avatarVal = document.getElementById('avatarInput').value.trim();
+
+            if (!nameVal) {
+                alert('プレイヤー名を入力してください。');
+                return;
+            }
+
+            const accountData = {
+                name: nameVal,
+                avatar: avatarVal
+            };
+
+            localStorage.setItem('secret_user_account', JSON.stringify(accountData));
+            sessionStorage.setItem('loginUserName', nameVal); // セッション側も同期
+
+            const successMsg = document.getElementById('successMsg');
+            successMsg.style.display = 'block';
+            setTimeout(() => {
+                successMsg.style.display = 'none';
+            }, 3000);
+        }
+    </script>
 </body>
 </html>
