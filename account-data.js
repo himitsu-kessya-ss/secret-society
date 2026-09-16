@@ -3,4 +3,4 @@
 // ==========================================
 
 // 管理者認証用パスワード
-const ADMIN_PASSWORD_SECRET = "12342234";
+const ADMIN_PASSWORD_SECRET = "p@ssw0rd";
