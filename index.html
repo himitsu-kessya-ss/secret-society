@@ -179,7 +179,6 @@
             box-shadow: 0 5px 15px rgba(0, 212, 255, 0.3);
         }
 
-        /* 工事中カードのスタイル */
         .under-const {
             opacity: 0.6;
             cursor: default;
@@ -223,6 +222,7 @@
             <a href="hunter.html" class="nav-item-custom">Hunter</a>
             <a href="trivia.html" class="nav-item-custom">Trivia</a>
             <a href="emoji.html" class="nav-item-custom">Emoji</a>
+            <a href="account.html" class="nav-item-custom">Account</a>
             <a href="#" class="nav-item-custom">Link</a>
         </nav>
     </header>
@@ -269,7 +269,6 @@
                     </div>
                  </a>
 
-                 <!-- 新しく追加した勢力P管理のカード -->
                  <a href="seiryoku-p.html" class="card" style="border-color: var(--accent-color);">
                     <div class="card-img" style="background: #112233;">
                         <span style="font-size: 2.5rem;">👑</span>
@@ -388,20 +387,40 @@
     </div>
 
 <script>
-    // ログイン用の正解ID・パスワード設定
-    const VALID_ID = "secret";
-    const VALID_PW = "12342234";
+    // -------------------------------------------------------------
+    // ユーザーリスト（もとの認証情報 "secret" / "12342234" を確実に保持）
+    // -------------------------------------------------------------
+    const VALID_USERS = [
+        { id: "secret", pw: "12342234", name: "管理人" },  // ← もとの認証情報
+        { id: "pilot1", pw: "abcd1234", name: "パイロットA" }   // 必要に応じて追加できる予備枠
+    ];
 
     function handleLogin(event) {
         event.preventDefault(); // ページのリロードを防止
         
-        const idInput = document.getElementById('username').value;
-        const pwInput = document.getElementById('password').value;
+        const idInput = document.getElementById('username').value.trim();
+        const pwInput = document.getElementById('password').value.trim();
         const errorMsg = document.getElementById('error-msg');
 
-        if (idInput === VALID_ID && pwInput === VALID_PW) {
+        // リストの中から入力されたIDとパスワードが一致するものを探す
+        const matchedUser = VALID_USERS.find(user => user.id === idInput && user.pw === pwInput);
+
+        if (matchedUser) {
             errorMsg.style.display = 'none';
-            sessionStorage.setItem('isLoggedIn', 'true'); // 認証成功フラグを保存
+            
+            // ログイン状態とユーザー名をブラウザのセッションに保存
+            sessionStorage.setItem('isLoggedIn', 'true');
+            sessionStorage.setItem('loginUserId', matchedUser.id);
+            sessionStorage.setItem('loginUserName', matchedUser.name);
+            
+            // アカウント設定がまだない場合の初期値をセット
+            if (!localStorage.getItem('secret_user_account')) {
+                localStorage.setItem('secret_user_account', JSON.stringify({
+                    name: matchedUser.name,
+                    avatar: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=' + matchedUser.id
+                }));
+            }
+
             goToMain();
         } else {
             errorMsg.style.display = 'block';
@@ -418,7 +437,7 @@
         if (pageId === 'main-page') {
             header.style.display = 'flex';
             
-            // メインページに入ってから10秒後に実行
+            // メインページに入ってから10秒後にシークレットカードを表示
             setTimeout(() => {
                 if (secretCard) {
                     secretCard.style.display = 'flex';
@@ -439,7 +458,7 @@
         }
         window.scrollTo(0, 0);
         
-        // GoatCounter手動トラッキング
+        // GoatCounterトラッキング
         if (window.goatcounter) goatcounter.count({ path: '/#' + pageId });
     }
 
@@ -448,16 +467,15 @@
         showPage('main-page'); 
     }
     
-    // ページ読み込み・URLハッシュ変化時の制御
+    // ページ読み込み・URLハッシュ変化時のルーティング制御
     function checkAuthAndRoute() {
         const isLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
         
-        // 未ログイン状態で#mainにアクセスしようとした場合はトップに引き戻す
         if (window.location.hash === '#main') {
             if (isLoggedIn) {
                 showPage('main-page');
             } else {
-                location.hash = ""; // URLの#mainをクリア
+                location.hash = ""; 
                 showPage('top-page');
             }
         } else {
