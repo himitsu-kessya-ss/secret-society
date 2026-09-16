@@ -210,10 +210,10 @@
     <header id="main-header">
         <a href="index.html#main" class="logo-link" onclick="location.reload()">秘密結社の部屋</a>
         <nav class="nav-links">
-            <a href="unit.html" class="nav-item-custom">Unit</a>
+            <a href="unit.html" class="nav-item-custom" style="display: none;">Unit</a>
             <a href="derivatives.html" class="nav-item-custom">Derivatives</a>
             <a href="arms.html" class="nav-item-custom">Arms</a>
-            <a href="hangar.html" class="nav-item-custom">Hangar</a>
+            <a href="hangar.html" class="nav-item-custom" style="display: none;">Hangar</a>
             <a href="seiryoku-p.html" class="nav-item-custom" style="color: var(--accent-color); border-color: var(--accent-color);">勢力P管理</a>
             <a href="upload.html" class="nav-item-custom">Upload</a>
             <a href="#" class="nav-item-custom">Battle</a>
@@ -249,16 +249,7 @@
     <div id="main-page" class="page">
         <div class="container">
             <div class="grid">
-                 <a href="unit.html" class="card">
-                    <div class="card-img">
-                        <img src="unit.gif" alt="Unit Database" class="gif-icon">
-                    </div>
-                    <div class="card-content">
-                        <h3 class="card-title">Unit Database</h3>
-                        <p class="card-desc">機体ステータス・特殊能力データ</p>
-                    </div>
-                 </a>
-                 
+                 <!-- 1. SS Upload（最上段に移動） -->
                  <a href="upload.html" class="card">
                     <div class="card-img" style="background: #112233;">
                         <span style="font-size: 2.5rem;">📸</span>
@@ -269,6 +260,18 @@
                     </div>
                  </a>
 
+                 <!-- Unit Database（非表示） -->
+                 <a href="unit.html" class="card" style="display: none;">
+                    <div class="card-img">
+                        <img src="unit.gif" alt="Unit Database" class="gif-icon">
+                    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">Unit Database</h3>
+                        <p class="card-desc">機体ステータス・特殊能力データ</p>
+                    </div>
+                 </a>
+                 
+                 <!-- Account 管理カード -->
                  <a href="account.html" class="card">
                     <div class="card-img" style="background: #112233;">
                         <span style="font-size: 2.5rem;">⚙️</span>
@@ -279,7 +282,8 @@
                     </div>
                  </a>
 
-                 <a href="seiryoku-p.html" class="card" style="border-color: var(--accent-color);">
+                 <!-- Seiryoku P（青縁を削除） -->
+                 <a href="seiryoku-p.html" class="card">
                     <div class="card-img" style="background: #112233;">
                         <span style="font-size: 2.5rem;">👑</span>
                     </div>
@@ -307,7 +311,9 @@
                         <p class="card-desc">武器・装備データと武器庫システム</p>
                     </div>
                 </a>
-                <a href="hangar.html" class="card">
+
+                <!-- Hangar（非表示） -->
+                <a href="hangar.html" class="card" style="display: none;">
                     <div class="card-img">
                         <img src="hangar.gif" alt="Hangar" class="gif-icon">
                     </div>
@@ -316,6 +322,7 @@
                         <p class="card-desc">勢力メンバー専用ハンガーデッキ</p>
                     </div>
                 </a>
+
                 <a href="javascript:void(0)" class="card under-const">
                     <div class="card-img">
                         <img src="battle.gif" alt="Battle Data" class="gif-icon">
