@@ -1,8 +1,9 @@
 // ==========================================
-// アカウントページ用 処理ロジックファイル
+// アカウントページ用 処理ロジックファイル (B案対応)
 // ==========================================
 
 window.onload = function() {
+    // 1. まず通常のログインチェック
     const isLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
     if (!isLoggedIn) {
         alert('ログインセッションが切れました。ログインしてください。');
@@ -10,7 +11,40 @@ window.onload = function() {
         return;
     }
 
-    // ログインIDの表示
+    // 2. 既にこのブラウザセッションで「管理者認証」が通っているか確認
+    if (sessionStorage.getItem('isAdminUnlocked') === 'true') {
+        unlockPageContent();
+    } else {
+        // まだならオーバーレイ（ロック画面）を表示したままにする
+        document.getElementById('auth-overlay').style.display = 'flex';
+        document.getElementById('protected-content').style.display = 'none';
+    }
+};
+
+// ページ入室時の管理者パスワード検証処理
+function verifyPageAdmin(event) {
+    event.preventDefault();
+    const inputPw = document.getElementById('page-admin-pw').value.trim();
+    const errorMsg = document.getElementById('page-auth-error');
+
+    if (inputPw === ADMIN_PASSWORD_SECRET) {
+        errorMsg.style.display = 'none';
+        sessionStorage.setItem('isAdminUnlocked', 'true');
+        document.getElementById('page-admin-pw').value = '';
+        unlockPageContent();
+    } else {
+        errorMsg.style.display = 'block';
+    }
+}
+
+// 認証成功時にコンテンツをアンロックして表示する処理
+function unlockPageContent() {
+    // ロック画面を隠す
+    document.getElementById('auth-overlay').style.display = 'none';
+    // メインコンテンツを表示
+    document.getElementById('protected-content').style.display = 'flex';
+
+    // ログインIDの反映
     const loginUserId = sessionStorage.getItem('loginUserId') || 'secret';
     document.getElementById('display-id').textContent = loginUserId;
 
@@ -28,12 +62,7 @@ window.onload = function() {
     document.getElementById('input-name').value = accountData.name || '';
     document.getElementById('input-avatar').value = accountData.avatar || '';
     updateAvatarPreview(accountData.avatar);
-
-    // 既に管理者セッションが通っているかチェック
-    if (sessionStorage.getItem('isAdminUnlocked') === 'true') {
-        showAdminUnlocked();
-    }
-};
+}
 
 // アバターのプレビュー更新
 function updateAvatarPreview(url) {
@@ -70,31 +99,10 @@ function saveAccountSettings(event) {
     setTimeout(() => { msg.style.display = 'none'; }, 3000);
 }
 
-// 管理者認証の検証処理
-function verifyAdmin(event) {
-    event.preventDefault();
-    const inputPw = document.getElementById('admin-pw').value.trim();
-    const errorMsg = document.getElementById('admin-error');
-
-    if (inputPw === ADMIN_PASSWORD_SECRET) {
-        errorMsg.style.display = 'none';
-        sessionStorage.setItem('isAdminUnlocked', 'true');
-        showAdminUnlocked();
-        document.getElementById('admin-pw').value = '';
-    } else {
-        errorMsg.style.display = 'block';
-    }
-}
-
-function showAdminUnlocked() {
-    document.getElementById('admin-locked-view').style.display = 'none';
-    document.getElementById('admin-unlocked-view').style.display = 'block';
-}
-
-function lockAdmin() {
+// ロックして退出（管理者セッションを消してトップやロック画面に戻る）
+function lockAndExit() {
     sessionStorage.removeItem('isAdminUnlocked');
-    document.getElementById('admin-unlocked-view').style.display = 'none';
-    document.getElementById('admin-locked-view').style.display = 'block';
+    window.location.href = 'index.html#main';
 }
 
 function logout() {
