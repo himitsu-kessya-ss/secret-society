@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>アカウント管理 - 秘密結社の部屋</title>
+    <style>
+        :root {
+            --bg-color: #1a1c1e;
+            --card-bg: #25282c;
+            --accent-color: #00d4ff;
+            --admin-color: #ff9900;
+            --text-color: #e0e0e0;
+            --sub-text: #a0a0a0;
+            --header-height: 60px;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        /* 共通ヘッダー */
+        header {
+            background-color: rgba(0, 0, 0, 0.95);
+            height: var(--header-height);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 2px solid var(--accent-color);
+            padding: 0 15px;
+            box-sizing: border-box;
+        }
+
+        .logo-link {
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: var(--accent-color);
+            white-space: nowrap;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        .nav-links::-webkit-scrollbar { display: none; }
+
+        .nav-item-custom {
+            color: #e0e0e0; text-decoration: none; font-size: 0.85rem; 
+            padding: 6px 10px; border-radius: 4px; border: 1px solid transparent;
+            transition: 0.2s;
+        }
+        .nav-item-custom:hover { background: rgba(0, 212, 255, 0.2); border-color: #00d4ff; }
+
+        /* コンテナ・カードレイアウト */
+        .container {
+            width: 100%;
+            max-width: 800px;
+            margin: 30px auto;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            box-sizing: border-box;
+        }
+
+        h2 {
+            color: var(--accent-color);
+            margin-top: 0;
+            font-size: 1.5rem;
+            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        h2.admin-title {
+            color: var(--admin-color);
+        }
+
+        .account-info-flex {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            margin-bottom: 25px;
+            background: #1a1c1e;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+
+        .avatar-preview {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #000;
+            border: 2px solid var(--accent-color);
+            object-fit: cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .avatar-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .user-details div {
+            margin-bottom: 5px;
+            font-size: 0.95rem;
+        }
+        .user-details span {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.9rem;
+            color: var(--sub-text);
+            margin-bottom: 8px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            background: #1a1c1e;
+            border: 1px solid #444;
+            border-radius: 4px;
+            color: var(--text-color);
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            border-color: var(--accent-color);
+        }
+
+        .btn-container {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            font-size: 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: 0.3s;
+            text-align: center;
+            border: 1px solid;
+            text-decoration: none;
+            box-sizing: border-box;
+        }
+
+        .btn-primary {
+            background: transparent;
+            color: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+        .btn-primary:hover {
+            background: rgba(0, 212, 255, 0.1);
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+        }
+
+        .btn-admin {
+            background: transparent;
+            color: var(--admin-color);
+            border-color: var(--admin-color);
+        }
+        .btn-admin:hover {
+            background: rgba(255, 153, 0, 0.1);
+            box-shadow: 0 0 10px rgba(255, 153, 0, 0.3);
+        }
+
+        .btn-danger {
+            background: transparent;
+            color: #ff5555;
+            border-color: #ff5555;
+        }
+        .btn-danger:hover {
+            background: rgba(255, 85, 85, 0.1);
+            box-shadow: 0 0 10px rgba(255, 85, 85, 0.3);
+        }
+
+        .save-message {
+            color: #00ff00;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            display: none;
+            text-align: center;
+        }
+
+        .error-message {
+            color: #ff5555;
+            font-size: 0.85rem;
+            margin-top: 8px;
+            display: none;
+        }
+
+        /* 管理者ロックエリアの切り替え用 */
+        #admin-locked-view {
+            text-align: center;
+            padding: 20px 0;
+        }
+        #admin-unlocked-view {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 共通ヘッダー -->
+    <header id="main-header">
+        <a href="index.html#main" class="logo-link">秘密結社の部屋</a>
+        <nav class="nav-links">
+            <a href="unit.html" class="nav-item-custom">Unit</a>
+            <a href="derivatives.html" class="nav-item-custom">Derivatives</a>
+            <a href="arms.html" class="nav-item-custom">Arms</a>
+            <a href="hangar.html" class="nav-item-custom">Hangar</a>
+            <a href="seiryoku-p.html" class="nav-item-custom" style="color: var(--accent-color); border-color: var(--accent-color);">勢力P管理</a>
+            <a href="upload.html" class="nav-item-custom">Upload</a>
+            <a href="#" class="nav-item-custom">Battle</a>
+            <a href="novels.html" class="nav-item-custom">Novels</a>
+            <a href="tactics.html" class="nav-item-custom">Tactics</a>
+            <a href="hunter.html" class="nav-item-custom">Hunter</a>
+            <a href="trivia.html" class="nav-item-custom">Trivia</a>
+            <a href="emoji.html" class="nav-item-custom">Emoji</a>
+            <a href="account.html" class="nav-item-custom" style="border-color: var(--accent-color);">Account</a>
+            <a href="#" class="nav-item-custom">Link</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <!-- 1. 通常のアカウント設定カード -->
+        <div class="card">
+            <h2>アカウント設定</h2>
+            
+            <div class="account-info-flex">
+                <div class="avatar-preview" id="avatar-preview-box">
+                    👤
+                </div>
+                <div class="user-details">
+                    <div>ログインID: <span id="display-id">--</span></div>
+                    <div>ステータス: <span style="color: #00ff00;">ONLINE</span></div>
+                </div>
+            </div>
+
+            <form id="account-form" onsubmit="saveAccountSettings(event)">
+                <div class="form-group">
+                    <label for="input-name">表示名（プレイヤー名）</label>
+                    <input type="text" id="input-name" placeholder="掲示板などで表示される名前" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="input-avatar">アバター画像 URL（または絵文字・アイコン画像）</label>
+                    <input type="text" id="input-avatar" placeholder="https://example.com/image.png など">
+                </div>
+
+                <div id="save-msg" class="save-message">設定を保存しました！</div>
+
+                <div class="btn-container">
+                    <button type="submit" class="btn btn-primary">変更を保存</button>
+                    <button type="button" class="btn btn-danger" onclick="logout()">ログアウト</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- 2. 管理者認証カード -->
+        <div class="card" id="admin-card" style="border-color: var(--admin-color);">
+            <h2 class="admin-title">🔒 管理者認証セクション</h2>
+
+            <!-- ロック中の表示 -->
+            <div id="admin-locked-view">
+                <p style="color: var(--sub-text); margin-bottom: 20px; font-size: 0.95rem;">
+                    このエリアの設定や管理機能を使用するには、管理者パスワードの認証が必要です。
+                </p>
+                <form id="admin-login-form" onsubmit="verifyAdmin(event)" style="max-width: 320px; margin: 0 auto;">
+                    <div class="form-group" style="text-align: left;">
+                        <label for="admin-pw">管理者パスワード</label>
+                        <input type="password" id="admin-pw" placeholder="管理者用PWを入力" required>
+                    </div>
+                    <div id="admin-error" class="error-message">管理者パスワードが違います</div>
+                    <button type="submit" class="btn btn-admin" style="width: 100%; margin-top: 10px;">管理者権限を解除する</button>
+                </form>
+            </div>
+
+            <!-- 認証成功後にアンロックされる管理メニュー -->
+            <div id="admin-unlocked-view">
+                <p style="color: #00ff00; font-weight: bold; margin-bottom: 20px;">
+                    🔓 管理者権限が有効です（ACCESS GRANTED）
+                </p>
+                <div style="background: #1a1c1e; padding: 15px; border-radius: 8px; border: 1px solid #444; margin-bottom: 20px;">
+                    <h3 style="color: var(--admin-color); margin-top: 0; font-size: 1.1rem;">管理者メニュー</h3>
+                    <p style="font-size: 0.85rem; color: var(--sub-text); margin-bottom: 15px;">
+                        システムの裏側設定、ユーザー権限の調整、および全データの管理を行うことができます。
+                    </p>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-admin" onclick="alert('ここにユーザー管理機能やデータ初期化機能などを配置できます')">システム設定の編集</button>
+                        <button type="button" class="btn btn-danger" onclick="lockAdmin()" style="flex: 0.1; min-width: 120px;">ロックする</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // 管理者パスワードの定義（必要に応じて変更してください）
+    const ADMIN_PASSWORD_SECRET = "12342234"; // もとの認証PWや専用PWに設定可能
+
+    window.onload = function() {
+        const isLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
+        if (!isLoggedIn) {
+            alert('ログインセッションが切れました。ログインしてください。');
+            window.location.href = 'index.html';
+            return;
+        }
+
+        // ログインIDの表示
+        const loginUserId = sessionStorage.getItem('loginUserId') || 'secret';
+        document.getElementById('display-id').textContent = loginUserId;
+
+        // アカウント設定情報の読込
+        let accountData = JSON.parse(localStorage.getItem('secret_user_account'));
+        if (!accountData) {
+            const defaultName = sessionStorage.getItem('loginUserName') || '管理人';
+            accountData = {
+                name: defaultName,
+                avatar: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=' + loginUserId
+            };
+            localStorage.setItem('secret_user_account', JSON.stringify(accountData));
+        }
+
+        document.getElementById('input-name').value = accountData.name || '';
+        document.getElementById('input-avatar').value = accountData.avatar || '';
+        updateAvatarPreview(accountData.avatar);
+
+        // 既に管理者セッションが通っているかチェック
+        if (sessionStorage.getItem('isAdminUnlocked') === 'true') {
+            showAdminUnlocked();
+        }
+    };
+
+    function updateAvatarPreview(url) {
+        const previewBox = document.getElementById('avatar-preview-box');
+        if (url && url.trim() !== '') {
+            previewBox.innerHTML = `<img src="${url}" alt="Avatar" onerror="this.onerror=null; this.parentNode.innerHTML='👤';">`;
+        } else {
+            previewBox.innerHTML = '👤';
+        }
+    }
+
+    document.getElementById('input-avatar').addEventListener('input', function(e) {
+        updateAvatarPreview(e.target.value);
+    });
+
+    function saveAccountSettings(event) {
+        event.preventDefault();
+        const newName = document.getElementById('input-name').value.trim();
+        const newAvatar = document.getElementById('input-avatar').value.trim();
+
+        const accountData = { name: newName, avatar: newAvatar };
+        localStorage.setItem('secret_user_account', JSON.stringify(accountData));
+        sessionStorage.setItem('loginUserName', newName);
+
+        const msg = document.getElementById('save-msg');
+        msg.style.display = 'block';
+        setTimeout(() => { msg.style.display = 'none'; }, 3000);
+    }
+
+    // 管理者認証の検証処理
+    function verifyAdmin(event) {
+        event.preventDefault();
+        const inputPw = document.getElementById('admin-pw').value.trim();
+        const errorMsg = document.getElementById('admin-error');
+
+        if (inputPw === ADMIN_PASSWORD_SECRET) {
+            errorMsg.style.display = 'none';
+            sessionStorage.setItem('isAdminUnlocked', 'true');
+            showAdminUnlocked();
+            document.getElementById('admin-pw').value = '';
+        } else {
+            errorMsg.style.display = 'block';
+        }
+    }
+
+    function showAdminUnlocked() {
+        document.getElementById('admin-locked-view').style.display = 'none';
+        document.getElementById('admin-unlocked-view').style.display = 'block';
+    }
+
+    function lockAdmin() {
+        sessionStorage.removeItem('isAdminUnlocked');
+        document.getElementById('admin-unlocked-view').style.display = 'none';
+        document.getElementById('admin-locked-view').style.display = 'block';
+    }
+
+    function logout() {
+        if (confirm('ログアウトしますか？')) {
+            sessionStorage.clear(); // すべてのセッション情報をクリア
+            window.location.href = 'index.html';
+        }
+    }
+</script>
+<script data-goatcounter="https://bobs-base.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>
