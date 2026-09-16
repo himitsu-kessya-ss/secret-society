@@ -78,7 +78,7 @@
             color: var(--accent-color);
         }
 
-        /* --- 認証フォームのスタイル --- */
+        /* 認証フォームのスタイル */
         .login-box {
             background: var(--card-bg);
             padding: 25px 30px;
@@ -249,6 +249,7 @@
     <div id="main-page" class="page">
         <div class="container">
             <div class="grid">
+                 <!-- Unit Database -->
                  <a href="unit.html" class="card">
                     <div class="card-img">
                         <img src="unit.gif" alt="Unit Database" class="gif-icon">
@@ -259,6 +260,7 @@
                     </div>
                  </a>
                  
+                 <!-- SS Upload -->
                  <a href="upload.html" class="card">
                     <div class="card-img" style="background: #112233;">
                         <span style="font-size: 2.5rem;">📸</span>
@@ -269,6 +271,18 @@
                     </div>
                  </a>
 
+                 <!-- Account 管理カード（新しく追加！） -->
+                 <a href="account.html" class="card">
+                    <div class="card-img" style="background: #112233;">
+                        <span style="font-size: 2.5rem;">⚙️</span>
+                    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">Account Management</h3>
+                        <p class="card-desc">プレイヤー名・アバター設定、管理者認証</p>
+                    </div>
+                 </a>
+
+                 <!-- Seiryoku P -->
                  <a href="seiryoku-p.html" class="card" style="border-color: var(--accent-color);">
                     <div class="card-img" style="background: #112233;">
                         <span style="font-size: 2.5rem;">👑</span>
@@ -387,33 +401,28 @@
     </div>
 
 <script>
-    // -------------------------------------------------------------
-    // ユーザーリスト（もとの認証情報 "secret" / "12342234" を確実に保持）
-    // -------------------------------------------------------------
+    // ユーザーリスト（もとの認証情報 "secret" / "12342234" を保持）
     const VALID_USERS = [
-        { id: "secret", pw: "12342234", name: "管理人" },  // ← もとの認証情報
-        { id: "pilot1", pw: "abcd1234", name: "パイロットA" }   // 必要に応じて追加できる予備枠
+        { id: "secret", pw: "12342234", name: "管理人" },
+        { id: "pilot1", pw: "abcd1234", name: "パイロットA" }
     ];
 
     function handleLogin(event) {
-        event.preventDefault(); // ページのリロードを防止
+        event.preventDefault();
         
         const idInput = document.getElementById('username').value.trim();
         const pwInput = document.getElementById('password').value.trim();
         const errorMsg = document.getElementById('error-msg');
 
-        // リストの中から入力されたIDとパスワードが一致するものを探す
         const matchedUser = VALID_USERS.find(user => user.id === idInput && user.pw === pwInput);
 
         if (matchedUser) {
             errorMsg.style.display = 'none';
             
-            // ログイン状態とユーザー名をブラウザのセッションに保存
             sessionStorage.setItem('isLoggedIn', 'true');
             sessionStorage.setItem('loginUserId', matchedUser.id);
             sessionStorage.setItem('loginUserName', matchedUser.name);
             
-            // アカウント設定がまだない場合の初期値をセット
             if (!localStorage.getItem('secret_user_account')) {
                 localStorage.setItem('secret_user_account', JSON.stringify({
                     name: matchedUser.name,
@@ -437,7 +446,6 @@
         if (pageId === 'main-page') {
             header.style.display = 'flex';
             
-            // メインページに入ってから10秒後にシークレットカードを表示
             setTimeout(() => {
                 if (secretCard) {
                     secretCard.style.display = 'flex';
@@ -458,7 +466,6 @@
         }
         window.scrollTo(0, 0);
         
-        // GoatCounterトラッキング
         if (window.goatcounter) goatcounter.count({ path: '/#' + pageId });
     }
 
@@ -467,7 +474,6 @@
         showPage('main-page'); 
     }
     
-    // ページ読み込み・URLハッシュ変化時のルーティング制御
     function checkAuthAndRoute() {
         const isLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
         
