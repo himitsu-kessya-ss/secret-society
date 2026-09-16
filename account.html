@@ -225,12 +225,41 @@
             display: none;
         }
 
-        #admin-locked-view { text-align: center; padding: 20px 0; }
-        #admin-unlocked-view { display: none; }
+        /* ── 管理者認証オーバーレイ（B案のガード画面） ── */
+        #auth-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(26, 28, 30, 0.95);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .auth-card {
+            background: var(--card-bg);
+            border: 2px solid var(--admin-color);
+            border-radius: 12px;
+            padding: 30px;
+            width: 100%;
+            max-width: 380px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7);
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        /* 認証成功後にメインコンテンツを表示するための制御 */
+        #protected-content {
+            display: none;
+        }
     </style>
 </head>
 <body>
 
+    <!-- 共通ヘッダー -->
     <header id="main-header">
         <a href="index.html#main" class="logo-link">秘密結社の部屋</a>
         <nav class="nav-links">
@@ -251,8 +280,30 @@
         </nav>
     </header>
 
-    <div class="container">
-        <!-- アカウント設定カード -->
+    <!-- 【B案】ページ入室時の管理者認証オーバーレイ（ロック画面） -->
+    <div id="auth-overlay">
+        <div class="auth-card">
+            <h2 class="admin-title" style="margin-bottom: 15px; font-size: 1.3rem;">🔒 管理者認証が必要です</h2>
+            <p style="color: var(--sub-text); font-size: 0.85rem; margin-bottom: 20px;">
+                このページ（アカウント管理・システム設定）にアクセスするには、管理者パスワードの入力が必要です。
+            </p>
+            <form id="page-auth-form" onsubmit="verifyPageAdmin(event)">
+                <div class="form-group" style="text-align: left;">
+                    <label for="page-admin-pw">管理者パスワード</label>
+                    <input type="password" id="page-admin-pw" placeholder="パスワードを入力" required autocomplete="current-password">
+                </div>
+                <div id="page-auth-error" class="error-message">パスワードが違います</div>
+                <button type="submit" class="btn btn-admin" style="width: 100%; margin-top: 10px;">認証して入室する</button>
+            </form>
+            <div style="margin-top: 15px;">
+                <a href="index.html#main" style="color: var(--sub-text); font-size: 0.8rem; text-decoration: none;">← トップページに戻る</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 【保護されたメインコンテンツ】認証が成功するまで非表示 -->
+    <div id="protected-content" class="container">
+        <!-- 1. アカウント設定カード -->
         <div class="card">
             <h2>アカウント設定</h2>
             
@@ -260,7 +311,7 @@
                 <div class="avatar-preview" id="avatar-preview-box">👤</div>
                 <div class="user-details">
                     <div>ログインID: <span id="display-id">--</span></div>
-                    <div>ステータス: <span style="color: #00ff00;">ONLINE</span></div>
+                    <div>ステータス: <span style="color: #00ff00;">ONLINE (ADMIN ACCESS)</span></div>
                 </div>
             </div>
 
@@ -284,43 +335,26 @@
             </form>
         </div>
 
-        <!-- 管理者認証カード -->
-        <div class="card" id="admin-card" style="border-color: var(--admin-color);">
-            <h2 class="admin-title">🔒 管理者認証セクション</h2>
-
-            <div id="admin-locked-view">
-                <p style="color: var(--sub-text); margin-bottom: 20px; font-size: 0.95rem;">
-                    このエリアの設定や管理機能を使用するには、管理者パスワードの認証が必要です。
+        <!-- 2. 管理者専用メニューカード -->
+        <div class="card" style="border-color: var(--admin-color);">
+            <h2 class="admin-title">🛠️ 管理者メニュー</h2>
+            <p style="color: #00ff00; font-weight: bold; margin-bottom: 20px; font-size: 0.9rem;">
+                🔓 管理者認証が正常に完了しています。
+            </p>
+            <div style="background: #1a1c1e; padding: 15px; border-radius: 8px; border: 1px solid #444; margin-bottom: 20px;">
+                <h3 style="color: var(--admin-color); margin-top: 0; font-size: 1.1rem;">システム一括管理</h3>
+                <p style="font-size: 0.85rem; color: var(--sub-text); margin-bottom: 15px;">
+                    システムの裏側設定やユーザー権限の調整を行うことができます。
                 </p>
-                <form id="admin-login-form" onsubmit="verifyAdmin(event)" style="max-width: 320px; margin: 0 auto;">
-                    <div class="form-group" style="text-align: left;">
-                        <label for="admin-pw">管理者パスワード</label>
-                        <input type="password" id="admin-pw" placeholder="管理者用PWを入力" required>
-                    </div>
-                    <div id="admin-error" class="error-message">管理者パスワードが違います</div>
-                    <button type="submit" class="btn btn-admin" style="width: 100%; margin-top: 10px;">管理者権限を解除する</button>
-                </form>
-            </div>
-
-            <div id="admin-unlocked-view">
-                <p style="color: #00ff00; font-weight: bold; margin-bottom: 20px;">
-                    🔓 管理者権限が有効です（ACCESS GRANTED）
-                </p>
-                <div style="background: #1a1c1e; padding: 15px; border-radius: 8px; border: 1px solid #444; margin-bottom: 20px;">
-                    <h3 style="color: var(--admin-color); margin-top: 0; font-size: 1.1rem;">管理者メニュー</h3>
-                    <p style="font-size: 0.85rem; color: var(--sub-text); margin-bottom: 15px;">
-                        システムの裏側設定やユーザー権限の調整を行うことができます。
-                    </p>
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                        <button type="button" class="btn btn-admin" onclick="alert('システム設定の編集機能')">システム設定の編集</button>
-                        <button type="button" class="btn btn-danger" onclick="lockAdmin()" style="flex: 0.1; min-width: 120px;">ロックする</button>
-                    </div>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button type="button" class="btn btn-admin" onclick="alert('システム設定の編集機能')">システム設定の編集</button>
+                    <button type="button" class="btn btn-danger" onclick="lockAndExit()" style="flex: 0.1; min-width: 140px;">ロックして退出</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 外部スクリプトの読み込み（順番が重要です） -->
+    <!-- 外部スクリプトの読み込み -->
     <script src="account-data.js"></script>
     <script src="account-logic.js"></script>
     <script data-goatcounter="https://bobs-base.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
