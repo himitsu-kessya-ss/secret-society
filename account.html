@@ -83,6 +83,16 @@
             border-radius: 12px;
             padding: 25px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            margin-top: 0;
+            font-size: 1.2rem;
+            color: var(--accent-color);
+            border-bottom: 1px solid #333;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
         }
 
         .form-group {
@@ -117,7 +127,7 @@
             display: flex;
             align-items: center;
             gap: 15px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             background: #1a1c1e;
             padding: 12px;
             border-radius: 8px;
@@ -143,7 +153,7 @@
             object-fit: cover;
         }
 
-        .save-btn {
+        .action-btn {
             background: transparent;
             color: var(--accent-color);
             border: 1px solid var(--accent-color);
@@ -154,7 +164,7 @@
             transition: 0.3s;
             width: 100%;
         }
-        .save-btn:hover {
+        .action-btn:hover {
             background: rgba(0, 212, 255, 0.2);
             box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
         }
@@ -165,6 +175,12 @@
             margin-top: 10px;
             text-align: center;
             display: none;
+        }
+
+        .info-text {
+            font-size: 0.85rem;
+            color: var(--sub-text);
+            margin-bottom: 15px;
         }
     </style>
 </head>
@@ -191,14 +207,16 @@
     </header>
 
     <div class="container">
-        <h1 class="page-title">⚙️ プレイヤーアカウント設定</h1>
+        <h1 class="page-title">⚙️ アカウント設定・管理</h1>
 
+        <!-- プロフィール（名前・顔アイコン）設定カード -->
         <div class="card">
+            <h2>プロフィール設定</h2>
             <div class="form-group">
                 <label>現在の顔アイコン プレビュー</label>
                 <div class="avatar-preview-box">
                     <div class="avatar-img" id="preview-container">👤</div>
-                    <div style="font-size: 0.85rem; color: var(--sub-text);">
+                    <div class="info-text" style="margin-bottom: 0;">
                         ※登録された画像URL、または自動生成アイコンが表示されます。
                     </div>
                 </div>
@@ -212,67 +230,37 @@
             <div class="form-group">
                 <label for="avatarInput">顔アイコン画像URL（任意）</label>
                 <input type="text" id="avatarInput" placeholder="https://example.com/icon.png など" oninput="updatePreview()">
-                <div style="font-size: 0.75rem; color: var(--sub-text); margin-top: 4px;">※画像のアドレスを入力すると、アイコンとして反映されます。空欄の場合は自動アイコンになります。</div>
+                <div class="info-text" style="margin-top: 4px;">※画像のアドレスを入力すると、アイコンとして反映されます。空欄の場合は自動アイコンになります。</div>
             </div>
 
-            <button class="save-btn" onclick="saveAccountSettings()">設定を保存する</button>
-            <div id="successMsg" class="success-msg">設定を保存しました！</div>
+            <button class="action-btn" onclick="saveProfileSettings()">プロフィールを保存する</button>
+            <div id="profileSuccessMsg" class="success-msg">プロフィールを保存しました！</div>
+        </div>
+
+        <!-- 認証・セキュリティ設定カード -->
+        <div class="card">
+            <h2>ログイン情報</h2>
+            <div class="info-text">
+                現在ログイン中のアカウントID: <strong id="current-login-id" style="color: var(--accent-color);">-</strong>
+            </div>
+            
+            <div class="form-group">
+                <label for="currentPassword">現在のパスワード</label>
+                <input type="password" id="currentPassword" placeholder="現在のパスワードを入力">
+            </div>
+
+            <div class="form-group">
+                <label for="newPassword">新しいパスワード（変更する場合）</label>
+                <input type="password" id="newPassword" placeholder="新しいパスワードを入力">
+            </div>
+
+            <button class="action-btn" onclick="changePassword()">パスワードを変更する</button>
+            <div id="pwSuccessMsg" class="success-msg">パスワードを変更しました！</div>
         </div>
     </div>
 
-    <script>
-        window.onload = function() {
-            const savedData = JSON.parse(localStorage.getItem('secret_user_account'));
-            const loginUserName = sessionStorage.getItem('loginUserName') || '名無しパイロット';
-            const loginUserId = sessionStorage.getItem('loginUserId') || 'secret';
-
-            const nameInput = document.getElementById('nameInput');
-            const avatarInput = document.getElementById('avatarInput');
-
-            if (savedData) {
-                nameInput.value = savedData.name || loginUserName;
-                avatarInput.value = savedData.avatar || '';
-            } else {
-                nameInput.value = loginUserName;
-                avatarInput.value = '';
-            }
-            updatePreview();
-        };
-
-        function updatePreview() {
-            const avatarInputVal = document.getElementById('avatarInput').value.trim();
-            const previewContainer = document.getElementById('preview-container');
-            const loginUserId = sessionStorage.getItem('loginUserId') || 'secret';
-
-            const defaultAvatar = 'https://api.dicebear.com/7.x/pixel-art/svg?seed=' + loginUserId;
-            const targetAvatar = avatarInputVal !== '' ? avatarInputVal : defaultAvatar;
-
-            previewContainer.innerHTML = `<img src="${targetAvatar}" alt="Avatar" onerror="this.onerror=null; this.parentNode.innerHTML='👤';">`;
-        }
-
-        function saveAccountSettings() {
-            const nameVal = document.getElementById('nameInput').value.trim();
-            const avatarVal = document.getElementById('avatarInput').value.trim();
-
-            if (!nameVal) {
-                alert('プレイヤー名を入力してください。');
-                return;
-            }
-
-            const accountData = {
-                name: nameVal,
-                avatar: avatarVal
-            };
-
-            localStorage.setItem('secret_user_account', JSON.stringify(accountData));
-            sessionStorage.setItem('loginUserName', nameVal); // セッション側も同期
-
-            const successMsg = document.getElementById('successMsg');
-            successMsg.style.display = 'block';
-            setTimeout(() => {
-                successMsg.style.display = 'none';
-            }, 3000);
-        }
-    </script>
+    <!-- 外部JavaScriptファイルの読み込み -->
+    <script src="account_data.js"></script>
+    <script src="account_logic.js"></script>
 </body>
 </html>
