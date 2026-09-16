@@ -23,7 +23,6 @@
             line-height: 1.6;
         }
 
-        /* 共通ヘッダー */
         header {
             background-color: rgba(0, 0, 0, 0.95);
             height: var(--header-height);
@@ -61,7 +60,6 @@
         }
         .nav-item-custom:hover { background: rgba(0, 212, 255, 0.2); border-color: #00d4ff; }
 
-        /* コンテナ・カードレイアウト */
         .container {
             width: 100%;
             max-width: 800px;
@@ -227,19 +225,12 @@
             display: none;
         }
 
-        /* 管理者ロックエリアの切り替え用 */
-        #admin-locked-view {
-            text-align: center;
-            padding: 20px 0;
-        }
-        #admin-unlocked-view {
-            display: none;
-        }
+        #admin-locked-view { text-align: center; padding: 20px 0; }
+        #admin-unlocked-view { display: none; }
     </style>
 </head>
 <body>
 
-    <!-- 共通ヘッダー -->
     <header id="main-header">
         <a href="index.html#main" class="logo-link">秘密結社の部屋</a>
         <nav class="nav-links">
@@ -261,14 +252,12 @@
     </header>
 
     <div class="container">
-        <!-- 1. 通常のアカウント設定カード -->
+        <!-- アカウント設定カード -->
         <div class="card">
             <h2>アカウント設定</h2>
             
             <div class="account-info-flex">
-                <div class="avatar-preview" id="avatar-preview-box">
-                    👤
-                </div>
+                <div class="avatar-preview" id="avatar-preview-box">👤</div>
                 <div class="user-details">
                     <div>ログインID: <span id="display-id">--</span></div>
                     <div>ステータス: <span style="color: #00ff00;">ONLINE</span></div>
@@ -295,11 +284,10 @@
             </form>
         </div>
 
-        <!-- 2. 管理者認証カード -->
+        <!-- 管理者認証カード -->
         <div class="card" id="admin-card" style="border-color: var(--admin-color);">
             <h2 class="admin-title">🔒 管理者認証セクション</h2>
 
-            <!-- ロック中の表示 -->
             <div id="admin-locked-view">
                 <p style="color: var(--sub-text); margin-bottom: 20px; font-size: 0.95rem;">
                     このエリアの設定や管理機能を使用するには、管理者パスワードの認証が必要です。
@@ -314,7 +302,6 @@
                 </form>
             </div>
 
-            <!-- 認証成功後にアンロックされる管理メニュー -->
             <div id="admin-unlocked-view">
                 <p style="color: #00ff00; font-weight: bold; margin-bottom: 20px;">
                     🔓 管理者権限が有効です（ACCESS GRANTED）
@@ -322,10 +309,10 @@
                 <div style="background: #1a1c1e; padding: 15px; border-radius: 8px; border: 1px solid #444; margin-bottom: 20px;">
                     <h3 style="color: var(--admin-color); margin-top: 0; font-size: 1.1rem;">管理者メニュー</h3>
                     <p style="font-size: 0.85rem; color: var(--sub-text); margin-bottom: 15px;">
-                        システムの裏側設定、ユーザー権限の調整、および全データの管理を行うことができます。
+                        システムの裏側設定やユーザー権限の調整を行うことができます。
                     </p>
                     <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                        <button type="button" class="btn btn-admin" onclick="alert('ここにユーザー管理機能やデータ初期化機能などを配置できます')">システム設定の編集</button>
+                        <button type="button" class="btn btn-admin" onclick="alert('システム設定の編集機能')">システム設定の編集</button>
                         <button type="button" class="btn btn-danger" onclick="lockAdmin()" style="flex: 0.1; min-width: 120px;">ロックする</button>
                     </div>
                 </div>
@@ -333,105 +320,9 @@
         </div>
     </div>
 
-<script>
-    // 管理者パスワードの定義（必要に応じて変更してください）
-    const ADMIN_PASSWORD_SECRET = "12342234"; // もとの認証PWや専用PWに設定可能
-
-    window.onload = function() {
-        const isLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
-        if (!isLoggedIn) {
-            alert('ログインセッションが切れました。ログインしてください。');
-            window.location.href = 'index.html';
-            return;
-        }
-
-        // ログインIDの表示
-        const loginUserId = sessionStorage.getItem('loginUserId') || 'secret';
-        document.getElementById('display-id').textContent = loginUserId;
-
-        // アカウント設定情報の読込
-        let accountData = JSON.parse(localStorage.getItem('secret_user_account'));
-        if (!accountData) {
-            const defaultName = sessionStorage.getItem('loginUserName') || '管理人';
-            accountData = {
-                name: defaultName,
-                avatar: 'https://api.dicebear.com/7.x/pixel-art/svg?seed=' + loginUserId
-            };
-            localStorage.setItem('secret_user_account', JSON.stringify(accountData));
-        }
-
-        document.getElementById('input-name').value = accountData.name || '';
-        document.getElementById('input-avatar').value = accountData.avatar || '';
-        updateAvatarPreview(accountData.avatar);
-
-        // 既に管理者セッションが通っているかチェック
-        if (sessionStorage.getItem('isAdminUnlocked') === 'true') {
-            showAdminUnlocked();
-        }
-    };
-
-    function updateAvatarPreview(url) {
-        const previewBox = document.getElementById('avatar-preview-box');
-        if (url && url.trim() !== '') {
-            previewBox.innerHTML = `<img src="${url}" alt="Avatar" onerror="this.onerror=null; this.parentNode.innerHTML='👤';">`;
-        } else {
-            previewBox.innerHTML = '👤';
-        }
-    }
-
-    document.getElementById('input-avatar').addEventListener('input', function(e) {
-        updateAvatarPreview(e.target.value);
-    });
-
-    function saveAccountSettings(event) {
-        event.preventDefault();
-        const newName = document.getElementById('input-name').value.trim();
-        const newAvatar = document.getElementById('input-avatar').value.trim();
-
-        const accountData = { name: newName, avatar: newAvatar };
-        localStorage.setItem('secret_user_account', JSON.stringify(accountData));
-        sessionStorage.setItem('loginUserName', newName);
-
-        const msg = document.getElementById('save-msg');
-        msg.style.display = 'block';
-        setTimeout(() => { msg.style.display = 'none'; }, 3000);
-    }
-
-    // 管理者認証の検証処理
-    function verifyAdmin(event) {
-        event.preventDefault();
-        const inputPw = document.getElementById('admin-pw').value.trim();
-        const errorMsg = document.getElementById('admin-error');
-
-        if (inputPw === ADMIN_PASSWORD_SECRET) {
-            errorMsg.style.display = 'none';
-            sessionStorage.setItem('isAdminUnlocked', 'true');
-            showAdminUnlocked();
-            document.getElementById('admin-pw').value = '';
-        } else {
-            errorMsg.style.display = 'block';
-        }
-    }
-
-    function showAdminUnlocked() {
-        document.getElementById('admin-locked-view').style.display = 'none';
-        document.getElementById('admin-unlocked-view').style.display = 'block';
-    }
-
-    function lockAdmin() {
-        sessionStorage.removeItem('isAdminUnlocked');
-        document.getElementById('admin-unlocked-view').style.display = 'none';
-        document.getElementById('admin-locked-view').style.display = 'block';
-    }
-
-    function logout() {
-        if (confirm('ログアウトしますか？')) {
-            sessionStorage.clear(); // すべてのセッション情報をクリア
-            window.location.href = 'index.html';
-        }
-    }
-</script>
-<script data-goatcounter="https://bobs-base.goatcounter.com/count"
-        async src="//gc.zgo.at/count.js"></script>
+    <!-- 外部スクリプトの読み込み（順番が重要です） -->
+    <script src="account-data.js"></script>
+    <script src="account-logic.js"></script>
+    <script data-goatcounter="https://bobs-base.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>
