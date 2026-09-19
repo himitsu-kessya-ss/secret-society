@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Hunter Chance - 秘密結社の部屋</title>
     
+    <!-- 外部ライブラリの読み込み -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
 
@@ -149,171 +150,16 @@
         <table class="hayami-table" id="hayami-data">
             <thead><tr><th>暦</th><th>加算値</th><th>出現No</th></tr></thead>
             <tbody>
-                <tr><td>1日</td><td>153</td><td>1000 - 1999</td></tr>
-                <tr><td>2日</td><td>156</td><td>2000 - 2999</td></tr>
-                <tr><td>3日</td><td>159</td><td>3000 - 3999</td></tr>
-                <tr><td>4日</td><td>162</td><td>4000 - 4999</td></tr>
-                <tr><td>5日</td><td>165</td><td>5000 - 5999</td></tr>
-                <tr><td>6日</td><td>168</td><td>6000 - 6999</td></tr>
-                <tr><td>7日</td><td>171</td><td>7000 - 7999</td></tr>
-                <tr><td>8日</td><td>174</td><td>8000 - 8999</td></tr>
-                <tr><td>9日</td><td>177</td><td>0 - 999</td></tr>
-                <tr><td>10日</td><td>180</td><td>0 - 999</td></tr>
-                <tr><td>11日</td><td>183</td><td>1000 - 1999</td></tr>
-                <tr><td>12日</td><td>186</td><td>2000 - 2999</td></tr>
-                <tr><td>13日</td><td>189</td><td>3000 - 3999</td></tr>
-                <tr><td>14日</td><td>192</td><td>4000 - 4999</td></tr>
-                <tr><td>15日</td><td>165</td><td>5000 - 5999</td></tr>
-                <tr><td>16日</td><td>168</td><td>6000 - 6999</td></tr>
-                <tr><td>17日</td><td>171</td><td>7000 - 7999</td></tr>
-                <tr><td>18日</td><td>174</td><td>8000 - 8999</td></tr>
-                <tr><td>19日</td><td>177</td><td>0 - 999</td></tr>
-                <tr><td>20日</td><td>180</td><td>0 - 999</td></tr>
-                <tr><td>21日</td><td>183</td><td>1000 - 1999</td></tr>
-                <tr><td>22日</td><td>186</td><td>2000 - 2999</td></tr>
-                <tr><td>23日</td><td>189</td><td>3000 - 3999</td></tr>
-                <tr><td>24日</td><td>192</td><td>4000 - 4999</td></tr>
-                <tr><td>25日</td><td>195</td><td>5000 - 5999</td></tr>
-                <tr><td>26日</td><td>198</td><td>6000 - 6999</td></tr>
-                <tr><td>27日</td><td>201</td><td>7000 - 7999</td></tr>
-                <tr><td>28日</td><td>204</td><td>8000 - 8999</td></tr>
-                <tr><td>29日</td><td>207</td><td>0 - 999</td></tr>
-                <tr><td>30日</td><td>210</td><td>0 - 999</td></tr>
-                <tr><td>31日</td><td>213</td><td>1000 - 1999</td></tr>
+                <!-- hunter_data.js から自動的に中身が埋め込まれます -->
             </tbody>
         </table>
     </div>
 </div>
 
-<script>
-/** * 【設定】
- * ユニットデータが入っているCSVファイル名を正確に指定してください。
- * (例: "unit.csv" や "unit_26.3.24.csv")
- */
-const CSV_FILE = "unit_26.3.24.csv"; 
+<!-- 分割したJSファイルを読み込む -->
+<script src="hunter_data.js"></script>
+<script src="hunter_script.js"></script>
 
-$(document).ready(function () {
-    // 今日の情報をテーブルから取得
-    function getTodayData() {
-        const d = new Date().getDate();
-        const row = $('#hayami-data tbody tr').eq(d - 1);
-        return {
-            day: d,
-            addVal: parseInt(row.find('td').eq(1).text()) || 0,
-            range: row.find('td').eq(2).text() || ""
-        };
-    }
-
-    // ① 計算機の即時反映
-    $('#input-battle').on('input', function() {
-        const prev = parseInt($(this).val());
-        const data = getTodayData();
-        if (isNaN(prev)) { $('#calc-res').text("数値を入力してください"); return; }
-        
-        const next = Math.floor((prev / data.addVal) + 1) * data.addVal;
-        $('#calc-res').html(`今日の最初のHCは <strong style="color:var(--accent-color);">${next.toLocaleString()}</strong> 戦目です`);
-    });
-
-    // ② 今日のデータ更新 & ③ ランキング解析
-    function refreshTodayTab() {
-        const data = getTodayData();
-        $('#today-info').html(`本日は ${data.day}日： 加算値 <b style="color:var(--accent-color);">${data.addVal}</b> / 出現No <b style="color:var(--accent-color);">${data.range}</b>`);
-        
-        const [min, max] = data.range.split(' - ').map(s => parseInt(s.trim()));
-        loadAndRankUnits(min, max);
-    }
-
-    // ③ ユニットCSVの読み込みとソート
-function loadAndRankUnits(min, max) {
-        Papa.parse(CSV_FILE, {
-            download: true,
-            header: true,
-            skipEmptyLines: true,
-            trimHeaders: true, 
-            complete: function(results) {
-                const headers = results.meta.fields;
-                
-                // --- カラム名の特定ロジックを強化 ---
-                // 「名声」を含む列を探す
-                const fameKey = headers.find(h => h.includes("名声")) || "名声";
-                
-                // 「POINT」または「ポイント」を大文字小文字問わず探す
-                const pointKey = headers.find(h => {
-                    const upperH = h.toUpperCase();
-                    return upperH.includes("POINT") || upperH.includes("ポイント");
-                }) || "POINT"; 
-
-                // デバッグ用：どの列名として認識したかコンソールに出す（F12で見れます）
-                console.log("認識した列名:", { fame: fameKey, point: pointKey });
-
-                const filtered = results.data.filter(u => {
-                    const no = parseInt(u["No"]);
-                    return no >= min && no <= max;
-                });
-
-                if (filtered.length === 0) {
-                    $('#unit-error').text(`範囲内の機体が見つかりません(No ${min}-${max})`);
-                    return;
-                }
-                $('#unit-error').hide();
-
-                displayRank(filtered, fameKey, "#rank-fame");
-                displayRank(filtered, pointKey, "#rank-point");
-            },
-            error: function() { $('#unit-error').text("CSV読込失敗"); }
-        });
-    }
-
-    function displayRank(data, key, targetId) {
-        const sorted = [...data].sort((a, b) => {
-            // 文字列からカンマを除去して数値に変換（例: "1,000,000" -> 1000000）
-            const valA = parseFloat(String(a[key] || "0").replace(/,/g, '')) || 0;
-            const valB = parseFloat(String(b[key] || "0").replace(/,/g, '')) || 0;
-            return valB - valA;
-        }).slice(0, 3);
-
-        let html = '';
-        sorted.forEach((u, i) => {
-            const val = u[key] || 0;
-            // 数値の場合は3桁区切りにする
-            const displayVal = isNaN(parseFloat(String(val).replace(/,/g, ''))) ? val : parseFloat(String(val).replace(/,/g, '')).toLocaleString();
-            
-            html += `<div class="unit-card">
-                        <span class="rank-badge">${i+1}</span><strong>${u["機体名"] || "No."+u["No"]}</strong>
-                        <span class="unit-val">${key}: ${displayVal}</span>
-                     </div>`;
-        });
-        $(targetId).html(html);
-    }
-    // タブ切り替え処理
-    $('.tab-btn').on('click', function() {
-        $('.tab-btn').removeClass('active');
-        $(this).addClass('active');
-        const type = $(this).data('type');
-
-        $('#today-tool, #text-content-display, #content-frame, #static-table-area').hide();
-
-        if (type === 'today') {
-            $('#today-tool').show();
-            refreshTodayTab();
-        } else if (type === 'txt') {
-            $('#text-content-display').show().text("読み込み中...");
-            fetch($(this).data('file')).then(r => r.arrayBuffer()).then(buf => {
-                let txt = new TextDecoder('utf-8').decode(buf);
-                if (txt.includes('\uFFFD')) txt = new TextDecoder('shift-jis').decode(buf);
-                $('#text-content-display').html(txt);
-            });
-        } else if (type === 'html') {
-            $('#content-frame').attr('src', $(this).data('file')).show();
-        } else if (type === 'static') {
-            $('#static-table-area').show();
-        }
-    });
-
-    // 初期実行
-    refreshTodayTab();
-});
-</script>
 <script data-goatcounter="https://bobs-base.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
 </body>
