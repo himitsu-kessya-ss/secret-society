@@ -23,43 +23,6 @@
             line-height: 1.6;
         }
 
-        header {
-            background-color: rgba(0, 0, 0, 0.95);
-            height: var(--header-height);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            border-bottom: 2px solid var(--accent-color);
-            padding: 0 15px;
-            box-sizing: border-box;
-        }
-
-        .logo-link {
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 1.1rem;
-            color: var(--accent-color);
-            white-space: nowrap;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 10px;
-            overflow-x: auto;
-            white-space: nowrap;
-        }
-        .nav-links::-webkit-scrollbar { display: none; }
-
-        .nav-item-custom {
-            color: #e0e0e0; text-decoration: none; font-size: 0.85rem; 
-            padding: 6px 10px; border-radius: 4px; border: 1px solid transparent;
-            transition: 0.2s;
-        }
-        .nav-item-custom:hover { background: rgba(0, 212, 255, 0.2); border-color: #00d4ff; }
-
         .container {
             width: 100%;
             max-width: 1000px;
@@ -112,22 +75,8 @@
 </head>
 <body>
 
-    <header id="main-header">
-        <a href="index.html#main" class="logo-link">秘密結社の部屋</a>
-        <nav class="nav-links">
-            <a href="unit.html" class="nav-item-custom">Unit</a>
-            <a href="derivatives.html" class="nav-item-custom">Derivatives</a>
-            <a href="arms.html" class="nav-item-custom">Arms</a>
-            <a href="hangar.html" class="nav-item-custom">Hangar</a>
-            <a href="seiryoku-p.html" class="nav-item-custom" style="color: var(--accent-color); border-color: var(--accent-color);">勢力P管理</a>
-            <a href="upload.html" class="nav-item-custom">Upload</a>
-            <a href="novels.html" class="nav-item-custom">Novels</a>
-            <a href="tactics.html" class="nav-item-custom">Tactics</a>
-            <a href="hunter.html" class="nav-item-custom">Hunter</a>
-            <a href="trivia.html" class="nav-item-custom">Trivia</a>
-            <a href="emoji.html" class="nav-item-custom">Emoji</a>
-        </nav>
-    </header>
+    <!-- ▼ 共通ヘッダーが自動でここに読み込まれます -->
+    <div id="header-container"></div>
 
     <div class="container">
         <div class="card">
@@ -139,6 +88,24 @@
             </a>
         </div>
     </div>
+
+    <!-- 共通ヘッダーを読み込んで現在地をアクティブにする処理 -->
+    <script>
+        fetch('header.html')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('header-container').innerHTML = data;
+                
+                // 現在開いているページを自動判定してナビに active クラスをつける
+                const currentPath = window.location.pathname.split('/').pop();
+                const navLinks = document.querySelectorAll('.nav-links a');
+                navLinks.forEach(link => {
+                    if (link.getAttribute('href') === currentPath) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+    </script>
 
 </body>
 </html>
