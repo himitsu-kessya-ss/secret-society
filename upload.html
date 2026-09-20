@@ -8,72 +8,11 @@
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <!-- 外部CSSファイルの読み込み -->
     <link rel="stylesheet" href="upload.css">
-    <style>
-        /* ヘッダー専用のスタイル（ヘッダー側で完全に独立管理） */
-        header {
-            background-color: rgba(0, 0, 0, 0.95);
-            height: 60px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            border-bottom: 2px solid #00d4ff;
-            padding: 0 15px;
-            box-sizing: border-box;
-        }
-        .logo-link {
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 1.1rem;
-            color: #00d4ff;
-            white-space: nowrap;
-        }
-        .nav-links {
-            display: flex;
-            gap: 10px;
-            overflow-x: auto;
-            white-space: nowrap;
-        }
-        .nav-links::-webkit-scrollbar { display: none; }
-        .nav-item-custom {
-            color: #e0e0e0; 
-            text-decoration: none; 
-            font-size: 0.85rem; 
-            padding: 6px 10px; 
-            border-radius: 4px; 
-            border: 1px solid transparent;
-            transition: 0.2s;
-        }
-        .nav-item-custom:hover, .nav-item-custom.active { 
-            background: rgba(0, 212, 255, 0.2); 
-            border-color: #00d4ff; 
-        }
-    </style>
 </head>
 <body>
 
-    <!-- ヘッダー -->
-    <header>
-        <a href="index.html#main" class="logo-link">秘密結社の部屋</a>
-        <nav class="nav-links">
-            <a href="unit.html" class="nav-item-custom" style="display: none;">Unit</a>
-            <a href="derivatives.html" class="nav-item-custom">Derivatives</a>
-            <a href="arms.html" class="nav-item-custom">Arms</a>
-            <a href="hangar.html" class="nav-item-custom" style="display: none;">Hangar</a>
-            <a href="seiryoku-p.html" class="nav-item-custom">勢力P管理</a>
-            <a href="upload.html" class="nav-item-custom active">Upload</a>
-            <a href="battle.html" class="nav-item-custom">Battle</a>
-            <a href="novels.html" class="nav-item-custom">Novels</a>
-            <a href="bbs.html" class="nav-item-custom">秘密結社BBS</a>
-            <a href="hunter.html" class="nav-item-custom">Hunter</a>
-            <a href="trivia.html" class="nav-item-custom">Trivia</a>
-            <a href="emoji.html" class="nav-item-custom">Emoji</a>
-            <a href="account.html" class="nav-item-custom">Account</a>
-            <a href="#" class="nav-item-custom">Link</a>
-        </nav>
-    </header>
+    <!-- ▼ 共通ヘッダーが自動でここに読み込まれます -->
+    <div id="header-container"></div>
 
     <div class="container">
         <h1 class="page-title">SS Upload (スクリーンショット投稿)</h1>
@@ -158,6 +97,24 @@
         <div id="loading-msg">データを読み込み中...</div>
         <div id="post-list" class="post-list"></div>
     </div>
+
+    <!-- 共通ヘッダーを読み込んで現在地をアクティブにする処理 -->
+    <script>
+        fetch('header.html')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('header-container').innerHTML = data;
+                
+                // 現在開いているページを自動判定してナビに active クラスをつける
+                const currentPath = window.location.pathname.split('/').pop();
+                const navLinks = document.querySelectorAll('.nav-links a');
+                navLinks.forEach(link => {
+                    if (link.getAttribute('href') === currentPath) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+    </script>
 
     <!-- メインのJavaScript（モジュールとして読み込み） -->
     <script type="module" src="upload.js"></script>
