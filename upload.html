@@ -6,48 +6,30 @@
     <title>SS Upload - 秘密結社の部屋</title>
     <!-- Tesseract.js (OCR) -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <!-- 外部CSSファイルの読み込み -->
+    <link rel="stylesheet" href="upload.css">
     <style>
-        :root {
-            --bg-color: #1a1c1e;
-            --card-bg: #25282c;
-            --accent-color: #00d4ff;
-            --danger-color: #ff4d4d;
-            --text-color: #e0e0e0;
-            --sub-text: #a0a0a0;
-            --header-height: 60px;
-            --border-color: #333;
-        }
-
-        body {
-            margin: 0;
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            line-height: 1.6;
-        }
-
+        /* ヘッダー専用のスタイル（ヘッダー側で完全に独立管理） */
         header {
             background-color: rgba(0, 0, 0, 0.95);
-            height: var(--header-height);
+            height: 60px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             position: sticky;
             top: 0;
             z-index: 1000;
-            border-bottom: 2px solid var(--accent-color);
+            border-bottom: 2px solid #00d4ff;
             padding: 0 15px;
             box-sizing: border-box;
         }
-
         .logo-link {
             text-decoration: none;
             font-weight: bold;
             font-size: 1.1rem;
-            color: var(--accent-color);
+            color: #00d4ff;
             white-space: nowrap;
         }
-
         .nav-links {
             display: flex;
             gap: 10px;
@@ -55,399 +37,40 @@
             white-space: nowrap;
         }
         .nav-links::-webkit-scrollbar { display: none; }
-
         .nav-item-custom {
-            color: #e0e0e0; text-decoration: none; font-size: 0.85rem; 
-            padding: 6px 10px; border-radius: 4px; border: 1px solid transparent;
+            color: #e0e0e0; 
+            text-decoration: none; 
+            font-size: 0.85rem; 
+            padding: 6px 10px; 
+            border-radius: 4px; 
+            border: 1px solid transparent;
             transition: 0.2s;
         }
         .nav-item-custom:hover, .nav-item-custom.active { 
             background: rgba(0, 212, 255, 0.2); 
             border-color: #00d4ff; 
         }
-
-        .container {
-            width: 100%;
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-
-        .page-title {
-            color: var(--accent-color);
-            border-bottom: 1px solid #333;
-            padding-bottom: 10px;
-            margin-top: 10px;
-        }
-
-        .guide-card {
-            background: rgba(0, 212, 255, 0.05);
-            border: 1px solid rgba(0, 212, 255, 0.3);
-            border-left: 4px solid var(--accent-color);
-            border-radius: 8px;
-            padding: 18px 20px;
-            margin-bottom: 25px;
-        }
-
-        .guide-title {
-            margin: 0 0 10px 0;
-            font-size: 1rem;
-            color: var(--accent-color);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .guide-list {
-            margin: 0;
-            padding-left: 20px;
-            font-size: 0.9rem;
-            color: var(--text-color);
-        }
-
-        .guide-list li {
-            margin-bottom: 6px;
-        }
-
-        .guide-highlight {
-            color: #ffd700;
-            font-weight: bold;
-        }
-
-        .upload-form-card {
-            background: var(--card-bg);
-            border: 1px solid #333;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 30px;
-        }
-
-        .form-row {
-            display: flex;
-            gap: 15px;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-            flex: 1;
-        }
-
-        .form-group.small {
-            flex: 0 0 140px;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 0.9rem;
-            color: var(--sub-text);
-            margin-bottom: 5px;
-        }
-
-        .form-group input[type="text"],
-        .form-group input[type="password"] {
-            width: 100%;
-            padding: 10px;
-            box-sizing: border-box;
-            background: #1a1c1e;
-            border: 1px solid #444;
-            border-radius: 4px;
-            color: var(--text-color);
-            font-size: 1rem;
-        }
-
-        .file-input-wrapper {
-            margin-top: 10px;
-        }
-
-        .submit-btn {
-            background: transparent;
-            color: var(--accent-color);
-            border: 1px solid var(--accent-color);
-            padding: 10px 20px;
-            font-size: 1rem;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-
-        .submit-btn:hover {
-            background: rgba(0, 212, 255, 0.2);
-            box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
-        }
-
-        /* 登録済み機体一覧データ */
-        .registered-units-area {
-            margin-bottom: 35px;
-        }
-
-        .table-header-area {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 12px;
-        }
-
-        .section-title {
-            font-size: 1.1rem;
-            color: var(--text-color);
-            margin: 0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .table-search-box {
-            width: 100%;
-            max-width: 300px;
-            padding: 6px 12px;
-            background: #1a1c1e;
-            border: 1px solid #444;
-            border-radius: 16px;
-            color: var(--text-color);
-            font-size: 0.85rem;
-            box-sizing: border-box;
-            outline: none;
-            transition: 0.2s;
-        }
-
-        .table-search-box:focus {
-            border-color: var(--accent-color);
-            box-shadow: 0 0 6px rgba(0, 212, 255, 0.4);
-        }
-
-        .table-container {
-            width: 100%;
-            overflow-x: auto;
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            background: var(--card-bg);
-            max-height: 320px;
-            overflow-y: auto;
-            position: relative;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            text-align: left;
-        }
-
-        th, td {
-            padding: 12px 15px;
-            border-bottom: 1px solid var(--border-color);
-            vertical-align: middle;
-        }
-
-        th {
-            background-color: #1b2838;
-            color: var(--accent-color);
-            font-weight: bold;
-            border-bottom: 2px solid var(--accent-color);
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            white-space: nowrap;
-        }
-
-        tr:hover {
-            background-color: rgba(255, 255, 255, 0.03);
-        }
-
-        .unit-no-badge {
-            background: rgba(0, 212, 255, 0.15);
-            color: var(--accent-color);
-            border: 1px solid var(--accent-color);
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.85rem;
-            font-family: monospace;
-            white-space: nowrap;
-        }
-
-        .ability-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-        }
-
-        .ability-badge {
-            background: rgba(255, 215, 0, 0.1);
-            color: #ffd700;
-            border: 1px solid rgba(255, 215, 0, 0.4);
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .ability-num {
-            color: var(--accent-color);
-            font-weight: bold;
-            font-size: 0.75rem;
-        }
-
-        .img-link-btn {
-            color: var(--accent-color);
-            text-decoration: none;
-            border: 1px solid var(--accent-color);
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            transition: 0.2s;
-            display: inline-block;
-            white-space: nowrap;
-        }
-
-        .img-link-btn:hover {
-            background: rgba(0, 212, 255, 0.2);
-            box-shadow: 0 0 8px rgba(0, 212, 255, 0.4);
-        }
-
-        /* 投稿一覧エリア */
-        .list-header-area {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .search-box {
-            width: 100%;
-            max-width: 360px;
-            padding: 8px 14px;
-            background: #1a1c1e;
-            border: 1px solid var(--accent-color);
-            border-radius: 20px;
-            color: var(--text-color);
-            font-size: 0.9rem;
-            box-sizing: border-box;
-            outline: none;
-            transition: 0.2s;
-        }
-
-        .search-box:focus {
-            box-shadow: 0 0 8px rgba(0, 212, 255, 0.5);
-            border-color: #55e6ff;
-        }
-
-        .post-list {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .post-card {
-            background: var(--card-bg);
-            border: 1px solid #333;
-            border-radius: 8px;
-            padding: 20px;
-        }
-
-        .post-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid #333;
-            padding-bottom: 8px;
-            margin-bottom: 12px;
-            font-size: 0.85rem;
-            color: var(--sub-text);
-        }
-
-        .post-header-left {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-        }
-
-        .post-author {
-            color: var(--accent-color);
-            font-weight: bold;
-        }
-
-        .delete-btn {
-            background: transparent;
-            color: var(--danger-color);
-            border: 1px solid var(--danger-color);
-            padding: 2px 8px;
-            font-size: 0.75rem;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .delete-btn:hover {
-            background: rgba(255, 77, 77, 0.2);
-            box-shadow: 0 0 6px rgba(255, 77, 77, 0.4);
-        }
-
-        .post-unit-title {
-            font-size: 1.1rem;
-            margin: 0 0 12px 0;
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-
-        .post-number-badge {
-            background: rgba(255, 215, 0, 0.15);
-            color: #ffd700;
-            border: 1px solid #ffd700;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.85rem;
-            font-weight: bold;
-        }
-
-        .unit-number-badge {
-            background: rgba(0, 212, 255, 0.15);
-            color: var(--accent-color);
-            border: 1px solid var(--accent-color);
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 0.85rem;
-        }
-
-        .post-image {
-            max-width: 100%;
-            max-height: 500px;
-            border-radius: 6px;
-            border: 1px solid #444;
-            display: block;
-        }
-
-        #loading-msg {
-            text-align: center;
-            color: var(--sub-text);
-            padding: 20px;
-        }
     </style>
 </head>
 <body>
 
+    <!-- ヘッダー -->
     <header>
         <a href="index.html#main" class="logo-link">秘密結社の部屋</a>
         <nav class="nav-links">
-            <a href="unit.html" class="nav-item-custom">Unit</a>
+            <a href="unit.html" class="nav-item-custom" style="display: none;">Unit</a>
             <a href="derivatives.html" class="nav-item-custom">Derivatives</a>
             <a href="arms.html" class="nav-item-custom">Arms</a>
-            <a href="hangar.html" class="nav-item-custom">Hangar</a>
+            <a href="hangar.html" class="nav-item-custom" style="display: none;">Hangar</a>
+            <a href="seiryoku-p.html" class="nav-item-custom">勢力P管理</a>
             <a href="upload.html" class="nav-item-custom active">Upload</a>
-            <a href="#" class="nav-item-custom">Battle</a>
+            <a href="battle.html" class="nav-item-custom">Battle</a>
             <a href="novels.html" class="nav-item-custom">Novels</a>
-            <a href="tactics.html" class="nav-item-custom">Tactics</a>
+            <a href="bbs.html" class="nav-item-custom">秘密結社BBS</a>
             <a href="hunter.html" class="nav-item-custom">Hunter</a>
             <a href="trivia.html" class="nav-item-custom">Trivia</a>
             <a href="emoji.html" class="nav-item-custom">Emoji</a>
+            <a href="account.html" class="nav-item-custom">Account</a>
             <a href="#" class="nav-item-custom">Link</a>
         </nav>
     </header>
@@ -536,250 +159,7 @@
         <div id="post-list" class="post-list"></div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-        // 外出しした投稿処理モジュールをインポート
-        import { handlePostSubmit, handlePostDelete } from "./post-handler.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyAKnEENO4tuGtFHsTOAWusbUNPzzUiMNMY",
-            authDomain: "himitsukessya-aa509.firebaseapp.com",
-            projectId: "himitsukessya-aa509",
-            storageBucket: "himitsukessya-aa509.firebasestorage.app",
-            messagingSenderId: "584936417780",
-            appId: "1:584936417780:web:7702b98ea7faf7ccfbb1a1",
-            measurementId: "G-9XBXVQN1JC"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-
-        const form = document.getElementById('upload-form');
-        const submitBtn = document.getElementById('submit-btn');
-        const postList = document.getElementById('post-list');
-        const loadingMsg = document.getElementById('loading-msg');
-        const searchInput = document.getElementById('search-input');
-        const tableSearchInput = document.getElementById('table-search-input');
-        const tableBody = document.getElementById('registered-table-body');
-
-        let allPosts = [];
-
-        // 投稿一覧データの読み込み
-        async function loadPosts() {
-            try {
-                postList.innerHTML = '';
-                loadingMsg.style.display = 'block';
-
-                const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
-                const querySnapshot = await getDocs(q);
-
-                loadingMsg.style.display = 'none';
-
-                allPosts = [];
-                querySnapshot.forEach((docSnap) => {
-                    allPosts.push({ id: docSnap.id, ...docSnap.data() });
-                });
-
-                renderPosts(allPosts);
-                renderRegisteredTable(allPosts);
-
-            } catch (error) {
-                console.error("読み込みエラー:", error);
-                loadingMsg.textContent = 'データの読み込みに失敗しました。画面を再読み込みしてください。';
-                tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--danger-color);">データの読み込みに失敗しました。</td></tr>';
-            }
-        }
-
-        // 登録済み機体一覧テーブルの描画
-        function renderRegisteredTable(posts) {
-            tableBody.innerHTML = '';
-
-            if (posts.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--sub-text);">該当する機体データはありません。</td></tr>';
-                return;
-            }
-
-            const sortedPosts = [...posts].sort((a, b) => {
-                const numA = parseInt(a.unitNumber, 10) || 0;
-                const numB = parseInt(b.unitNumber, 10) || 0;
-                return numA - numB;
-            });
-
-            sortedPosts.forEach(data => {
-                const tr = document.createElement('tr');
-                const unitNo = escapeHTML(data.unitNumber || '----');
-                const unitName = escapeHTML(data.unitName || '名称未設定');
-                const imgUrl = data.imageUrl || '#';
-
-                let abilityBadgesHTML = '';
-                
-                if (data.abilities && Array.isArray(data.abilities) && data.abilities.length > 0) {
-                    abilityBadgesHTML = data.abilities.map(item => `
-                        <span class="ability-badge">
-                            <span class="ability-num">No.${item.no}</span>
-                            ${escapeHTML(item.text)}
-                        </span>
-                    `).join('');
-                } else {
-                    const oldAbilities = [];
-                    if (data.ability1) oldAbilities.push({ no: 1, text: data.ability1 });
-                    if (data.ability2) oldAbilities.push({ no: 2, text: data.ability2 });
-                    if (data.ability3) oldAbilities.push({ no: 3, text: data.ability3 });
-
-                    if (oldAbilities.length > 0) {
-                        abilityBadgesHTML = oldAbilities.map(item => `
-                            <span class="ability-badge">
-                                <span class="ability-num">No.${item.no}</span>
-                                ${escapeHTML(item.text)}
-                            </span>
-                        `).join('');
-                    } else {
-                        abilityBadgesHTML = '<span style="color:#666;">-</span>';
-                    }
-                }
-
-                tr.innerHTML = `
-                    <td><span class="unit-no-badge">${unitNo}</span></td>
-                    <td><strong>${unitName}</strong></td>
-                    <td><div class="ability-container">${abilityBadgesHTML}</div></td>
-                    <td><a href="${imgUrl}" target="_blank" rel="noopener noreferrer" class="img-link-btn">🔗 画像を見る</a></td>
-                `;
-                tableBody.appendChild(tr);
-            });
-        }
-
-        // 投稿カードリストの描画
-        function renderPosts(postsToRender) {
-            postList.innerHTML = '';
-
-            if (postsToRender.length === 0) {
-                postList.innerHTML = '<p style="color: var(--sub-text); text-align: center; padding: 30px 0;">該当する投稿が見つかりませんでした。</p>';
-                return;
-            }
-
-            postsToRender.forEach((data) => {
-                const dateStr = data.createdAt ? new Date(data.createdAt.toDate()).toLocaleString('ja-JP') : '日時不明';
-                const postNoStr = data.postNo ? `投稿 No.${data.postNo}` : '投稿 No.--';
-                const unitNoStr = data.unitNumber ? `機体 No.${escapeHTML(data.unitNumber)}` : '機体 No.----';
-
-                const card = document.createElement('div');
-                card.className = 'post-card';
-                card.innerHTML = `
-                    <div class="post-header">
-                        <div class="post-header-left">
-                            <span class="post-author">${escapeHTML(data.author || '名無し')}</span>
-                            <span class="post-date">${dateStr}</span>
-                        </div>
-                        <button class="delete-btn" data-id="${data.id}">削除</button>
-                    </div>
-                    <h3 class="post-unit-title">
-                        <span class="post-number-badge">${postNoStr}</span>
-                        <span class="unit-number-badge">${unitNoStr}</span>
-                        <span>${escapeHTML(data.unitName || '名称未設定')}</span>
-                    </h3>
-                    ${data.imageUrl ? `<img src="${data.imageUrl}" class="post-image" alt="投稿画像" loading="lazy">` : ''}
-                `;
-
-                // 削除ボタンのクリック処理（post-handler.js の関数を呼出）
-                const deleteBtn = card.querySelector('.delete-btn');
-                deleteBtn.addEventListener('click', () => {
-                    handlePostDelete(db, data.id, data.deleteKey, loadPosts);
-                });
-
-                postList.appendChild(card);
-            });
-        }
-
-        // テーブル検索フィルター
-        tableSearchInput.addEventListener('input', (e) => {
-            const keyword = e.target.value.toLowerCase().trim();
-
-            if (!keyword) {
-                renderRegisteredTable(allPosts);
-                return;
-            }
-
-            const filteredTableData = allPosts.filter(post => {
-                const unitNumberMatch = (post.unitNumber || '').toLowerCase().includes(keyword);
-                const unitNameMatch = (post.unitName || '').toLowerCase().includes(keyword);
-                
-                let abilityMatch = false;
-                if (post.abilities && Array.isArray(post.abilities)) {
-                    abilityMatch = post.abilities.some(item => item.text.toLowerCase().includes(keyword));
-                } else {
-                    abilityMatch = (post.ability1 || '').toLowerCase().includes(keyword) ||
-                                   (post.ability2 || '').toLowerCase().includes(keyword) ||
-                                   (post.ability3 || '').toLowerCase().includes(keyword);
-                }
-
-                return unitNameMatch || unitNumberMatch || abilityMatch;
-            });
-
-            renderRegisteredTable(filteredTableData);
-        });
-
-        // 投稿カード検索フィルター
-        searchInput.addEventListener('input', (e) => {
-            const keyword = e.target.value.toLowerCase().trim();
-
-            if (!keyword) {
-                renderPosts(allPosts);
-                return;
-            }
-
-            const filteredPosts = allPosts.filter(post => {
-                const postNoStr = post.postNo ? `no.${post.postNo}` : '';
-                const rawPostNoStr = post.postNo ? String(post.postNo) : '';
-                const unitNumberMatch = (post.unitNumber || '').toLowerCase().includes(keyword);
-                const unitNameMatch = (post.unitName || '').toLowerCase().includes(keyword);
-                const authorMatch = (post.author || '').toLowerCase().includes(keyword);
-                const postNoMatch = postNoStr.includes(keyword) || rawPostNoStr.includes(keyword);
-                
-                return unitNameMatch || unitNumberMatch || authorMatch || postNoMatch;
-            });
-
-            renderPosts(filteredPosts);
-        });
-
-        // フォーム送信処理（post-handler.js の関数を呼出）
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const file = document.getElementById('image-file').files[0];
-            const unitNumber = document.getElementById('unit-number').value.trim();
-            const pageTitleInput = document.getElementById('unit-name').value.trim(); // 修正：変数名を適切に維持
-            const unitName = document.getElementById('unit-name').value.trim();
-            const author = document.getElementById('author').value.trim();
-            const deleteKey = document.getElementById('delete-key').value.trim();
-
-            const success = await handlePostSubmit({
-                db,
-                file,
-                unitNumber,
-                unitName,
-                author,
-                deleteKey,
-                submitBtn
-            });
-
-            if (success) {
-                form.reset();
-                searchInput.value = '';
-                tableSearchInput.value = '';
-                await loadPosts();
-            }
-        });
-
-        function escapeHTML(str) {
-            return str.replace(/[&<>'"]/g, 
-                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
-            );
-        }
-
-        // 初期読み込み
-        loadPosts();
-    </script>
+    <!-- メインのJavaScript（モジュールとして読み込み） -->
+    <script type="module" src="upload.js"></script>
 </body>
 </html>
