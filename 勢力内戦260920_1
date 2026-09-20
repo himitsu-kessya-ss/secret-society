@@ -1,0 +1,532 @@
+
+<html lang="ja" style="background-color: #000000;"><head>
+<meta HTTP-EQUIV="Content-type" CONTENT="text/html; charset=UTF-8">
+<meta HTTP-EQUIV="Expires" CONTENT="0">
+<meta HTTP-EQUIV="Cache-Control" CONTENT="no-cache">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="shortcut icon" href="https://mstactics.xsrv.jp/mst8/favicon.ico" />
+<NOSCRIPT>
+<meta HTTP-EQUIV="Refresh" CONTENT="0;URL=https://mstactics.xsrv.jp/">
+</NOSCRIPT>
+<SCRIPT LANGUAGE="JavaScript">
+<!--
+sent = false;
+function send_check()
+{
+if(sent){ return false; }
+else	{ sent = true; setTimeout(function(){ sent = false; }, 2000); }  // 2byou de sousin kaikin (button ga shinanai you ni)
+return true;
+}
+function dsp_msg()
+{
+dspmsg = "";
+if( dspmsg ){ alert(dspmsg); }
+}
+window.onload=dsp_msg;
+//-->
+</SCRIPT>
+<META http-equiv="Page-Exit" content="blendTrans(Duration=1.5)">
+<STYLE type="text/css">
+<!--
+body,tr,td,th{font-size:95%;text-size-adjust: 100%; -webkit-text-size-adjust: 100%;}a:hover{color:#ff6666}.small{font-size:90%}.big{font-size:20px;font-weight:bold;}.b1{background-color:#2a2a33;border-color: #5a5a68 #33333d #33333d #5a5a68; border-style:solid;border-width:1px;padding:3px 6px;}.b2{background-color:#3b374f;border-color: #c6c6c6 #696969 #696969 #c6c6c6; border-style:solid;border-width:1px;text-align:center;font-weight: bold;line-height: 120%;}.b3{background: #dcdcdc;border-color: #696969 #dcdcdc #dcdcdc #696969;}.b4{padding: 1px 3px; background: #020202;}.dmg{color:red;font-size:16pt}.dmgitem{color:red;font-size:18pt}.clit{color:#FF00FF;font-size:16pt}.btn{color:#000;border-top:1px solid #f8f8ff;border-bottom:1px solid gray;border-left : 1px solid #f8f8ff; border-right:1px solid gray;background-color:#c1b8af;border-radius: 3px; -moz-border-radius: 3px; -webkit-border-radius: 3px;}.slc{background:#f8f8ff;}.txt{background:#f8f8ff;color:#006;}.info{background:#020202;color:#f8f8ff;}.btn:hover{background: -moz-linear-gradient(top,#d6eafa 0%,#8cabc5);	background: -webkit-gradient(linear, left top, left bottom, from(#d6eafa), to(#8cabc5));}
+.cbtn {
+text-decoration: none;font-weight: bold;text-align: center;font-size: 15px;display: block;
+background: -moz-linear-gradient(top,#787878 0%,#35313B);
+background: -webkit-gradient(linear, left top, left bottom, from(#787878), to(#35313B));
+border: 1px solid #EAD551;color: #ed8800;border-radius: 4px;-moz-border-radius: 4px;-webkit-border-radius: 4px;
+-moz-box-shadow: 1px 1px 1px rgba(000,000,000,0.3);
+-webkit-box-shadow: 1px 1px 1px rgba(000,000,000,0.3);
+text-shadow: 0px 0px 3px rgba(0,0,0,0.5);width: 40px;padding: 2px 0;
+}
+.cbtn:hover {
+  color: #ffffff; /* マウスが乗った時の文字色（例：白） */
+}
+.outline{text-shadow: #323232 1px 1px 0px, #323232 -1px 1px 0px, #323232 1px -1px 0px, #323232 -1px -1px 0px;}
+.outline2{text-shadow: #cccccc 1px 1px 0px, #cccccc -1px 1px 0px, #cccccc 1px -1px 0px, #cccccc -1px -1px 0px;}
+table[border="1"] {
+    border-collapse: collapse;
+    border-spacing: 0;
+    border: 1px solid #4a4a58;
+}
+table[border="1"] td,
+table[border="1"] th {
+    border: 1px solid #33333d;
+    padding: 4px 6px;
+}
+table[border="1"] table[border="1"] {
+    border: none;
+}
+table[border="0"] {
+    border-collapse: collapse;
+    border-spacing: 0;
+    border: none;
+}
+table[border="0"] td,
+table[border="0"] th {
+    border: none;
+}
+/* Share bars on the group list (groupwork.cgi). The bar used to be an image
+   with its width written in pixels (3px per percent, so 300px at 100%), which
+   on a phone was wider than the whole column and pushed the table off screen.
+   Now the bar is a percentage of this box: the box is 300px on a desktop, so
+   the bars look exactly as before, and on a narrow screen the box shrinks to
+   whatever the column has and every bar shrinks with it, keeping the lengths
+   comparable. */
+span.barbox {
+    display: inline-block;
+    width: 300px;
+    max-width: 100%;
+    vertical-align: middle;
+}
+span.barbox img {
+    display: block;
+}
+/* Group colour swatches (groupwork.cgi). These replaced a 370x160 popup
+   window, which on a phone opened as a whole extra tab. The swatches sit in
+   the settings form itself: tap one and the code drops into the field, with
+   the sample text next to it changing colour so the choice can be judged
+   against the black background it will actually be read on. */
+div.grpcolmap {
+    margin: 4px 0 2px 0;
+    max-width: 100%;
+    line-height: 0;
+}
+span.grpcolsw {
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    margin: 1px;
+    border: 1px solid #333;
+    cursor: pointer;
+    vertical-align: top;
+}
+span.grpcolsw:hover {
+    border-color: #fff;
+}
+span.grpcolprev {
+    font-weight: bold;
+    padding: 0 6px;
+}
+input#grpcolpick {
+    width: 34px;
+    height: 26px;
+    padding: 0;
+    vertical-align: middle;
+}
+/* Bottom menu frame (sysmenu.cgi). Every button there has its width written
+   in pixels, and they add up to more than a phone screen, so the hangar button
+   (and on tablets/narrow PC windows, sometimes the menuno pulldown itself)
+   fell off the right — and since that frame has scrolling="no", whatever falls
+   off is simply unreachable until the whole thing is logged back into.
+   2026-08-26: this used to be inside the phone-only (max-width:640px) block
+   below, so tablets (iPad ~768-1024px, and PC windows narrower than the sum
+   of every button's fixed width) never got the fix. Made unconditional
+   instead — sizing buttons/select to their own content is harmless at any
+   width, so there is no need to gate it by screen size at all.
+   The 35px height stays, because the frame is only 50px tall. */
+.sysbar input.btn {
+    width: auto !important;
+    min-width: 0 !important;
+    padding: 0 14px;
+}
+/* Space between the buttons so a thumb cannot hit two of them at once.
+   The height stays at the 35px written on the tag: the frame is only 50px
+   tall, and with the default body margin a taller button would be cut off
+   at the bottom and become unpressable. Room is bought sideways instead. */
+.sysbar td {
+    padding-right: 10px;
+}
+.sysbar select.slc {
+    max-width: 30vw;
+}
+/* Jump-to-edge buttons for the sideways-scrolling tables below (table.xscroll).
+   Hidden here because on a wide screen table.xscroll does not scroll at all
+   (that behaviour is only switched on inside the narrow-screen block), so the
+   buttons would have nothing to do. */
+div.xscrollnav {
+    display: none;
+}
+/* Narrow screens: let class="lay" tables stop behaving as tables, so that
+   side-by-side cells stack vertically instead of being squeezed.
+   Wide screens are untouched. */
+@media screen and (max-width: 640px) {
+/* Unit pictures marked class="uimg" shrink on phones. The image keeps its
+   own size on wide screens, so nothing changes for PC. */
+img.uimg {
+    max-width: 45vw;
+    height: auto;
+}
+table.lay,
+table.lay > tbody > tr,
+table.lay > tbody > tr > td {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+}
+table.lay > tbody > tr > td {
+    border-width: 0 0 1px 0;
+}
+/* Hard stop against sideways scrolling of the whole page. 100vw is the screen
+   width itself, so it holds no matter how wide the parent got. If one block
+   still has something too wide inside (a long select, a data table), only that
+   block scrolls, and the rest of the page stays put. */
+table.lay,
+table.lay > tbody > tr,
+table.lay > tbody > tr > td {
+    max-width: 100vw;
+}
+table.lay > tbody > tr > td {
+    overflow-x: auto;
+}
+/* class="lay2" is for a table built as
+       row1: [heading A][heading B]
+       row2: [body A   ][body B   ][body C]
+   Stacking it plainly would give heading, heading, body, body. So the rows are
+   dissolved with display:contents, which hands all the cells to one column
+   list, and then each cell is given its place with order:
+       A heading 1, A body 2, B heading 3, B body 4, C 6
+   When heading B carries colspan=2 it covers both B and C, and C simply
+   follows B, which is the reading order we want either way. */
+table.lay2 {
+    display: flex;
+    flex-direction: column;
+    max-width: 100vw;
+}
+table.lay2 > tbody,
+table.lay2 > tbody > tr {
+    display: contents;
+}
+table.lay2 > tbody > tr > td {
+    display: block;
+    width: 100%;
+    max-width: 100vw;
+    box-sizing: border-box;
+    overflow-x: auto;
+    border-width: 0 0 1px 0;
+}
+table.lay2 > tbody > tr:nth-child(1) > td:nth-child(1) { order: 1; }
+table.lay2 > tbody > tr:nth-child(2) > td:nth-child(1) { order: 2; }
+table.lay2 > tbody > tr:nth-child(1) > td:nth-child(2) { order: 3; }
+table.lay2 > tbody > tr:nth-child(2) > td:nth-child(2) { order: 4; }
+table.lay2 > tbody > tr:nth-child(1) > td:nth-child(3) { order: 5; }
+table.lay2 > tbody > tr:nth-child(2) > td:nth-child(3) { order: 6; }
+/* The unit picture is 300px wide by inline style. On a phone that alone eats
+   most of the screen and pushes the data columns out of view, which makes the
+   whole page scroll sideways. Shrink it here only. !important is needed
+   because the size is written on the tag itself. */
+#effect5 img {
+    max-width: 30vw !important;
+    max-height: 30vw !important;
+}
+/* The weapon / equipment load buttons sit in their own column on the right of
+   the unit table, so their width is width the data columns cannot use. Smaller
+   text there buys back about as much room as shrinking the unit picture would,
+   and the picture is worth more. Height is left alone so the rows still line
+   up. Only these two buttons are touched: they are the ones inside the
+   item.cgi forms. */
+form[action="item.cgi"] input.btn {
+    font-size: 11px;
+    padding: 0 2px;
+}
+/* A select is as wide as its longest option, whichever one is chosen. On the
+   tactics row that pushes the SET and R buttons off the screen, so cap it. */
+select.slc {
+    max-width: 34vw;
+}
+/* Tighter cells on a phone. The roomier padding set above is for desktop;
+   on a narrow screen those few pixels per column are what pushes the unit
+   data table off the right edge. */
+table[border="1"] td,
+table[border="1"] th {
+    padding: 2px 3px;
+}
+/* Login box on the top page (index.cgi). The row is
+       [ID][input][password][input][button]
+   which is far wider than a phone screen, so it used to run off the right and
+   the login button could not be reached. The table also carries class="lay",
+   so the cells are already stacked by the rules above; what is left is to give
+   the inputs and the button the full width of that stack.
+   16px on the fields is on purpose: iOS zooms the whole page in when a field
+   with smaller text is tapped, and after that zoom the page stays enlarged.
+   !important is needed on the button because its width is written on the tag
+   itself (style="width:100px"). */
+table.loginbox input[type="text"],
+table.loginbox input[type="password"] {
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 16px;
+    padding: 6px 4px;
+}
+table.loginbox input.btn {
+    width: 100% !important;
+}
+table.loginbox > tbody > tr > td {
+    text-align: center;
+}
+/* Profile screen (profile.cgi). The table carries class="lay", so the label
+   cell and the field cell are already stacked by the rules above. What is left
+   is that every field there has its width written in columns (size=50,
+   cols=80), which is far wider than a phone screen, so the page ran off to the
+   right and the right hand end of each field could not be reached.
+   16px is on purpose: iOS zooms the whole page in when a field with smaller
+   text is tapped, and the page stays enlarged afterwards. */
+table.proftbl input[type="text"],
+table.proftbl textarea,
+table.formtbl input[type="text"],
+table.formtbl textarea {
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 16px;
+    padding: 4px;
+}
+table.proftbl textarea,
+table.formtbl textarea {
+    min-height: 8em;
+}
+/* Group settings (groupwork.cgi). The fields there are written in columns too
+   (size=50 on the name, size=100 on the notice, COLS=72 on the appeal box),
+   which is two to three phone screens wide. table.formtbl above gives them the
+   width of the screen instead; what is left is the member list at the bottom,
+   where each member is a row of up to five cells — name, comment, and three
+   buttons with a text field among them. Those are actions on one person, so
+   stacking them (class="lay") keeps them together and reachable. */
+table.grpmember input.btn {
+    margin: 2px 0;
+}
+table.grpmember input[type="text"] {
+    width: 60%;
+    font-size: 16px;
+}
+/* Bigger swatches on a phone: 22px is a comfortable mouse target but a poor
+   thumb target, and picking the wrong colour here is a wasted save. The text
+   field next to them must not be stretched to the full row width, or the
+   native picker button and the sample are pushed to the next line. */
+span.grpcolsw {
+    width: 30px;
+    height: 30px;
+}
+table.formtbl input#grpcolval {
+    width: 8em;
+}
+/* Tables with too many columns to ever fit a phone: the ranker list
+   (rankin8.cgi, twelve columns) and the ranker detail (info.cgi). They are
+   read across, not down, so they are not stacked; instead the table itself
+   becomes the scrolling box. display:block is what allows a table to scroll
+   its own contents, and it is only done here, on a narrow screen, so the
+   desktop layout is untouched. */
+table.xscroll {
+    display: block;
+    max-width: 100vw;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+/* Turned on only here (see the hidden default above), right where
+   table.xscroll actually scrolls. The buttons just set that table's own
+   scrollLeft, so they sit directly above the table they control. */
+div.xscrollnav {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+    margin: 2px 0;
+}
+div.xscrollnav input.btn {
+    font-size: 11px;
+    padding: 2px 8px;
+    width: auto;
+}
+table.ranklist {
+    font-size: 11px;
+}
+/* The unit picture on the detail page is around 300px, which is most of a
+   phone screen on its own and made the whole sheet a long sideways drag.
+   Capping it here leaves the numbers as the thing you scroll to. Small images
+   in the same table (rank badges, faces, emblems) are already under this size,
+   so they are not touched. */
+table.infomain img {
+    max-width: 40vw;
+    height: auto;
+}
+/* The decoration guide (#r# is red, #o# is orange ...) is one long block of
+   text. Stacked on a phone it filled most of the screen before the writing box
+   came into view. Keep it, but small and inside its own little scroller. */
+table.proftbl td.decohelp {
+    font-size: 11px;
+    line-height: 1.4;
+    max-height: 8em;
+    overflow-y: auto;
+}
+/* The hangar picture choices are radio buttons in a row. Give each one its own
+   line so a thumb cannot hit the neighbouring one. */
+table.proftbl input[type="radio"] {
+    margin: 4px 4px 4px 0;
+}
+/* Newtype lab (training.cgi). The lab picture and the doctor's portrait are
+   full size images sitting in the left column, which on a phone left almost no
+   room for the numbers next to them. The tables carry class="lay", so the
+   picture and the text are stacked; shrinking the picture here keeps it as a
+   small illustration instead of a screenful. */
+table.ntlab img {
+    max-width: 30vw;
+    height: auto;
+}
+/* Super arena (md_top.cgi).
+   The class buttons are eight cells in one table row, each 155px wide by an
+   inline style, so five of them hung off the right of a phone screen with no
+   way to reach them. Turn that row into a wrapping strip of two buttons per
+   line. flex-wrap is what does the work; the width has to be beaten with
+   !important because it is written on the tag itself. The text is allowed to
+   wrap, so the height must go to auto or a two-line label spills out. */
+table.arenabtn > tbody > tr {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+table.arenabtn > tbody > tr > td {
+    flex: 1 1 45%;
+    padding: 2px;
+}
+table.arenabtn input.btn {
+    width: 100% !important;
+    height: auto !important;
+    min-height: 35px;
+    white-space: normal;
+    font-size: 13px;
+    padding: 4px 2px;
+}
+/* The No.1 ranking table has one column per class, which cannot be made to fit
+   and should not be stacked either (it is a comparison, read across). Let that
+   one table scroll sideways on its own instead of dragging the whole page with
+   it. The columns are held wide enough that the unit picture stays readable,
+   so about three fit on screen and the rest are a swipe away. */
+div.arenascroll {
+    max-width: 100vw;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+table.arenarank > tbody > tr > td {
+    min-width: 30vw;
+}
+/* "Back to the arena" sits right above "register / update my data" on the
+   ranking page. On a phone a thumb covers both, and one of them changes saved
+   data, so keep them a finger apart. The back button is also made smaller so
+   the two do not look like a pair of equal choices. */
+form.arenaback {
+    margin: 0 0 26px 0 !important;
+}
+form.arenaback input.btn {
+    font-size: 12px;
+    padding: 2px 10px;
+}
+/* Group list (groupwork.cgi). Six columns is more than a phone can show, and
+   it is a ranking meant to be read across, so it is not stacked. Only the
+   table scrolls sideways, and only when it has to; the rest of the page stays
+   still. The share bars inside it are already proportional (see span.barbox
+   above), so they shrink with the columns instead of forcing the width. */
+div.grplistscroll {
+    max-width: 100vw;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+table.grplist {
+    font-size: 12px;
+}
+table.grplist td {
+    white-space: nowrap;
+}
+}
+-->
+</STYLE>
+<title>MSタクティクスSR</title></head>
+<body background="https://mstactics.xsrv.jp/mst2/img/bg.gif" bgcolor="#141a24" text="#d9d9d9" link="#99ccff" vlink="#ccccff" alink="#ff6666"><STYLE type="text/css"><!--.outline{text-shadow: black 1px 1px 0px, black -1px 1px 0px, black 1px -1px 0px, black -1px -1px 0px;}--></STYLE>
+
+<table><tr><form action="trmnt_setei.cgi" method="post" onSubmit="return send_check()"><td>
+<input type=hidden name=mode value="trmt_settei_view">
+<input type=hidden name=id value="moon2525">
+<input type=hidden name=pass value="t59616975ce7e7ff873a8d80c72949f51">
+<input type=hidden name=back value="no">
+<input type=submit class=btn value="大会の登録／修正"></td></form></tr></table>
+<hr size=0>/ <a href="job.cgi?mode=itiran&id=moon2525&pass=t59616975ce7e7ff873a8d80c72949f51&tpage=0&torokuonly=&torokuok=&kekaonly=&torokuzmi=&torokumi=&torokutu=&bakmode=trmt_syosai&tid=54275H2TnVo1owKmA&tbak=back&back=no">格納庫へ</a> / <a href="tornament.cgi?id=moon2525&pass=t59616975ce7e7ff873a8d80c72949f51&mode=trmt_main&back=no&tpage=0&torokuonly=&torokuok=&kekaonly=&torokuzmi=&torokumi=&torokutu=">トーナメント一覧へ</a><hr size=0><table border=1 align=center width=100%><tr><td colspan=2 class="b2" align=center>トーナメント詳細</td></tr>
+<tr><td colspan=2 class="b1" align=center><font size=+2><b>秘密結社）勢力内戦</b></font><b>（終了）</b></td></tr><tr><td><table><tr><td><b><font color="#FFEA00">【❄️🦊】</font>Oro🍊min</b>：<br>※関係者以外のご参加はご遠慮ください<br><br><br>チームA_AA：ハチワレ<br>チームA_AA：シン・アスカ<br>チームA_SA：アイアンサウス<br>チームA_DA：キュウべぇ<br>チームA_AD：Marc<br>チームA_AD：ニャオハ<br>チームA_SD：Halbert<br>チームA_AS：リーア<br><br>チームB_AA：アラン<br>チームB_AA：キッド<br>チームB_SA：ヴォルド<br>チームB_DA：ナイト<br>チームB_AD：スパイク<br>チームB_AD：Yggdrasill<br>チームB_SD：Freddie<br>チームB_AS：ボブ<br><br>※オロは適当に調整枠で入ります（D枠かなぁ）<br><br>・設置：９／１８（金）夜<br>・開催：９／１９（土）夜<br><br>&gt;▼レギュ<br>・HP７００以下<br>（戦力目安確認のため総耐久も入れます）<br>・カスタム：自由<br>・武器、装備：自由<br>・団体総力戦（リーダーなし）<br>・個人戦術あり<br>・団体戦術あり（くじでチームと合わせて指定）<br>・地形：仮想空間<br>・能力固定あり<br><br>▼報酬<br>勝利チーム：名声１０<br>負けチーム：名声５</td></tr></table><p>
+【形式】<b>団体総力戦</b> <font color=yellow>■ A（9人）（総耐久：6300）（総コスト：9999） VS B（9人）（総耐久：6300）（総コスト：9999） ■</font><br>【賞金】 10919 クレジット<br>【参加条件】<br>
+機体自由、耐久力700以下<br>【大会ルール】<br>
+自由団体戦、団体戦術あり<br>地形：ランダム、回復なし、戦術あり、能力固定あり（全員500・機体のみで勝負）</td>
+<td rowspan=2 align=center nowrap>
+<br><a href="tornament.cgi?tid=mp0oho7no26522F50&id=moon2525&pass=t59616975ce7e7ff873a8d80c72949f51&mode=trmnt_view&v_number=0&tpage=0&torokuonly=&torokuok=&kekaonly=&torokuzmi=&torokumi=&torokutu=&back=no">大会結果</a><br>
+</td></tr><tr><td>【参加者】<br>
+<STYLE TYPE="text/css">
+<!--
+.tooltip { /* 補足説明するテキストのスタイル */
+  position: relative;
+  cursor: pointer;
+  padding: 0 5px;
+  font-size: 1.0em;
+  color: #85aece;
+}
+
+.description_top { /* ツールチップのスタイル */
+/*  width: 150px; /* 横幅 */
+  position: absolute;
+  left: 50%;
+  bottom: 80%; /* Y軸の位置 */
+  transform: translateX(-50%);
+  margin-bottom: 6px; /* テキストとの距離 */
+  padding: 8px;
+  border-radius: 10px; /* 角の丸み */
+  background-color: #666;
+  font-size: 0.7em;
+  color: #fff;
+  text-align: center;
+  visibility: hidden; /* ツールチップを非表示に */
+  opacity: 0; /* 不透明度を0％に */
+  z-index: 1;
+  transition: 0.3s all; /* マウスオーバー時のアニメーション速度 */
+}
+
+.tooltip:hover .description_top { /* マウスオーバー時のスタイル */
+  bottom: 100%; /* Y軸の位置 */
+  visibility: visible; /* ツールチップを表示 */
+  opacity: 1; /* 不透明度を100％に */
+}
+-->
+</STYLE>
+<br><br><b>A</b><br>■<span title=No.7151>キュゥべえ</span>(<span class="tooltip">マークアレス【耐久：624】【コスト：66】<span class="description_top"><img src="https://mstactics.xsrv.jp/mst2/img/unit/faf_Alles.png"></span></span>)武器:3408 装甲:58 Lv:11 
+■<span title=No.8079>リーア</span>(<span class="tooltip">ストライクフリーダム弐式【耐久：548】【コスト：88】<span class="description_top"><img src="https://mstactics.xsrv.jp/mst2/img/unit/ZGMF_A-262B.png"></span></span>)武器:0798 装甲:55 Lv:651 
+■<span title=No.1459>アイアンサウス</span>(<span class="tooltip">ブリッツガンダムΨ【耐久：473】【コスト：62】<span class="description_top"><img src="https://mstactics.xsrv.jp/mst2/img/unit/GAT-X207.png"></span></span>)武器:2222 装甲:31 Lv:771 
+■<span title=No.6536>ニャオハ</span>(<span class="tooltip">ガンダム・マルコシアス【耐久：562】【コスト：73】<span class="description_top"><img src="https://mstactics.xsrv.jp/mst2/img/unit/ASW-G-35.png"></span></span>)武器:3043 装甲:61 Lv:759 
+■<span title=No.2083>シン・アスカ</span>(<span class="tooltip">インフィニットジャスティス【耐久：553】【コスト：95】<span class="description_top"><img src="https://mstactics.xsrv.jp/mst2/img/unit/ZGMF-X19A.png"></span></span>)武器:0813 装甲:52 Lv:101 
+■<span title=No.7937>Halbert</span>(<span class="tooltip">デスティニーガンダムSpecII【耐久：582】【コスト：81】<span class="description_top"><img src="https://mstactics.xsrv.jp/mst2/img/unit/ZGMF_A-42S2.png"></span></span>)武器:1042 装甲:58 Lv:697 
+■<span title=No.6531>Marc</span>(<span class="tooltip">モードロンド【耐久：545】【コスト：77】<span class="description_top"><img src="https://mstactics.xsrv.jp/mst2/img/unit/XXXG-00YSW(S).png"></span></span>)武器:0036 装甲:89 Lv:541 
+■<span title=No.4853>ハチワレ</span>(<span class="tooltip">バンシィ・ノルン(DM)【耐久：590】【コスト：80】<span class="description_top"><img src="https://mstactics.xsrv.jp/mst2/img/unit/RX-0N(DM).gif"></span></span>)武器:2412 装甲:72 Lv:680 
+<font color=#99CCFF><b>Oro🍊min(<span title=No.0>夏記念ボール</span>【耐久：120】【コスト：29】)</b></font>
+<br>【総耐久：4597】【総コスト：651】<br><br><br><b>B</b><br>■<span title=No.7937>アラン</span>(<span class="tooltip">デスティニーガンダムSpecII【耐久：591】【コスト：84】<span class="description_top"><img src="https://mstactics.xsrv.jp/mst2/img/unit/ZGMF_A-42S2.png"></span></span>)武器:1042 装甲:60 Lv:659 
+■<span title=No.6743>スパイク</span>(<span class="tooltip">ゴールドフレーム天ミナC【耐久：693】【コスト：60】<span class="description_top"><img src="https://mstactics.xsrv.jp/mst2/img/unit/MBF-P01-Re2c.png"></span></span>)武器:3185 装甲:45 Lv:804 
+■<span title=No.5762>ヴォルド</span>(<span class="tooltip">グシオンリベイクフルシティ【耐久：565】【コスト：70】<span class="description_top"><img src="https://mstactics.xsrv.jp/mst2/img/unit/ASW-G-11F.png"></span></span>)武器:2696 装甲:60 Lv:747 
+■<span title=No.2083>Freddie</span>(<span class="tooltip">Ψインフィニットジャスティス【耐久：699】【コスト：95】<span class="description_top"><img src="https://mstactics.xsrv.jp/mst2/img/unit/ZGMF-X19A.png"></span></span>)武器:0348 装甲:52 Lv:1004 
+■<span title=No.1116>Yggdrasill</span>(<span class="tooltip">ヒュッケバイン【耐久：632】【コスト：69】<span class="description_top"><img src="https://mstactics.xsrv.jp/mst2/img/unit/RTX-008R.png"></span></span>)武器:0454 装甲:47 Lv:731 
+■<span title=No.1917>炎のナイト</span>(<span class="tooltip">ヒュッケバインMk-IIトロンベ【耐久：578】【コスト：66】<span class="description_top"><img src="https://mstactics.xsrv.jp/mst2/img/unit/RTX-010(Trombe).png"></span></span>)武器:0457 装甲:42 Lv:656 
+■<span title=No.4915>キッド</span>(<span class="tooltip">パワードジムカーディガン【耐久：383】【コスト：37】<span class="description_top"><img src="https://mstactics.xsrv.jp/mst2/img/unit/RGM-79PC.gif"></span></span>)武器:2454 装甲:46 Lv:490 
+■<span title=No.4851>ボブ</span>(<span class="tooltip">フェネクス(DM)【耐久：568】【コスト：73】<span class="description_top"><img src="https://mstactics.xsrv.jp/mst2/img/unit/RX-0-3(DM).png"></span></span>)武器:2412 装甲:68 Lv:561 <br>【総耐久：4709】【総コスト：554】
+</td></tr></table>
+<table border=1><tr><td colspan=2 class="b1" align=center><b>大会へのコメント</b></td></tr>
+<tr><td>>ボブさん</td><td><font color=#00ffff>「遅刻してごめんなさい～&gt;&lt;」</font></td></tr><tr><form action="tornament.cgi" method="post" onSubmit="return send_check()">
+<td colspan=2>
+「 <input type="text" class=txt name=cmnt value="" size=60 maxlength=140> 」
+<input type=hidden name=mode value="cmnt">
+<input type=hidden name=tid value="mp0oho7no26522F50">
+<input type=hidden name=id value="moon2525">
+<input type=hidden name=pass value="t59616975ce7e7ff873a8d80c72949f51">
+<input type=hidden name=back value="no">
+<input type=hidden name=torokuonly value="">
+<input type=hidden name=torokuok value="">
+<input type=hidden name=kekaonly value="">
+<input type=hidden name=torokuzmi value="">
+<input type=hidden name=torokumi value="">
+<input type=hidden name=torokutu value="">
+<input type=hidden name=tpage value="0">
+<input type=hidden name=tback value="back">
+<input type=submit class=btn value="コメント">
+</td></tr>
+</table>
+<hr size=0>
+/ <a href="rankin8.cgi?id=moon2525&pass=t59616975ce7e7ff873a8d80c72949f51&page=0&sort=name">ランキングへ</a> / <a href="tornament.cgi?id=moon2525&pass=t59616975ce7e7ff873a8d80c72949f51&mode=trmt_main&back=no&tpage=0&torokuonly=&torokuok=&kekaonly=&torokuzmi=&torokumi=&torokutu=">トーナメント一覧へ</a> <hr size=0>/ <a href="job.cgi?mode=itiran&id=moon2525&pass=t59616975ce7e7ff873a8d80c72949f51&tpage=0&torokuonly=&torokuok=&kekaonly=&torokuzmi=&torokumi=&torokutu=&bakmode=trmt_syosai&tid=54275H2TnVo1owKmA&tbak=back&back=no">格納庫へ</a> / <a href="tornament.cgi?id=moon2525&pass=t59616975ce7e7ff873a8d80c72949f51&mode=trmt_main&back=no&tpage=0&torokuonly=&torokuok=&kekaonly=&torokuzmi=&torokumi=&torokutu=">トーナメント一覧へ</a><hr size=0>
+</body></html>
