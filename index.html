@@ -4,29 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>秘密結社の部屋</title>
+    <!-- 専用のCSSファイルを読み込み -->
     <link rel="stylesheet" href="index.css">
 </head>
 <body>
 
-    <header id="main-header">
-        <a href="index.html#main" class="logo-link" onclick="location.reload()">秘密結社の部屋</a>
-        <nav class="nav-links">
-            <a href="unit.html" class="nav-item-custom" style="display: none;">Unit</a>
-            <a href="derivatives.html" class="nav-item-custom">Derivatives</a>
-            <a href="arms.html" class="nav-item-custom">Arms</a>
-            <a href="hangar.html" class="nav-item-custom" style="display: none;">Hangar</a>
-            <a href="seiryoku-p.html" class="nav-item-custom" style="color: var(--accent-color); border-color: var(--accent-color);">勢力P管理</a>
-            <a href="upload.html" class="nav-item-custom">Upload</a>
-            <a href="#" class="nav-item-custom">Battle</a>
-            <a href="novels.html" class="nav-item-custom">Novels</a>
-            <a href="bbs.html" class="nav-item-custom">秘密結社BBS</a>
-            <a href="hunter.html" class="nav-item-custom">Hunter</a>
-            <a href="trivia.html" class="nav-item-custom">Trivia</a>
-            <a href="emoji.html" class="nav-item-custom">Emoji</a>
-            <a href="account.html" class="nav-item-custom">Account</a>
-            <a href="#" class="nav-item-custom">Link</a>
-        </nav>
-    </header>
+    <!-- ヘッダー読み込み用プレースホルダー または 共通ヘッダー -->
+    <div id="header-container"></div>
 
     <div id="top-page" class="page active">
         <h1 class="title-large">秘密結社の部屋</h1>
@@ -50,6 +34,7 @@
     <div id="main-page" class="page">
         <div class="container">
             <div class="grid">
+                 <!-- 1. SS Upload -->
                  <a href="upload.html" class="card">
                     <div class="card-img" style="background: #112233;">
                         <span style="font-size: 2.5rem;">📸</span>
@@ -60,6 +45,7 @@
                     </div>
                  </a>
 
+                 <!-- 2. 秘密結社BBS（最上段へ配置） -->
                  <a href="bbs.html" class="card">
                     <div class="card-img">
                         <img src="tactics.gif" alt="秘密結社BBS" class="gif-icon">
@@ -70,6 +56,7 @@
                     </div>
                  </a>
 
+                 <!-- Unit Database（非表示） -->
                  <a href="unit.html" class="card" style="display: none;">
                     <div class="card-img">
                         <img src="unit.gif" alt="Unit Database" class="gif-icon">
@@ -80,6 +67,7 @@
                     </div>
                  </a>
                  
+                 <!-- Account 管理カード -->
                  <a href="account.html" class="card">
                     <div class="card-img" style="background: #112233;">
                         <span style="font-size: 2.5rem;">⚙️</span>
@@ -90,6 +78,7 @@
                     </div>
                  </a>
 
+                 <!-- Seiryoku P -->
                  <a href="seiryoku-p.html" class="card">
                     <div class="card-img" style="background: #112233;">
                         <span style="font-size: 2.5rem;">👑</span>
@@ -119,6 +108,7 @@
                     </div>
                 </a>
 
+                <!-- Hangar（非表示） -->
                 <a href="hangar.html" class="card" style="display: none;">
                     <div class="card-img">
                         <img src="hangar.gif" alt="Hangar" class="gif-icon">
@@ -129,15 +119,17 @@
                     </div>
                 </a>
 
-                <a href="javascript:void(0)" class="card under-const">
+                <!-- Battle Data（battles.htmlへ接続） -->
+                <a href="battles.html" class="card">
                     <div class="card-img">
                         <img src="battle.gif" alt="Battle Data" class="gif-icon">
                     </div>
                     <div class="card-content">
-                        <h3 class="card-title">Battle Data (工事中)</h3>
+                        <h3 class="card-title">Battle Data</h3>
                         <p class="card-desc">戦闘記録・大会結果</p>
                     </div>
                 </a>
+
                 <a href="novels.html" class="card">
                     <div class="card-img">
                         <img src="novels.gif" alt="Novels" class="gif-icon">
@@ -200,6 +192,16 @@
         </div>
     </div>
 
+<!-- ヘッダーを読み込むためのスクリプト（ヘッダー読み込み式対応） -->
+<script>
+    fetch('header.html')
+        .then(response => response.text())
+        .then(data => {
+            document.getElementById('header-container').innerHTML = data;
+        });
+</script>
+
+<!-- 専用のJavaScriptファイルを読み込み -->
 <script src="index.js"></script>
 
 <script data-goatcounter="https://bobs-base.goatcounter.com/count"
