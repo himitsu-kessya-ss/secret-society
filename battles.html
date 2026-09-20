@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battle (戦闘結果管理) - 秘密結社の部屋</title>
+    <!-- 外部CSSファイルの読み込み（共通デザイン） -->
+    <link rel="stylesheet" href="upload.css">
+    <style>
+        /* ヘッダー専用のスタイル */
+        header {
+            background-color: rgba(0, 0, 0, 0.95);
+            height: 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 2px solid #00d4ff;
+            padding: 0 15px;
+            box-sizing: border-box;
+        }
+        .logo-link {
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: #00d4ff;
+            white-space: nowrap;
+        }
+        .nav-links {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        .nav-links::-webkit-scrollbar { display: none; }
+        .nav-item-custom {
+            color: #e0e0e0; 
+            text-decoration: none; 
+            font-size: 0.85rem; 
+            padding: 6px 10px; 
+            border-radius: 4px; 
+            border: 1px solid transparent;
+            transition: 0.2s;
+        }
+        .nav-item-custom:hover, .nav-item-custom.active { 
+            background: rgba(0, 212, 255, 0.2); 
+            border-color: #00d4ff; 
+        }
+
+        /* バトルページ固有のスタイル */
+        .battle-form-card {
+            background: var(--card-bg);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .form-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .form-group {
+            margin-bottom: 15px;
+            flex: 1;
+            min-width: 200px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.9rem;
+            color: var(--sub-text);
+            margin-bottom: 5px;
+        }
+        .form-group input[type="text"],
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            background: #1a1c1e;
+            border: 1px solid #444;
+            border-radius: 4px;
+            color: var(--text-color);
+            font-size: 1rem;
+            outline: none;
+        }
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 6px rgba(0, 212, 255, 0.4);
+        }
+        .form-group textarea {
+            resize: vertical;
+            height: 100px;
+        }
+
+        /* イベント階層ツリーのスタイル */
+        .event-section {
+            margin-bottom: 25px;
+        }
+        .event-card {
+            background: var(--card-bg);
+            border: 1px solid #333;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            transition: 0.2s;
+        }
+        .event-header {
+            background: #1f2328;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            border-left: 4px solid var(--accent-color);
+        }
+        .event-title {
+            font-size: 1.1rem;
+            color: var(--accent-color);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .event-body {
+            padding: 15px 20px;
+            border-top: 1px solid #333;
+            background: rgba(0, 0, 0, 0.15);
+        }
+        .sub-battle-item {
+            background: #1a1c1e;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        .sub-battle-info {
+            flex: 1;
+        }
+        .sub-battle-title {
+            font-weight: bold;
+            color: #ffd700;
+            margin-bottom: 4px;
+            font-size: 0.95rem;
+        }
+        .sub-battle-desc {
+            font-size: 0.85rem;
+            color: var(--text-color);
+            white-space: pre-wrap;
+        }
+        .delete-btn {
+            background: transparent;
+            color: var(--danger-color);
+            border: 1px solid var(--danger-color);
+            padding: 3px 8px;
+            font-size: 0.75rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: 0.2s;
+            white-space: nowrap;
+        }
+        .delete-btn:hover {
+            background: rgba(255, 77, 77, 0.2);
+            box-shadow: 0 0 6px rgba(255, 77, 77, 0.4);
+        }
+        #loading-msg {
+            text-align: center;
+            color: var(--sub-text);
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ヘッダー -->
+    <header>
+        <a href="index.html#main" class="logo-link">秘密結社の部屋</a>
+        <nav class="nav-links">
+            <a href="unit.html" class="nav-item-custom" style="display: none;">Unit</a>
+            <a href="derivatives.html" class="nav-item-custom">Derivatives</a>
+            <a href="arms.html" class="nav-item-custom">Arms</a>
+            <a href="hangar.html" class="nav-item-custom" style="display: none;">Hangar</a>
+            <a href="seiryoku-p.html" class="nav-item-custom">勢力P管理</a>
+            <a href="upload.html" class="nav-item-custom">Upload</a>
+            <a href="battle.html" class="nav-item-custom active">Battle</a>
+            <a href="novels.html" class="nav-item-custom">Novels</a>
+            <a href="bbs.html" class="nav-item-custom">秘密結社BBS</a>
+            <a href="hunter.html" class="nav-item-custom">Hunter</a>
+            <a href="trivia.html" class="nav-item-custom">Trivia</a>
+            <a href="emoji.html" class="nav-item-custom">Emoji</a>
+            <a href="account.html" class="nav-item-custom">Account</a>
+            <a href="#" class="nav-item-custom">Link</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <h1 class="page-title">Battle (戦闘結果・大会ログ管理)</h1>
+
+        <!-- ガイドカード -->
+        <div class="guide-card">
+            <h2 class="guide-title">ℹ️ バトル結果の登録ルール</h2>
+            <ul class="guide-list">
+                <li><strong>1階層目（イベント単位）：</strong> 「春大会」「秋大会」など、大会やイベントの大枠の名称を入力・選択します。</li>
+                <li><strong>2階層目（各種データ）：</strong> イベント内の「サマリ」「1回戦目」「2回戦目」「決勝戦」などの詳細な対戦結果を登録します。</li>
+            </ul>
+        </div>
+
+        <!-- 戦闘結果 登録フォーム -->
+        <div class="battle-form-card">
+            <h2 class="section-title" style="margin-bottom: 15px;">⚔️ 戦闘結果の新規登録</h2>
+            <form id="battle-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="event-name">1階層目：イベント名（例：春大会）</label>
+                        <input type="text" id="event-name" list="event-list" placeholder="例：第1回 春の陣" required>
+                        <datalist id="event-list">
+                            <!-- 既存のイベント名がここに入ります -->
+                        </datalist>
+                    </div>
+                    <div class="form-group">
+                        <label for="round-name">2階層目：データ種別・回戦名（例：サマリ、1回戦目）</label>
+                        <input type="text" id="round-name" placeholder="例：1回戦目 vs 〇〇機体" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="battle-content">戦闘詳細・ログ・メモ</label>
+                    <textarea id="battle-content" placeholder="戦闘の勝敗、スコア、ハイライトなどを入力してください..." required></textarea>
+                </div>
+
+                <button type="submit" id="submit-btn" class="submit-btn">戦闘結果を登録する</button>
+            </form>
+        </div>
+
+        <!-- 戦闘結果 2階層表示エリア -->
+        <div class="event-section">
+            <h2 class="section-title" style="margin-bottom: 15px;">📋 イベント別 戦闘結果一覧</h2>
+            <div id="loading-msg">データを読み込み中...</div>
+            <div id="event-container">
+                <!-- ここにイベントごとのカードが動的に挿入されます -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase連携・バトルロジックのスクリプト -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAKnEENO4tuGtFHsTOAWusbUNPzzUiMNMY",
+            authDomain: "himitsukessya-aa509.firebaseapp.com",
+            projectId: "himitsukessya-aa509",
+            storageBucket: "himitsukessya-aa509.firebasestorage.app",
+            messagingSenderId: "584936417780",
+            appId: "1:584936417780:web:7702b98ea7faf7ccfbb1a1",
+            measurementId: "G-9XBXVQN1JC"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const form = document.getElementById('battle-form');
+        const eventContainer = document.getElementById('event-container');
+        const loadingMsg = document.getElementById('loading-msg');
+        const eventListDatalist = document.getElementById('event-list');
+
+        let allBattles = [];
+
+        // データの読み込み
+        async function loadBattles() {
+            try {
+                loadingMsg.style.display = 'block';
+                eventContainer.innerHTML = '';
+
+                const q = query(collection(db, "battles"), orderBy("createdAt", "desc"));
+                const querySnapshot = await getDocs(q);
+
+                loadingMsg.style.display = 'none';
+
+                allBattles = [];
+                const eventMap = {};
+                const eventNamesSet = new Set();
+
+                querySnapshot.forEach((docSnap) => {
+                    const data = { id: docSnap.id, ...docSnap.data() };
+                    allBattles.push(data);
+
+                    const eventName = data.eventName || 'その他のイベント';
+                    eventNamesSet.add(eventName);
+
+                    if (!eventMap[eventName]) {
+                        eventMap[eventName] = [];
+                    }
+                    eventMap[eventName].push(data);
+                });
+
+                // 1階層目の入力候補（datalist）を更新
+                eventListDatalist.innerHTML = '';
+                eventNamesSet.forEach(name => {
+                    const option = document.createElement('option');
+                    option.value = name;
+                    eventListDatalist.appendChild(option);
+                });
+
+                renderEvents(eventMap);
+
+            } catch (error) {
+                console.error("読み込みエラー:", error);
+                loadingMsg.textContent = 'データの読み込みに失敗しました。';
+            }
+        }
+
+        // イベント階層の描画
+        function renderEvents(eventMap) {
+            eventContainer.innerHTML = '';
+
+            const eventNames = Object.keys(eventMap);
+            if (eventNames.length === 0) {
+                eventContainer.innerHTML = '<p style="color: var(--sub-text); text-align: center; padding: 20px;">登録された戦闘結果はまだありません。</p>';
+                return;
+            }
+
+            eventNames.forEach(eventName => {
+                const items = eventMap[eventName];
+
+                const card = document.createElement('div');
+                card.className = 'event-card';
+
+                // 1階層目（イベント名ヘッダー）
+                const header = document.createElement('div');
+                header.className = 'event-header';
+                header.innerHTML = `
+                    <h3 class="event-title">🏆 ${escapeHTML(eventName)} <span style="font-size: 0.8rem; color: var(--sub-text); font-weight: normal;">(${items.items ? items.length : items.length}件のデータ)</span></h3>
+                    <span style="font-size: 0.85rem; color: var(--accent-color);">▼ 開閉</span>
+                `;
+
+                // 2階層目（イベント内の詳細データ群）
+                const body = document.createElement('div');
+                body.className = 'event-body';
+
+                items.forEach(item => {
+                    const subItem = document.createElement('div');
+                    subItem.className = 'sub-battle-item';
+                    subItem.innerHTML = `
+                        <div class="sub-battle-info">
+                            <div class="sub-battle-title">📌 ${escapeHTML(item.roundName || '詳細データ')}</div>
+                            <div class="sub-battle-desc">${escapeHTML(item.content || '')}</div>
+                        </div>
+                        <button class="delete-btn" data-id="${item.id}">削除</button>
+                    `;
+
+                    // 削除ボタンの処理
+                    const deleteBtn = subItem.querySelector('.delete-btn');
+                    deleteBtn.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        if (confirm(`「${item.roundName}」を削除しますか？`)) {
+                            try {
+                                await deleteDoc(doc(db, "battles", item.id));
+                                await loadBattles();
+                            } catch (err) {
+                                console.error("削除エラー:", err);
+                                alert('削除に失敗しました。');
+                            }
+                        }
+                    });
+
+                    body.appendChild(subItem);
+                });
+
+                // アコーディオン開閉の切り替え
+                header.addEventListener('click', () => {
+                    if (body.style.display === 'none') {
+                        body.style.display = 'block';
+                    } else {
+                        body.style.display = 'none';
+                    }
+                });
+
+                card.appendChild(header);
+                card.appendChild(body);
+                eventContainer.appendChild(card);
+            });
+        }
+
+        // フォーム送信処理（新規登録）
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const eventName = document.getElementById('event-name').value.trim();
+            const roundName = document.getElementById('round-name').value.trim();
+            const content = document.getElementById('battle-content').value.trim();
+            const submitBtn = document.getElementById('submit-btn');
+
+            if (!eventName || !roundName || !content) return;
+
+            try {
+                submitBtn.disabled = true;
+                submitBtn.textContent = '登録中...';
+
+                await addDoc(collection(db, "battles"), {
+                    eventName,
+                    roundName,
+                    content,
+                    createdAt: serverTimestamp()
+                });
+
+                form.reset();
+                await loadBattles();
+
+            } catch (error) {
+                console.error("登録エラー:", error);
+                alert('登録に失敗しました。');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '戦闘結果を登録する';
+            }
+        });
+
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+            );
+        }
+
+        // 初期読み込み
+        loadBattles();
+    </script>
+</body>
+</html>
