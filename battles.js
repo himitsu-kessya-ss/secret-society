@@ -33,6 +33,8 @@ document.addEventListener("DOMContentLoaded", () => {
         // 2階層目（イベント内の詳細データ群）
         const body = document.createElement('div');
         body.className = 'event-body';
+        // ★ここを変更：デフォルトでは閉じた状態にする
+        body.style.display = 'none';
 
         eventGroup.battles.forEach(battle => {
             const subItem = document.createElement('div');
