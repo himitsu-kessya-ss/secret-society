@@ -1,27 +1,27 @@
 // battles-data.js
 const battleEvents = [
     {
-        eventName: "勢力内戦（2026年9月）",
+        eventName: "勢力内戦（2026年9月20日開催）",
         battles: [
             {
-                roundName: "勢力内戦 260920 まとめ・概要",
+                roundName: "大会概要",
                 url: "battles/勢力内戦260920/summary.html",
-                description: "全体のまとめ・ハイライト情報"
+                description: "レギュなど大会概要"
             },
             {
-                roundName: "勢力内戦 260920 試合結果一覧",
+                roundName: "大会結果まとめ",
                 url: "battles/勢力内戦260920/result.html",
                 description: "勝敗やスコアなどの結果データ"
             },
             {
-                roundName: "勢力内戦 260920 ログ (1〜100ターン)",
+                roundName: "戦闘ログ (1〜100ターン)",
                 url: "battles/勢力内戦260920/1-100.html",
-                description: "詳細なバトルログ・前半戦"
+                description: "前半戦"
             },
             {
-                roundName: "勢力内戦 260920 ログ (101〜200ターン)",
+                roundName: "戦闘ログ (101〜200ターン)",
                 url: "battles/勢力内戦260920/101-200.html",
-                description: "詳細なバトルログ・後半戦"
+                description: "後半戦"
             }
         ]
     },
