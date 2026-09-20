@@ -1,0 +1,90 @@
+:root {
+    --bg-color: #1a1c1e;
+    --accent-color: #00d4ff;
+    --text-color: #e0e0e0;
+    --card-bg: #25282c;
+    --border-color: #444;
+    --header-height: 60px;
+}
+
+html, body {
+    margin: 0; padding: 0; height: 100%;
+    background-color: var(--bg-color); color: var(--text-color);
+    overflow: hidden; font-family: sans-serif;
+}
+
+/* 共通ヘッダー用 */
+header {
+    background: rgba(0,0,0,0.95); height: var(--header-height); display: flex; 
+    justify-content: space-between; align-items: center; 
+    position: sticky; top: 0; z-index: 1000; 
+    border-bottom: 2px solid var(--accent-color); padding: 0 15px; box-sizing: border-box;
+}
+
+.logo-link {
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: var(--accent-color);
+    white-space: nowrap;
+}
+
+.nav-links {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+.nav-links::-webkit-scrollbar { display: none; }
+
+.nav-item-custom {
+    color: #e0e0e0; text-decoration: none; font-size: 0.85rem; 
+    padding: 6px 10px; border-radius: 4px; border: 1px solid transparent;
+    transition: 0.2s;
+}
+.nav-item-custom:hover, .nav-item-custom.active { 
+    background: rgba(0, 212, 255, 0.2); 
+    border-color: #00d4ff; 
+}
+
+/* 検索エリア */
+.top-section {
+    height: 65px; background: var(--bg-color);
+    border-bottom: 1px solid var(--border-color);
+    padding: 10px 20px; box-sizing: border-box;
+}
+
+.search-area { display: flex; gap: 10px; align-items: center; }
+#search-box {
+    flex-grow: 1; padding: 10px; background: #222; 
+    border: 1px solid var(--accent-color); color: white; border-radius: 4px;
+    max-width: 500px;
+}
+
+/* テーブルエリア */
+.main-content {
+    height: calc(100% - 125px); /* header + top-section */
+    background: var(--bg-color);
+}
+
+table.dataTable { background-color: var(--card-bg) !important; margin: 0 !important; border-collapse: collapse !important; }
+table.dataTable thead th { 
+    background: #333 !important; color: var(--accent-color) !important; 
+    padding: 12px 10px; border: 1px solid var(--border-color) !important;
+}
+table.dataTable td { 
+    border: 1px solid var(--border-color) !important; padding: 8px 10px !important; 
+    white-space: pre !important; color: var(--text-color) !important;
+    background-color: var(--card-bg) !important;
+    font-family: "MS Gothic", "Osaka-mono", monospace;
+}
+
+.dtfc-fixed-left td, .dtfc-fixed-left th { background-color: #2a2d31 !important; z-index: 5; }
+
+/* スクロールバー */
+.dataTables_scrollBody::-webkit-scrollbar { height: 16px; width: 16px; }
+.dataTables_scrollBody::-webkit-scrollbar-track { background: #111; }
+.dataTables_scrollBody::-webkit-scrollbar-thumb { background: #555; border-radius: 8px; border: 3px solid #111; }
+.dataTables_scrollBody::-webkit-scrollbar-thumb:hover { background: var(--accent-color); }
+
+mark { background: #ffeb3b; color: #000; padding: 0 2px; }
