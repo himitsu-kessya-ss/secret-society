@@ -1,0 +1,99 @@
+:root {
+    --bg-color: #1a1c1e;
+    --accent-color: #00d4ff;
+    --text-color: #e0e0e0;
+    --card-bg: #25282c;
+    --border-color: #444;
+    --header-height: 60px;
+    --top-section-height: 65px;
+}
+
+html, body {
+    margin: 0; padding: 0; height: 100%;
+    background-color: var(--bg-color); color: var(--text-color);
+    overflow: hidden; font-family: sans-serif;
+}
+
+/* 共通ヘッダー用 */
+header {
+    background: rgba(0,0,0,0.95); height: var(--header-height); display: flex; 
+    justify-content: space-between; align-items: center; 
+    position: sticky; top: 0; z-index: 1000; 
+    border-bottom: 2px solid var(--accent-color); padding: 0 15px; box-sizing: border-box;
+}
+
+.logo-link {
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: var(--accent-color);
+    white-space: nowrap;
+}
+
+.nav-links {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+.nav-links::-webkit-scrollbar { display: none; }
+
+.nav-item-custom {
+    color: #e0e0e0; text-decoration: none; font-size: 0.85rem; 
+    padding: 6px 10px; border-radius: 4px; border: 1px solid transparent;
+    transition: 0.2s;
+}
+.nav-item-custom:hover, .nav-item-custom.active { 
+    background: rgba(0, 212, 255, 0.2); 
+    border-color: #00d4ff; 
+}
+
+/* 上部固定エリア（検索部分） */
+.top-section {
+    height: var(--top-section-height);
+    background: var(--bg-color);
+    border-bottom: 2px solid var(--accent-color);
+    padding: 10px 20px; box-sizing: border-box;
+    position: relative; z-index: 100;
+}
+
+/* 検索エリア */
+.search-area { display: flex; gap: 10px; align-items: center; }
+#search-column {
+    padding: 10px; background: #222; border: 1px solid var(--accent-color);
+    color: white; border-radius: 4px;
+}
+#search-box {
+    flex-grow: 1; padding: 10px; background: #222; 
+    border: 1px solid var(--accent-color); color: white; border-radius: 4px;
+}
+
+/* データ表示エリア */
+.main-content {
+    height: calc(100% - var(--header-height) - var(--top-section-height));
+    overflow: auto; padding: 0 20px 20px 20px; box-sizing: border-box;
+}
+
+table {
+    width: 100%; border-collapse: collapse;
+    background: var(--card-bg); font-size: 0.9rem;
+}
+
+thead th {
+    position: sticky; top: 0; background: #333;
+    color: var(--accent-color); z-index: 50;
+    padding: 12px 10px; border: 1px solid var(--border-color);
+    white-space: nowrap; box-shadow: 0 2px 2px rgba(0,0,0,0.5);
+}
+
+td { border: 1px solid var(--border-color); padding: 12px 10px; text-align: center; }
+
+/* 記号だけ大きく表示 */
+.emoji-cell { font-size: 1.5rem; }
+/* 検索ワードは左寄せ */
+.word-cell { text-align: left; color: #aaa; font-size: 0.8rem; }
+/* コード類はコピーしやすいように等幅フォント */
+.code-cell { font-family: monospace; color: var(--accent-color); }
+
+tr:nth-child(even) { background-color: #1e2124; }
+tr:hover { background-color: #2c3e50; }
