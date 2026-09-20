@@ -1,0 +1,98 @@
+:root {
+    --bg-color: #0d0e10;
+    --accent-color: #00d4ff;
+    --text-color: #e0e0e0;
+    --card-bg: #1a1c1e;
+    --color-oromin: #00d4ff;
+    --color-knight: #ff4d4d;
+    --color-bob: #ffeb3b;
+    --color-ozuna: #a200ff;
+    --color-rhino: #ffc107;
+    --color-all: #ffffff;
+    --header-height: 60px;
+}
+
+body {
+    margin: 0; padding: 0;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: "Meiryo", "Hiragino Kaku Gothic ProN", sans-serif;
+    display: flex; flex-direction: column; align-items: center;
+}
+
+/* 共通ヘッダー用 */
+header {
+    width: 100%; background: rgba(0,0,0,0.95); height: var(--header-height);
+    display: flex; justify-content: space-between; align-items: center;
+    position: sticky; top: 0; z-index: 1000;
+    border-bottom: 2px solid var(--accent-color); padding: 0 15px; box-sizing: border-box;
+}
+
+.logo-link { 
+    text-decoration: none; 
+    color: var(--accent-color); 
+    font-weight: bold; 
+    font-size: 1.1rem;
+    white-space: nowrap;
+}
+
+.nav-links {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+.nav-links::-webkit-scrollbar { display: none; }
+
+.nav-item-custom {
+    color: #e0e0e0; text-decoration: none; font-size: 0.85rem; 
+    padding: 6px 10px; border-radius: 4px; border: 1px solid transparent;
+    transition: 0.2s;
+}
+.nav-item-custom:hover, .nav-item-custom.active { 
+    background: rgba(0, 212, 255, 0.2); 
+    border-color: #00d4ff; 
+}
+
+/* プレイヤーエリア（スマホで隠れないよう調整） */
+.player-section {
+    width: 100%; max-width: 600px; padding: 20px 15px;
+    text-align: center; position: sticky; top: var(--header-height);
+    background: var(--bg-color); z-index: 900; box-sizing: border-box;
+}
+h1 { font-size: 1.4rem; margin: 0 0 15px 0; letter-spacing: 2px; color: var(--accent-color); }
+audio { width: 100%; height: 45px; }
+
+/* 歌詞エリア */
+.lyrics-container {
+    width: 100%; max-width: 700px; padding: 20px 15px 100px 15px; box-sizing: border-box;
+}
+
+.verse {
+    margin-bottom: 35px; padding: 20px; border-radius: 10px;
+    background: var(--card-bg); border-left: 5px solid transparent;
+}
+
+.character-name { font-weight: bold; font-size: 1.1rem; margin-bottom: 10px; display: block; }
+.lyrics-text { line-height: 1.8; font-size: 1rem; white-space: pre-wrap; }
+
+/* キャラごとのカラー */
+.v-oromin { border-color: var(--color-oromin); }
+.v-oromin .character-name { color: var(--color-oromin); }
+.v-knight { border-color: var(--color-knight); }
+.v-knight .character-name { color: var(--color-knight); }
+.v-bob { border-color: var(--color-bob); }
+.v-bob .character-name { color: var(--color-bob); }
+.v-ozuna { border-color: var(--color-ozuna); }
+.v-ozuna .character-name { color: var(--color-ozuna); }
+.v-rhino { border-color: var(--color-rhino); }
+.v-rhino .character-name { color: var(--color-rhino); }
+.v-all { border-color: var(--color-all); border-left: none; border-top: 3px solid var(--color-all); text-align: center; }
+.v-all .character-name { color: var(--color-all); }
+
+/* スマホ用微調整 */
+@media (max-width: 480px) {
+    h1 { font-size: 1.1rem; }
+    .lyrics-text { font-size: 0.9rem; }
+    .verse { padding: 15px; }
+}
