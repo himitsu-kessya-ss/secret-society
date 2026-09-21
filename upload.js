@@ -35,6 +35,7 @@ const STORAGE_KEY_AUTHOR = 'ss_upload_author';
 const STORAGE_KEY_DELETE_KEY = 'ss_upload_delete_key';
 
 let allPosts = [];
+let displayLimit = 10; // 初期表示件数
 
 // --- 初期化：No.1 〜 No.9 のセレクトボックスにマスター辞書の選択肢を流し込む（共通ヘルパー） ---
 function createAbilityOptionsHTML(selectedValue = '') {
@@ -83,6 +84,7 @@ async function loadPosts() {
             allPosts.push({ id: docSnap.id, ...docSnap.data() });
         });
 
+        displayLimit = 10; // データ再読み込み時は10件にリセット
         renderPosts(allPosts);
         renderRegisteredTable(allPosts);
 
@@ -170,7 +172,7 @@ imageFileInput.addEventListener('change', async (e) => {
     }
 });
 
-// 投稿カードリストの描画（カード内で直接特殊能力をインライン編集できる機能付き）
+// 投稿カードリストの描画（直近10件制限 ＋ もっと見るボタン対応）
 function renderPosts(postsToRender) {
     postList.innerHTML = '';
 
@@ -179,10 +181,26 @@ function renderPosts(postsToRender) {
         return;
     }
 
-    postsToRender.forEach((data) => {
+    // 表示する件数を制限
+    const slicedPosts = postsToRender.slice(0, displayLimit);
+
+    slicedPosts.forEach((data) => {
         const dateStr = data.createdAt ? new Date(data.createdAt.toDate()).toLocaleString('ja-JP') : '日時不明';
         const postNoStr = data.postNo ? `投稿 No.${data.postNo}` : '投稿 No.--';
         const unitNoStr = data.unitNumber ? `機体 No.${escapeHTML(data.unitNumber)}` : '機体 No.----';
+
+        // 特殊能力一覧のHTML生成
+        let abilityBadgesHTML = '';
+        if (data.abilities && Array.isArray(data.abilities) && data.abilities.length > 0) {
+            abilityBadgesHTML = data.abilities.map(item => `
+                <div style="display: flex; align-items: center; margin-bottom: 6px; font-size: 13px;">
+                    <span style="background: #333; color: #ff9800; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-right: 8px; font-weight: bold; min-width: 42px; text-align: center;">No.${item.no}</span>
+                    <span style="color: #fff;">${escapeHTML(item.text)}</span>
+                </div>
+            `).join('');
+        } else {
+            abilityBadgesHTML = '<div style="color: #666; font-size: 13px;">特殊能力の登録はありません</div>';
+        }
 
         const card = document.createElement('div');
         card.className = 'post-card';
@@ -193,7 +211,7 @@ function renderPosts(postsToRender) {
                     <span class="post-date">${dateStr}</span>
                 </div>
                 <div class="post-header-right" style="display: flex; gap: 6px;">
-                    <button class="inline-edit-toggle-btn" data-id="${data.id}" style="padding: 4px 10px; background-color: #ff9800; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">特殊能力編集</button>
+                    <button class="inline-edit-toggle-btn" data-id="${data.id}" style="padding: 4px 10px; background-color: #ff9800; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">編集</button>
                     <button class="delete-btn" data-id="${data.id}">削除</button>
                 </div>
             </div>
@@ -202,19 +220,29 @@ function renderPosts(postsToRender) {
                 <span class="unit-number-badge">${unitNoStr}</span>
                 <span>${escapeHTML(data.unitName || '名称未設定')}</span>
             </h3>
-            ${data.imageUrl ? `<img src="${data.imageUrl}" class="post-image" alt="投稿画像" loading="lazy">` : ''}
+            
+            <!-- ▼ 画像と特殊能力リストを横並びにするエリア -->
+            <div class="card-body-content" style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start;">
+                ${data.imageUrl ? `<div style="flex: 1; min-width: 280px; max-width: 500px;"><img src="${data.imageUrl}" class="post-image" alt="投稿画像" loading="lazy" style="width: 100%; height: auto; border-radius: 4px;"></div>` : ''}
+                <div style="flex: 1; min-width: 220px; background: #1e1e1e; padding: 12px 16px; border-radius: 6px; border: 1px solid #333;">
+                    <div style="font-size: 12px; color: #aaa; margin-bottom: 8px; border-bottom: 1px solid #444; padding-bottom: 4px; font-weight: bold;">✨ 登録特殊能力</div>
+                    ${abilityBadgesHTML}
+                </div>
+            </div>
+
+            <!-- ▼ インライン編集用コンテナ -->
             <div class="inline-edit-container" id="inline-edit-${data.id}" style="display: none; margin-top: 15px; padding: 15px; background: #2a2a2a; border-radius: 6px; border: 1px solid #444;"></div>
         `;
 
         const inlineEditContainer = card.querySelector(`#inline-edit-${data.id}`);
         const inlineEditToggleBtn = card.querySelector('.inline-edit-toggle-btn');
 
-        // 「特殊能力編集」ボタンのクリック処理（認証チェック＆エディタ表示切替）
+        // 「編集」ボタンのクリック処理（認証チェック＆エディタ表示切替）
         inlineEditToggleBtn.addEventListener('click', () => {
             const isVisible = inlineEditContainer.style.display === 'block';
             if (isVisible) {
                 inlineEditContainer.style.display = 'none';
-                inlineEditToggleBtn.textContent = '特殊能力編集';
+                inlineEditToggleBtn.textContent = '編集';
                 return;
             }
 
@@ -242,7 +270,6 @@ function renderPosts(postsToRender) {
 
             for (let i = 1; i <= 9; i++) {
                 const val = currentAbilitiesMap[i] || '';
-                editorHTML.innerHTML; // dummy
                 editorHTML += `
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span style="font-size: 12px; min-width: 40px; color: #aaa;">No.${i}</span>
@@ -267,7 +294,7 @@ function renderPosts(postsToRender) {
             // キャンセルボタンのイベント
             inlineEditContainer.querySelector('.inline-cancel-btn').addEventListener('click', () => {
                 inlineEditContainer.style.display = 'none';
-                inlineEditToggleBtn.textContent = '特殊能力編集';
+                inlineEditToggleBtn.textContent = '編集';
             });
 
             // 保存ボタンのイベント
@@ -314,6 +341,27 @@ function renderPosts(postsToRender) {
 
         postList.appendChild(card);
     });
+
+    // まだ全件表示しきれていない場合、「もっと見る」ボタンをリストの最後に追加
+    if (displayLimit < postsToRender.length) {
+        const loadMoreContainer = document.createElement('div');
+        loadMoreContainer.style.cssText = 'text-align: center; margin: 25px 0;';
+        
+        const loadMoreBtn = document.createElement('button');
+        loadMoreBtn.textContent = `もっと見る （残り ${postsToRender.length - displayLimit} 件）`;
+        loadMoreBtn.style.cssText = 'padding: 10px 24px; background-color: #333; color: #fff; border: 1px solid #555; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; transition: background 0.2s;';
+        
+        loadMoreBtn.onmouseover = () => loadMoreBtn.style.backgroundColor = '#444';
+        loadMoreBtn.onmouseout = () => loadMoreBtn.style.backgroundColor = '#333';
+
+        loadMoreBtn.addEventListener('click', () => {
+            displayLimit += 10; // 10件ずつ増やす
+            renderPosts(postsToRender);
+        });
+
+        loadMoreContainer.appendChild(loadMoreBtn);
+        postList.appendChild(loadMoreContainer);
+    }
 }
 
 // テーブル検索フィルター
@@ -345,6 +393,7 @@ searchInput.addEventListener('input', (e) => {
     const keyword = e.target.value.toLowerCase().trim();
 
     if (!keyword) {
+        displayLimit = 10; // 検索解除時は10件制限に戻す
         renderPosts(allPosts);
         return;
     }
@@ -360,6 +409,7 @@ searchInput.addEventListener('input', (e) => {
         return unitNameMatch || unitNumberMatch || authorMatch || postNoMatch;
     });
 
+    displayLimit = filteredPosts.length; // 検索時は該当分を一括表示
     renderPosts(filteredPosts);
 });
 
