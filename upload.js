@@ -1,8 +1,10 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getFirestore, collection, getDocs, query, orderBy, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// ファイル名を変更したモジュールをインポート
+// 各種モジュールのインポート
 import { handlePostSubmit, handlePostDelete } from "./upload_post-handler.js";
+import { MASTER_ABILITIES } from "./ability-master.js";
+import { analyzeImageAbilities } from "./upload_ocr-processor.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAKnEENO4tuGtFHsTOAWusbUNPzzUiMNMY",
@@ -24,9 +26,29 @@ const loadingMsg = document.getElementById('loading-msg');
 const searchInput = document.getElementById('search-input');
 const tableSearchInput = document.getElementById('table-search-input');
 const tableBody = document.getElementById('registered-table-body');
+const imageFileInput = document.getElementById('image-file');
 
 let allPosts = [];
 let editingPostId = null; // 編集中のデータID（nullなら新規登録）
+
+// --- 初期化：No.1 〜 No.9 のセレクトボックスにマスター辞書の選択肢を流し込む ---
+function initAbilityDropdowns() {
+    for (let i = 1; i <= 9; i++) {
+        const selectEl = document.getElementById(`ability-${i}`);
+        if (!selectEl) continue;
+
+        // 既存の選択肢をクリアしてデフォルトを入れる
+        selectEl.innerHTML = '<option value="">-- 未選択 --</option>';
+
+        // マスター辞書の項目をoptionとして追加
+        MASTER_ABILITIES.forEach(ability => {
+            const option = document.createElement('option');
+            option.value = ability;
+            option.textContent = ability;
+            selectEl.appendChild(option);
+        });
+    }
+}
 
 // 投稿一覧データの読み込み
 async function loadPosts() {
@@ -85,21 +107,7 @@ function renderRegisteredTable(posts) {
                 </span>
             `).join('');
         } else {
-            const oldAbilities = [];
-            if (data.ability1) oldAbilities.push({ no: 1, text: data.ability1 });
-            if (data.ability2) oldAbilities.push({ no: 2, text: data.ability2 });
-            if (data.ability3) oldAbilities.push({ no: 3, text: data.ability3 });
-
-            if (oldAbilities.length > 0) {
-                abilityBadgesHTML = oldAbilities.map(item => `
-                    <span class="ability-badge">
-                        <span class="ability-num">No.${item.no}</span>
-                        ${escapeHTML(item.text)}
-                    </span>
-                `).join('');
-            } else {
-                abilityBadgesHTML = '<span style="color:#666;">-</span>';
-            }
+            abilityBadgesHTML = '<span style="color:#666;">-</span>';
         }
 
         tr.innerHTML = `
@@ -122,7 +130,7 @@ function renderRegisteredTable(posts) {
     });
 }
 
-// 編集モードに入る関数（基本情報 ＋ No.1〜No.9 のアビリティをフォームにセット）
+// 編集モードに入る関数（基本情報 ＋ プルダウンへのアビリティセット）
 function startEditing(postData) {
     editingPostId = postData.id;
 
@@ -131,17 +139,17 @@ function startEditing(postData) {
     document.getElementById('unit-name').value = postData.unitName || '';
     document.getElementById('author').value = postData.author || '';
 
-    // 特殊能力（No.1〜No.9）の入力欄をクリアしてから既存データをセット
+    // 特殊能力（No.1〜No.9）のプルダウンをリセットしてから値をセット
     for (let i = 1; i <= 9; i++) {
-        const inputEl = document.getElementById(`ability-${i}`);
-        if (inputEl) inputEl.value = '';
+        const selectEl = document.getElementById(`ability-${i}`);
+        if (selectEl) selectEl.value = '';
     }
 
     const abilities = postData.abilities || [];
     abilities.forEach(item => {
-        const inputEl = document.getElementById(`ability-${item.no}`);
-        if (inputEl) {
-            inputEl.value = item.text || '';
+        const selectEl = document.getElementById(`ability-${item.no}`);
+        if (selectEl) {
+            selectEl.value = item.text || '';
         }
     });
 
@@ -149,9 +157,45 @@ function startEditing(postData) {
     submitBtn.textContent = 'データを更新する';
     submitBtn.style.backgroundColor = '#ff9800';
 
-    // フォームの位置までスムーズにスクロール
     form.scrollIntoView({ behavior: 'smooth' });
 }
+
+// --- 画像選択時にOCR解析を行い、自動でプルダウンに結果をセットする処理 ---
+imageFileInput.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // 編集中でない、または新規投稿時のみOCR自動入力を走らせる（お好みで調整可能）
+    if (editingPostId) return; 
+
+    try {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'OCR解析中...';
+
+        // プルダウンを一旦リセット
+        for (let i = 1; i <= 9; i++) {
+            const selectEl = document.getElementById(`ability-${i}`);
+            if (selectEl) selectEl.value = '';
+        }
+
+        // OCR解析実行（upload_ocr-processor.js の関数）
+        const detectedAbilities = await analyzeImageAbilities(file);
+
+        // 検出された結果を対応するNo.のプルダウンに自動選択
+        detectedAbilities.forEach(item => {
+            const selectEl = document.getElementById(`ability-${item.no}`);
+            if (selectEl) {
+                selectEl.value = item.text; // マッチしていれば自動選択される
+            }
+        });
+
+    } catch (err) {
+        console.error("OCR自動解析エラー:", err);
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '投稿する';
+    }
+});
 
 // 投稿カードリストの描画
 function renderPosts(postsToRender) {
@@ -245,36 +289,37 @@ searchInput.addEventListener('input', (e) => {
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const file = document.getElementById('image-file').files[0];
+    const file = imageFileInput.files[0];
     const unitNumber = document.getElementById('unit-number').value.trim();
     const unitName = document.getElementById('unit-name').value.trim();
     const author = document.getElementById('author').value.trim();
     const deleteKey = document.getElementById('delete-key').value.trim();
 
+    // プルダウンから選択されたNo.1〜No.9の特殊能力を収集（未選択は除外）
+    const selectedAbilities = [];
+    for (let i = 1; i <= 9; i++) {
+        const selectEl = document.getElementById(`ability-${i}`);
+        const val = selectEl ? selectEl.value.trim() : '';
+        if (val) {
+            selectedAbilities.push({
+                no: i,
+                text: val
+            });
+        }
+    }
+
     if (editingPostId) {
-        // --- データの更新処理（手動修正されたNo.1〜No.9のアビリティを反映） ---
+        // --- データの更新処理 ---
         try {
             submitBtn.disabled = true;
             submitBtn.textContent = '更新中...';
-
-            // 入力されたNo.1〜No.9の特殊能力を配列として再構築（入力があるものだけ抽出・整理）
-            const updatedAbilities = [];
-            for (let i = 1; i <= 9; i++) {
-                const val = document.getElementById(`ability-${i}`)?.value.trim();
-                if (val) {
-                    updatedAbilities.push({
-                        no: i, // 入力された番号(No.x)をそのまま保持
-                        text: val
-                    });
-                }
-            }
 
             const postRef = doc(db, "posts", editingPostId);
             await updateDoc(postRef, {
                 unitNumber: unitNumber,
                 unitName: unitName,
                 author: author,
-                abilities: updatedAbilities, // 修正されたアビリティリストを保存
+                abilities: selectedAbilities, // プルダウンで選択・修正されたアビリティリストを保存
                 updatedAt: new Date()
             });
 
@@ -296,7 +341,9 @@ form.addEventListener('submit', async (e) => {
         }
 
     } else {
-        // --- 従来の新規登録処理 ---
+        // --- 新規登録処理（abilitiesを渡して保存するようにハンドラーを呼び出し） ---
+        // ※ upload_post-handler.js 側で abilities を受け取れるようにしている前提ですが、
+        // もし自動解析をそのまま使いたい場合はこれまで通りの処理に合わせます。
         const success = await handlePostSubmit({
             db,
             file,
@@ -304,7 +351,8 @@ form.addEventListener('submit', async (e) => {
             unitName,
             author,
             deleteKey,
-            submitBtn
+            submitBtn,
+            customAbilities: selectedAbilities // 手動選択・修正されたアビリティがある場合
         });
 
         if (success) {
@@ -322,5 +370,7 @@ function escapeHTML(str) {
     );
 }
 
-// 初期読み込み
+// ページ読み込み時にプルダウンを初期化してマスター辞書をセット
+initAbilityDropdowns();
+// 初期データ読み込み
 loadPosts();
