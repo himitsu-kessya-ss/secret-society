@@ -47,11 +47,32 @@ function createAbilityOptionsHTML(selectedValue = '') {
     return html;
 }
 
+// 選択状態に応じてプルダウンの背景色を切り替えるヘルパー
+function updateSelectBackground(selectEl) {
+    if (selectEl.value) {
+        // 選択されている場合（アクセントカラー：暗めのオレンジ/ブラウン系）
+        selectEl.style.backgroundColor = '#3a2711';
+        selectEl.style.borderColor = '#d97706';
+        selectEl.style.color = '#ffedd5';
+    } else {
+        // 未選択の場合（デフォルトの暗い背景）
+        selectEl.style.backgroundColor = '#1a1a1a';
+        selectEl.style.borderColor = '#555';
+        selectEl.style.color = '#fff';
+    }
+}
+
 function initAbilityDropdowns() {
     for (let i = 1; i <= 9; i++) {
         const selectEl = document.getElementById(`ability-${i}`);
         if (!selectEl) continue;
         selectEl.innerHTML = createAbilityOptionsHTML();
+        updateSelectBackground(selectEl);
+        
+        // 値変更時にも色を動的に変更
+        selectEl.addEventListener('change', () => {
+            updateSelectBackground(selectEl);
+        });
     }
 }
 
@@ -152,7 +173,10 @@ imageFileInput.addEventListener('change', async (e) => {
 
         for (let i = 1; i <= 9; i++) {
             const selectEl = document.getElementById(`ability-${i}`);
-            if (selectEl) selectEl.value = '';
+            if (selectEl) {
+                selectEl.value = '';
+                updateSelectBackground(selectEl);
+            }
         }
 
         const detectedAbilities = await analyzeImageAbilities(file);
@@ -161,6 +185,7 @@ imageFileInput.addEventListener('change', async (e) => {
             const selectEl = document.getElementById(`ability-${item.no}`);
             if (selectEl) {
                 selectEl.value = item.text;
+                updateSelectBackground(selectEl);
             }
         });
 
@@ -289,7 +314,7 @@ function renderPosts(postsToRender) {
                 editorHTML += `
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span style="font-size: 12px; min-width: 40px; color: #aaa;">No.${i}</span>
-                        <select class="inline-ability-select" data-no="${i}" style="flex: 1; padding: 6px; background: #1a1a1a; color: #fff; border: 1px solid #555; border-radius: 4px;">
+                        <select class="inline-ability-select" data-no="${i}" style="flex: 1; padding: 6px; color: #fff; border: 1px solid #555; border-radius: 4px;">
                             ${createAbilityOptionsHTML(val)}
                         </select>
                     </div>
@@ -306,6 +331,15 @@ function renderPosts(postsToRender) {
             inlineEditContainer.innerHTML = editorHTML;
             inlineEditContainer.style.display = 'block';
             inlineEditToggleBtn.textContent = '閉じる';
+
+            // インラインエディタ内のセレクトボックスにも背景色制御を適用
+            const inlineSelects = inlineEditContainer.querySelectorAll('.inline-ability-select');
+            inlineSelects.forEach(sel => {
+                updateSelectBackground(sel);
+                sel.addEventListener('change', () => {
+                    updateSelectBackground(sel);
+                });
+            });
 
             // キャンセルボタンのイベント
             inlineEditContainer.querySelector('.inline-cancel-btn').addEventListener('click', () => {
@@ -482,7 +516,10 @@ form.addEventListener('submit', async (e) => {
 
         for (let i = 1; i <= 9; i++) {
             const selectEl = document.getElementById(`ability-${i}`);
-            if (selectEl) selectEl.value = '';
+            if (selectEl) {
+                selectEl.value = '';
+                updateSelectBackground(selectEl);
+            }
         }
 
         searchInput.value = '';
