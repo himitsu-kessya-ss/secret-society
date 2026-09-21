@@ -26,7 +26,7 @@ const tableSearchInput = document.getElementById('table-search-input');
 const tableBody = document.getElementById('registered-table-body');
 
 let allPosts = [];
-let editingPostId = null; // ★ 編集中のデータID（nullなら新規登録）
+let editingPostId = null; // 編集中のデータID（nullなら新規登録）
 
 // 投稿一覧データの読み込み
 async function loadPosts() {
@@ -122,14 +122,24 @@ function renderRegisteredTable(posts) {
     });
 }
 
-// 編集モードに入る関数
+// 編集モードに入る関数（基本情報 ＋ No.1〜No.9 のアビリティをフォームにセット）
 function startEditing(postData) {
     editingPostId = postData.id;
 
-    // フォームの入力欄に既存の値をセット
+    // 基本情報のセット
     document.getElementById('unit-number').value = postData.unitNumber || '';
     document.getElementById('unit-name').value = postData.unitName || '';
     document.getElementById('author').value = postData.author || '';
+
+    // 特殊能力（No.1〜No.9）の入力欄に既存データをセット
+    const abilities = postData.abilities || [];
+    for (let i = 1; i <= 9; i++) {
+        const inputEl = document.getElementById(`ability-${i}`);
+        if (inputEl) {
+            const found = abilities.find(item => item.no === i);
+            inputEl.value = found ? found.text : '';
+        }
+    }
 
     // 送信ボタンの見た目を「更新用」に変更
     submitBtn.textContent = 'データを更新する';
@@ -242,16 +252,29 @@ form.addEventListener('submit', async (e) => {
     const deleteKey = document.getElementById('delete-key').value.trim();
 
     if (editingPostId) {
-        // --- データの更新処理 ---
+        // --- データの更新処理（特殊能力の手動修正反映含む） ---
         try {
             submitBtn.disabled = true;
             submitBtn.textContent = '更新中...';
+
+            // 入力されたNo.1〜No.9の特殊能力を配列として再構築（空欄は除外）
+            const updatedAbilities = [];
+            for (let i = 1; i <= 9; i++) {
+                const val = document.getElementById(`ability-${i}`)?.value.trim();
+                if (val) {
+                    updatedAbilities.push({
+                        no: updatedAbilities.length + 1,
+                        text: val
+                    });
+                }
+            }
 
             const postRef = doc(db, "posts", editingPostId);
             await updateDoc(postRef, {
                 unitNumber: unitNumber,
                 unitName: unitName,
                 author: author,
+                abilities: updatedAbilities, // 修正されたアビリティリストを保存
                 updatedAt: new Date()
             });
 
