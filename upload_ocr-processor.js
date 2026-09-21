@@ -1,5 +1,5 @@
 /**
- * ocr-processor.js
+ * upload_ocr-processor.js
  * SS解析・OCR処理および特殊能力補正ロジック
  */
 
