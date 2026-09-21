@@ -1,10 +1,10 @@
 /**
- * post-handler.js
+ * upload_post-handler.js
  * 投稿データの登録、削除、ImgBB画像アップロード等のロジック
  */
 
 import { collection, addDoc, getDocs, doc, deleteDoc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { analyzeImageAbilities } from "./ocr-processor.js";
+import { analyzeImageAbilities } from "./upload_ocr-processor.js"; // ★ ファイル名を変更
 
 const IMGBB_API_KEY = "29969679b0297f97687888bd7faede64";
 const ADMIN_PASS = "p@ssw0rd";
@@ -94,7 +94,7 @@ export async function handlePostSubmit({ db, file, unitNumber, unitName, author,
             createdAt: serverTimestamp()
         });
 
-        // ★【追加】投稿が成功したら、次回の入力の手間を省くためブラウザに保持する
+        // 投稿が成功したら、次回の入力の手間を省くためブラウザに保持する
         localStorage.setItem('last_post_author', author);
         localStorage.setItem('last_post_deleteKey', deleteKey);
 
