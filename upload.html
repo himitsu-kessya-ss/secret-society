@@ -25,7 +25,7 @@
                 <li><strong>機体名：</strong> 画像に映っている機体の名称を入力してください。</li>
                 <li><strong>投稿者：</strong> ゲーム内でのキャラクター名（パイロット名）を入力してください。</li>
                 <li><strong>削除キー：</strong> 投稿後に自分で削除したい場合に使用する<span class="guide-highlight">数字4桁の暗証番号</span>を設定してください。</li>
-                <li><strong>特殊能力解析：</strong> 特殊能力領域を範囲切り出し（自動トリミング）し、マスター辞書と照合して自動抽出します（必要に応じて手動修正も可能です）。</li>
+                <li><strong>特殊能力解析：</strong> 画像から特殊能力を自動抽出します。プルダウンから手動で変更・追加も可能です。</li>
             </ul>
         </div>
 
@@ -59,19 +59,19 @@
                     <input type="file" id="image-file" accept="image/*" required>
                 </div>
 
-                <!-- ▼ 特殊能力 手動入力・修正エリア (No.1 〜 No.9) -->
+                <!-- ▼ 特殊能力 プルダウン選択エリア (No.1 〜 No.9) -->
                 <div class="form-group" style="margin-top: 20px; border-top: 1px dashed #444; padding-top: 15px;">
-                    <label style="margin-bottom: 8px; display: block; color: var(--accent-color, #ff9800);">✨ 特殊能力の手動入力・修正 (No.1 〜 No.9)</label>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
-                        <div><label style="font-size: 12px;">No.1</label><input type="text" id="ability-1" placeholder="例：SSサイズ" style="width: 100%; padding: 6px; box-sizing: border-box;"></div>
-                        <div><label style="font-size: 12px;">No.2</label><input type="text" id="ability-2" placeholder="例：海洋だと攻撃力増" style="width: 100%; padding: 6px; box-sizing: border-box;"></div>
-                        <div><label style="font-size: 12px;">No.3</label><input type="text" id="ability-3" placeholder="" style="width: 100%; padding: 6px; box-sizing: border-box;"></div>
-                        <div><label style="font-size: 12px;">No.4</label><input type="text" id="ability-4" placeholder="" style="width: 100%; padding: 6px; box-sizing: border-box;"></div>
-                        <div><label style="font-size: 12px;">No.5</label><input type="text" id="ability-5" placeholder="" style="width: 100%; padding: 6px; box-sizing: border-box;"></div>
-                        <div><label style="font-size: 12px;">No.6</label><input type="text" id="ability-6" placeholder="" style="width: 100%; padding: 6px; box-sizing: border-box;"></div>
-                        <div><label style="font-size: 12px;">No.7</label><input type="text" id="ability-7" placeholder="" style="width: 100%; padding: 6px; box-sizing: border-box;"></div>
-                        <div><label style="font-size: 12px;">No.8</label><input type="text" id="ability-8" placeholder="" style="width: 100%; padding: 6px; box-sizing: border-box;"></div>
-                        <div><label style="font-size: 12px;">No.9</label><input type="text" id="ability-9" placeholder="" style="width: 100%; padding: 6px; box-sizing: border-box;"></div>
+                    <label style="margin-bottom: 8px; display: block; color: var(--accent-color, #ff9800);">✨ 特殊能力の選択・手動修正 (No.1 〜 No.9)</label>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px;">
+                        <div><label style="font-size: 12px;">No.1</label><select id="ability-1" style="width: 100%; padding: 6px; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;"><option value="">-- 未選択 --</option></select></div>
+                        <div><label style="font-size: 12px;">No.2</label><select id="ability-2" style="width: 100%; padding: 6px; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;"><option value="">-- 未選択 --</option></select></div>
+                        <div><label style="font-size: 12px;">No.3</label><select id="ability-3" style="width: 100%; padding: 6px; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;"><option value="">-- 未選択 --</option></select></div>
+                        <div><label style="font-size: 12px;">No.4</label><select id="ability-4" style="width: 100%; padding: 6px; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;"><option value="">-- 未選択 --</option></select></div>
+                        <div><label style="font-size: 12px;">No.5</label><select id="ability-5" style="width: 100%; padding: 6px; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;"><option value="">-- 未選択 --</option></select></div>
+                        <div><label style="font-size: 12px;">No.6</label><select id="ability-6" style="width: 100%; padding: 6px; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;"><option value="">-- 未選択 --</option></select></div>
+                        <div><label style="font-size: 12px;">No.7</label><select id="ability-7" style="width: 100%; padding: 6px; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;"><option value="">-- 未選択 --</option></select></div>
+                        <div><label style="font-size: 12px;">No.8</label><select id="ability-8" style="width: 100%; padding: 6px; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;"><option value="">-- 未選択 --</option></select></div>
+                        <div><label style="font-size: 12px;">No.9</label><select id="ability-9" style="width: 100%; padding: 6px; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;"><option value="">-- 未選択 --</option></select></div>
                     </div>
                 </div>
 
