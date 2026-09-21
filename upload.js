@@ -1,8 +1,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, query, orderBy, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// 外出しした投稿処理モジュールをインポート
-import { handlePostSubmit, handlePostDelete } from "./post-handler.js";
+// ファイル名を変更したモジュールをインポート
+import { handlePostSubmit, handlePostDelete } from "./upload_post-handler.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyAKnEENO4tuGtFHsTOAWusbUNPzzUiMNMY",
@@ -26,6 +26,7 @@ const tableSearchInput = document.getElementById('table-search-input');
 const tableBody = document.getElementById('registered-table-body');
 
 let allPosts = [];
+let editingPostId = null; // ★ 編集中のデータID（nullなら新規登録）
 
 // 投稿一覧データの読み込み
 async function loadPosts() {
@@ -105,10 +106,37 @@ function renderRegisteredTable(posts) {
             <td><span class="unit-no-badge">${unitNo}</span></td>
             <td><strong>${unitName}</strong></td>
             <td><div class="ability-container">${abilityBadgesHTML}</div></td>
-            <td><a href="${imgUrl}" target="_blank" rel="noopener noreferrer" class="img-link-btn">🔗 画像を見る</a></td>
+            <td>
+                <a href="${imgUrl}" target="_blank" rel="noopener noreferrer" class="img-link-btn">🔗 画像を見る</a>
+                <button class="edit-btn" data-id="${data.id}" style="margin-left: 6px; padding: 4px 8px; cursor: pointer; background-color: #2196F3; color: white; border: none; border-radius: 4px;">編集</button>
+            </td>
         `;
+
+        // 編集ボタンが押されたときの処理
+        const editBtn = tr.querySelector('.edit-btn');
+        editBtn.addEventListener('click', () => {
+            startEditing(data);
+        });
+
         tableBody.appendChild(tr);
     });
+}
+
+// 編集モードに入る関数
+function startEditing(postData) {
+    editingPostId = postData.id;
+
+    // フォームの入力欄に既存の値をセット
+    document.getElementById('unit-number').value = postData.unitNumber || '';
+    document.getElementById('unit-name').value = postData.unitName || '';
+    document.getElementById('author').value = postData.author || '';
+
+    // 送信ボタンの見た目を「更新用」に変更
+    submitBtn.textContent = 'データを更新する';
+    submitBtn.style.backgroundColor = '#ff9800';
+
+    // フォームの位置までスムーズにスクロール
+    form.scrollIntoView({ behavior: 'smooth' });
 }
 
 // 投稿カードリストの描画
@@ -203,7 +231,7 @@ searchInput.addEventListener('input', (e) => {
     renderPosts(filteredPosts);
 });
 
-// フォーム送信処理
+// フォーム送信処理（新規登録 or 更新の分岐）
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -213,21 +241,55 @@ form.addEventListener('submit', async (e) => {
     const author = document.getElementById('author').value.trim();
     const deleteKey = document.getElementById('delete-key').value.trim();
 
-    const success = await handlePostSubmit({
-        db,
-        file,
-        unitNumber,
-        unitName,
-        author,
-        deleteKey,
-        submitBtn
-    });
+    if (editingPostId) {
+        // --- データの更新処理 ---
+        try {
+            submitBtn.disabled = true;
+            submitBtn.textContent = '更新中...';
 
-    if (success) {
-        form.reset();
-        searchInput.value = '';
-        tableSearchInput.value = '';
-        await loadPosts();
+            const postRef = doc(db, "posts", editingPostId);
+            await updateDoc(postRef, {
+                unitNumber: unitNumber,
+                unitName: unitName,
+                author: author,
+                updatedAt: new Date()
+            });
+
+            alert('データを更新しました！');
+
+            form.reset();
+            editingPostId = null;
+            submitBtn.textContent = '投稿する';
+            submitBtn.style.backgroundColor = '';
+            searchInput.value = '';
+            tableSearchInput.value = '';
+            await loadPosts();
+
+        } catch (error) {
+            console.error("更新エラー:", error);
+            alert('データの更新に失敗しました：' + error.message);
+        } finally {
+            submitBtn.disabled = false;
+        }
+
+    } else {
+        // --- 従来の新規登録処理 ---
+        const success = await handlePostSubmit({
+            db,
+            file,
+            unitNumber,
+            unitName,
+            author,
+            deleteKey,
+            submitBtn
+        });
+
+        if (success) {
+            form.reset();
+            searchInput.value = '';
+            tableSearchInput.value = '';
+            await loadPosts();
+        }
     }
 });
 
