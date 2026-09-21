@@ -1,10 +1,10 @@
 /**
  * upload_post-handler.js
- * 投稿データの登録、削除、ImgBB画像アップロード等のロジック
+ * 投稿データの登録、更新、削除、ImgBB画像アップロード等のロジック
  */
 
-import { collection, addDoc, getDocs, doc, deleteDoc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { analyzeImageAbilities } from "./upload_ocr-processor.js"; // ★ ファイル名を変更
+import { collection, addDoc, getDocs, doc, deleteDoc, query, orderBy, serverTimestamp, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { analyzeImageAbilities } from "./upload_ocr-processor.js";
 
 const IMGBB_API_KEY = "29969679b0297f97687888bd7faede64";
 const ADMIN_PASS = "p@ssw0rd";
@@ -22,9 +22,9 @@ export function loadSavedPostCredentials() {
 /**
  * 画像をImgBBにアップロードする処理
  */
-export async function uploadImageToImgBB(file, newPostNo, unitNumber, unitName) {
+export async function uploadImageToImgBB(file, postNo, unitNumber, unitName) {
     const fileExtension = file.name.substring(file.name.lastIndexOf('.'));
-    const newFileName = `PostNo${newPostNo}_${unitNumber}_${unitName}${fileExtension}`;
+    const newFileName = `PostNo${postNo}_${unitNumber}_${unitName}${fileExtension}`;
     const renamedFile = new File([file], newFileName, { type: file.type });
 
     const formData = new FormData();
@@ -46,7 +46,7 @@ export async function uploadImageToImgBB(file, newPostNo, unitNumber, unitName) 
 /**
  * 新規投稿メイン処理
  */
-export async function handlePostSubmit({ db, file, unitNumber, unitName, author, deleteKey, submitBtn }) {
+export async function handlePostSubmit({ db, file, unitNumber, unitName, author, deleteKey, submitBtn, customAbilities }) {
     if (!file) {
         alert('画像を選択してください。');
         return false;
@@ -58,15 +58,22 @@ export async function handlePostSubmit({ db, file, unitNumber, unitName, author,
     }
 
     submitBtn.disabled = true;
-    submitBtn.textContent = '画像解析中... (数秒かかります)';
+    submitBtn.textContent = '処理中...';
 
     try {
-        // 1. OCRで特殊能力を自動解析
-        const abilities = await analyzeImageAbilities(file);
+        let abilities = [];
+
+        // プルダウンから手動選択された内容がなければOCR解析を実行、あればそれを採用
+        if (customAbilities && customAbilities.length > 0) {
+            abilities = customAbilities;
+        } else {
+            submitBtn.textContent = '画像解析中... (数秒かかります)';
+            abilities = await analyzeImageAbilities(file);
+        }
 
         submitBtn.textContent = 'アップロード中...';
 
-        // 2. 投稿No.のオートインクリメント計算
+        // 投稿No.のオートインクリメント計算
         const snapshot = await getDocs(collection(db, "posts"));
         let maxNo = 0;
         snapshot.forEach(docSnap => {
@@ -79,10 +86,10 @@ export async function handlePostSubmit({ db, file, unitNumber, unitName, author,
         });
         const newPostNo = maxNo + 1;
 
-        // 3. ImgBBへの画像アップロード
+        // ImgBBへの画像アップロード
         const imageUrl = await uploadImageToImgBB(file, newPostNo, unitNumber, unitName);
 
-        // 4. Firebaseへの保存
+        // Firebaseへの新規保存
         await addDoc(collection(db, "posts"), {
             postNo: newPostNo,
             unitNumber: unitNumber,
@@ -94,7 +101,7 @@ export async function handlePostSubmit({ db, file, unitNumber, unitName, author,
             createdAt: serverTimestamp()
         });
 
-        // 投稿が成功したら、次回の入力の手間を省くためブラウザに保持する
+        // 投稿者名と削除キーをブラウザに保持
         localStorage.setItem('last_post_author', author);
         localStorage.setItem('last_post_deleteKey', deleteKey);
 
@@ -104,6 +111,54 @@ export async function handlePostSubmit({ db, file, unitNumber, unitName, author,
     } catch (error) {
         console.error("投稿エラー:", error);
         alert('投稿に失敗しました：' + error.message);
+        return false;
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '投稿する';
+    }
+}
+
+/**
+ * 既存データの更新処理（修正用）
+ */
+export async function handlePostUpdate({ db, docId, file, unitNumber, unitName, author, deleteKey, submitBtn, customAbilities, existingImageUrl, currentPostNo }) {
+    if (!/^\d{4}$/.test(deleteKey)) {
+        alert('削除キーは数字4桁で設定してください。');
+        return false;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = '更新中...';
+
+    try {
+        let imageUrl = existingImageUrl;
+
+        // 新しく画像が選択された場合のみ、画像をアップロードし直す
+        if (file) {
+            submitBtn.textContent = '画像アップロード中...';
+            imageUrl = await uploadImageToImgBB(file, currentPostNo || 0, unitNumber, unitName);
+        }
+
+        const postRef = doc(db, "posts", docId);
+        await updateDoc(postRef, {
+            unitNumber: unitNumber,
+            unitName: unitName,
+            author: author,
+            deleteKey: deleteKey,
+            imageUrl: imageUrl,
+            abilities: customAbilities || [],
+            updatedAt: serverTimestamp()
+        });
+
+        localStorage.setItem('last_post_author', author);
+        localStorage.setItem('last_post_deleteKey', deleteKey);
+
+        alert('データを更新しました！');
+        return true;
+
+    } catch (error) {
+        console.error("更新エラー:", error);
+        alert('データの更新に失敗しました：' + error.message);
         return false;
     } finally {
         submitBtn.disabled = false;
