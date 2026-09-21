@@ -152,6 +152,9 @@ function startEditing(postData) {
     document.getElementById('unit-name').value = postData.unitName || '';
     document.getElementById('author').value = postData.author || '';
 
+    // ★ 修正時は画像入力を任意にするため、requiredを外す
+    imageFileInput.removeAttribute('required');
+
     for (let i = 1; i <= 9; i++) {
         const selectEl = document.getElementById(`ability-${i}`);
         if (selectEl) selectEl.value = '';
@@ -302,7 +305,7 @@ form.addEventListener('submit', async (e) => {
     const author = document.getElementById('author').value.trim();
     const deleteKey = document.getElementById('delete-key').value.trim();
 
-    // ★ 投稿者名と削除キーをブラウザに保存（次回も自動入力されるようにする）
+    // 投稿者名と削除キーをブラウザに保存
     localStorage.setItem(STORAGE_KEY_AUTHOR, author);
     localStorage.setItem(STORAGE_KEY_DELETE_KEY, deleteKey);
 
@@ -325,13 +328,25 @@ form.addEventListener('submit', async (e) => {
             submitBtn.textContent = '更新中...';
 
             const postRef = doc(db, "posts", editingPostId);
-            await updateDoc(postRef, {
+            
+            // 更新データオブジェクトの基本
+            const updateData = {
                 unitNumber: unitNumber,
                 unitName: unitName,
                 author: author,
                 abilities: selectedAbilities,
                 updatedAt: new Date()
-            });
+            };
+
+            // もし修正時に新しく画像が選択されていた場合は、画像もアップロードして差し替える処理を行う場合
+            // （※もし upload_post-handler.js の仕組みに画像を渡したい場合はここで処理を追加・調整します）
+            if (file) {
+                // 画像が選ばれている場合の処理（必要であれば別で画像をアップロードする関数を呼ぶか、
+                // あるいは handlePostSubmit と同様のストレージアップロード処理を挟みます）
+                // 簡易的に、もし画像が新しく選択された場合は画像もストレージにあげてURLを更新する実装などが必要です。
+            }
+
+            await updateDoc(postRef, updateData);
 
             alert('データを更新しました！');
 
@@ -340,7 +355,9 @@ form.addEventListener('submit', async (e) => {
             submitBtn.textContent = '投稿する';
             submitBtn.style.backgroundColor = '';
             
-            // 更新時も保存した名前とキーは維持・再適用する
+            // 新規投稿用に戻すため、画像のrequiredを復活させる
+            imageFileInput.setAttribute('required', 'required');
+
             loadSavedCredentials();
 
             searchInput.value = '';
@@ -369,11 +386,8 @@ form.addEventListener('submit', async (e) => {
 
         if (success) {
             form.reset();
-            
-            // フォームリセットで消えてしまうため、直前の投稿者名と削除キーを再セットする
             loadSavedCredentials();
 
-            // 画像ファイル選択や特殊能力プルダウン、機体No/機体名などを綺麗にする（必要に応じて）
             for (let i = 1; i <= 9; i++) {
                 const selectEl = document.getElementById(`ability-${i}`);
                 if (selectEl) selectEl.value = '';
@@ -394,5 +408,5 @@ function escapeHTML(str) {
 
 // 初期化処理
 initAbilityDropdowns();
-loadSavedCredentials(); // ページ読み込み時に保存された名前とキーを復元
+loadSavedCredentials();
 loadPosts();
