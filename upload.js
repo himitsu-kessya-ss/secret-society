@@ -1,8 +1,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, getDocs, query, orderBy, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, query, orderBy, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// 各種モジュールのインポート
-import { handlePostSubmit, handlePostDelete } from "./upload_post-handler.js";
+// 各種モジュールのインポート（handlePostUpdateも追加）
+import { handlePostSubmit, handlePostDelete, handlePostUpdate } from "./upload_post-handler.js";
 import { MASTER_ABILITIES } from "./ability-master.js";
 import { analyzeImageAbilities } from "./upload_ocr-processor.js";
 
@@ -10,7 +10,7 @@ const firebaseConfig = {
     apiKey: "AIzaSyAKnEENO4tuGtFHsTOAWusbUNPzzUiMNMY",
     authDomain: "himitsukessya-aa509.firebaseapp.com",
     projectId: "himitsukessya-aa509",
-    storageBucket: "himitsukessya-aa509.firebasestorage.app",
+    storageBucket: "himitsukessya-aa509.appspot.com",
     messagingSenderId: "584936417780",
     appId: "1:584936417780:web:7702b98ea7faf7ccfbb1a1",
     measurementId: "G-9XBXVQN1JC"
@@ -152,9 +152,10 @@ function startEditing(postData) {
     document.getElementById('unit-name').value = postData.unitName || '';
     document.getElementById('author').value = postData.author || '';
 
-    // ★ 修正時は画像入力を任意にするため、requiredを外す
+    // ★ 修正時は画像入力を任意にするため、required属性を外す
     imageFileInput.removeAttribute('required');
 
+    // プルダウンを初期化してから登録されているアビリティをセット
     for (let i = 1; i <= 9; i++) {
         const selectEl = document.getElementById(`ability-${i}`);
         if (selectEl) selectEl.value = '';
@@ -179,6 +180,7 @@ imageFileInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
+    // 編集中の場合はファイル変更による自動上書きをしない（新規登録時のみ、または新規ファイル指定の更新時にお好みで）
     if (editingPostId) return; 
 
     try {
@@ -305,10 +307,7 @@ form.addEventListener('submit', async (e) => {
     const author = document.getElementById('author').value.trim();
     const deleteKey = document.getElementById('delete-key').value.trim();
 
-    // 投稿者名と削除キーをブラウザに保存
-    localStorage.setItem(STORAGE_KEY_AUTHOR, author);
-    localStorage.setItem(STORAGE_KEY_DELETE_KEY, deleteKey);
-
+    // 特殊能力プルダウンから選択されている内容を収集
     const selectedAbilities = [];
     for (let i = 1; i <= 9; i++) {
         const selectEl = document.getElementById(`ability-${i}`);
@@ -322,53 +321,42 @@ form.addEventListener('submit', async (e) => {
     }
 
     if (editingPostId) {
-        // --- データの更新処理 ---
-        try {
-            submitBtn.disabled = true;
-            submitBtn.textContent = '更新中...';
+        // --- データの更新処理（モジュール連携） ---
+        const targetPost = allPosts.find(p => p.id === editingPostId);
 
-            const postRef = doc(db, "posts", editingPostId);
-            
-            // 更新データオブジェクトの基本
-            const updateData = {
-                unitNumber: unitNumber,
-                unitName: unitName,
-                author: author,
-                abilities: selectedAbilities,
-                updatedAt: new Date()
-            };
+        const success = await handlePostUpdate({
+            db,
+            docId: editingPostId,
+            file,
+            unitNumber,
+            unitName,
+            author,
+            deleteKey,
+            submitBtn,
+            customAbilities: selectedAbilities,
+            existingImageUrl: targetPost ? targetPost.imageUrl : '',
+            currentPostNo: targetPost ? targetPost.postNo : 0
+        });
 
-            // もし修正時に新しく画像が選択されていた場合は、画像もアップロードして差し替える処理を行う場合
-            // （※もし upload_post-handler.js の仕組みに画像を渡したい場合はここで処理を追加・調整します）
-            if (file) {
-                // 画像が選ばれている場合の処理（必要であれば別で画像をアップロードする関数を呼ぶか、
-                // あるいは handlePostSubmit と同様のストレージアップロード処理を挟みます）
-                // 簡易的に、もし画像が新しく選択された場合は画像もストレージにあげてURLを更新する実装などが必要です。
-            }
-
-            await updateDoc(postRef, updateData);
-
-            alert('データを更新しました！');
-
+        if (success) {
             form.reset();
             editingPostId = null;
             submitBtn.textContent = '投稿する';
             submitBtn.style.backgroundColor = '';
             
-            // 新規投稿用に戻すため、画像のrequiredを復活させる
+            // 新規投稿用に戻すため、画像の required を復活させる
             imageFileInput.setAttribute('required', 'required');
 
             loadSavedCredentials();
 
+            for (let i = 1; i <= 9; i++) {
+                const selectEl = document.getElementById(`ability-${i}`);
+                if (selectEl) selectEl.value = '';
+            }
+
             searchInput.value = '';
             tableSearchInput.value = '';
             await loadPosts();
-
-        } catch (error) {
-            console.error("更新エラー:", error);
-            alert('データの更新に失敗しました：' + error.message);
-        } finally {
-            submitBtn.disabled = false;
         }
 
     } else {
@@ -386,7 +374,7 @@ form.addEventListener('submit', async (e) => {
 
         if (success) {
             form.reset();
-            loadSavedCredentials();
+            loadSavedCredentials(); // 保存された投稿者名・削除キーを再適用
 
             for (let i = 1; i <= 9; i++) {
                 const selectEl = document.getElementById(`ability-${i}`);
@@ -406,7 +394,7 @@ function escapeHTML(str) {
     );
 }
 
-// 初期化処理
+// ページ読み込み時の初期化処理
 initAbilityDropdowns();
 loadSavedCredentials();
 loadPosts();
