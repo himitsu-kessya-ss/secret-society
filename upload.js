@@ -131,15 +131,19 @@ function startEditing(postData) {
     document.getElementById('unit-name').value = postData.unitName || '';
     document.getElementById('author').value = postData.author || '';
 
-    // 特殊能力（No.1〜No.9）の入力欄に既存データをセット
-    const abilities = postData.abilities || [];
+    // 特殊能力（No.1〜No.9）の入力欄をクリアしてから既存データをセット
     for (let i = 1; i <= 9; i++) {
         const inputEl = document.getElementById(`ability-${i}`);
-        if (inputEl) {
-            const found = abilities.find(item => item.no === i);
-            inputEl.value = found ? found.text : '';
-        }
+        if (inputEl) inputEl.value = '';
     }
+
+    const abilities = postData.abilities || [];
+    abilities.forEach(item => {
+        const inputEl = document.getElementById(`ability-${item.no}`);
+        if (inputEl) {
+            inputEl.value = item.text || '';
+        }
+    });
 
     // 送信ボタンの見た目を「更新用」に変更
     submitBtn.textContent = 'データを更新する';
@@ -206,10 +210,6 @@ tableSearchInput.addEventListener('input', (e) => {
         let abilityMatch = false;
         if (post.abilities && Array.isArray(post.abilities)) {
             abilityMatch = post.abilities.some(item => item.text.toLowerCase().includes(keyword));
-        } else {
-            abilityMatch = (post.ability1 || '').toLowerCase().includes(keyword) ||
-                           (post.ability2 || '').toLowerCase().includes(keyword) ||
-                           (post.ability3 || '').toLowerCase().includes(keyword);
         }
 
         return unitNameMatch || unitNumberMatch || abilityMatch;
@@ -252,18 +252,18 @@ form.addEventListener('submit', async (e) => {
     const deleteKey = document.getElementById('delete-key').value.trim();
 
     if (editingPostId) {
-        // --- データの更新処理（特殊能力の手動修正反映含む） ---
+        // --- データの更新処理（手動修正されたNo.1〜No.9のアビリティを反映） ---
         try {
             submitBtn.disabled = true;
             submitBtn.textContent = '更新中...';
 
-            // 入力されたNo.1〜No.9の特殊能力を配列として再構築（空欄は除外）
+            // 入力されたNo.1〜No.9の特殊能力を配列として再構築（入力があるものだけ抽出・整理）
             const updatedAbilities = [];
             for (let i = 1; i <= 9; i++) {
                 const val = document.getElementById(`ability-${i}`)?.value.trim();
                 if (val) {
                     updatedAbilities.push({
-                        no: updatedAbilities.length + 1,
+                        no: i, // 入力された番号(No.x)をそのまま保持
                         text: val
                     });
                 }
