@@ -247,7 +247,7 @@ function renderPosts(postsToRender) {
             }
 
             // 編集時の認証
-            const inputKey = prompt('特殊能力を編集するには削除キー（または管理者パスワード）を入力してください：');
+            const inputKey = prompt('投稿データを編集するには削除キー（または管理者パスワード）を入力してください：');
             if (inputKey === null) return;
             const trimmedKey = inputKey.trim();
 
@@ -264,9 +264,25 @@ function renderPosts(postsToRender) {
                 });
             }
 
-            // インディケーター（エディタUI）を組み立て
-            let editorHTML = `<h4 style="margin-top:0; margin-bottom:10px; color:#ff9800; font-size:14px;">🛠 特殊能力の直接編集 (No.1〜9)</h4>`;
-            editorHTML += `<div style="display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 12px;">`;
+            // インディケーター（エディタUI）を組み立て（機体ナンバー・機体名・特殊能力）
+            let editorHTML = `<h4 style="margin-top:0; margin-bottom:12px; color:#ff9800; font-size:14px;">🛠 投稿データの直接編集</h4>`;
+            
+            // 機体ナンバー・機体名入力エリア
+            editorHTML += `
+                <div style="display: grid; grid-template-columns: 120px 1fr; gap: 10px; margin-bottom: 15px; background: #1f1f1f; padding: 10px; border-radius: 4px; border: 1px solid #444;">
+                    <div>
+                        <label style="font-size: 11px; color: #aaa; display: block; margin-bottom: 4px;">機体ナンバー (4桁)</label>
+                        <input type="text" id="edit-unit-number-${data.id}" value="${escapeHTML(data.unitNumber || '')}" maxlength="4" pattern="\\d{4}" style="width: 100%; padding: 6px; box-sizing: border-box; background: #1a1a1a; color: #fff; border: 1px solid #555; border-radius: 4px;">
+                    </div>
+                    <div>
+                        <label style="font-size: 11px; color: #aaa; display: block; margin-bottom: 4px;">機体名</label>
+                        <input type="text" id="edit-unit-name-${data.id}" value="${escapeHTML(data.unitName || '')}" style="width: 100%; padding: 6px; box-sizing: border-box; background: #1a1a1a; color: #fff; border: 1px solid #555; border-radius: 4px;">
+                    </div>
+                </div>
+            `;
+
+            editorHTML += `<div style="font-size: 12px; color: #ff9800; margin-bottom: 6px; font-weight: bold;">特殊能力 (No.1 〜 No.9)</div>`;
+            editorHTML += `<div style="display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 15px;">`;
 
             for (let i = 1; i <= 9; i++) {
                 const val = currentAbilitiesMap[i] || '';
@@ -304,6 +320,16 @@ function renderPosts(postsToRender) {
                 saveBtn.textContent = '保存中...';
 
                 try {
+                    const newUnitNumber = document.getElementById(`edit-unit-number-${data.id}`).value.trim();
+                    const newUnitName = document.getElementById(`edit-unit-name-${data.id}`).value.trim();
+
+                    if (!newUnitNumber || !newUnitName) {
+                        alert('機体ナンバーと機体名は必須です。');
+                        saveBtn.disabled = false;
+                        saveBtn.textContent = '変更を保存';
+                        return;
+                    }
+
                     const selects = inlineEditContainer.querySelectorAll('.inline-ability-select');
                     const newAbilities = [];
 
@@ -315,13 +341,15 @@ function renderPosts(postsToRender) {
                         }
                     });
 
-                    // Firestoreの該当ドキュメントを更新
+                    // Firestoreの該当ドキュメントを更新（unitNumber, unitName, abilities）
                     const postRef = doc(db, "posts", data.id);
                     await updateDoc(postRef, {
+                        unitNumber: newUnitNumber,
+                        unitName: newUnitName,
                         abilities: newAbilities
                     });
 
-                    alert('特殊能力を更新しました！');
+                    alert('投稿データを更新しました！');
                     await loadPosts(); // リロードして最新状態に
 
                 } catch (err) {
