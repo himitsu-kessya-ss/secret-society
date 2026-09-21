@@ -28,6 +28,10 @@ const tableSearchInput = document.getElementById('table-search-input');
 const tableBody = document.getElementById('registered-table-body');
 const imageFileInput = document.getElementById('image-file');
 
+// 入力保持用のストレージキー
+const STORAGE_KEY_AUTHOR = 'ss_upload_author';
+const STORAGE_KEY_DELETE_KEY = 'ss_upload_delete_key';
+
 let allPosts = [];
 let editingPostId = null; // 編集中のデータID（nullなら新規登録）
 
@@ -37,16 +41,27 @@ function initAbilityDropdowns() {
         const selectEl = document.getElementById(`ability-${i}`);
         if (!selectEl) continue;
 
-        // 既存の選択肢をクリアしてデフォルトを入れる
         selectEl.innerHTML = '<option value="">-- 未選択 --</option>';
 
-        // マスター辞書の項目をoptionとして追加
         MASTER_ABILITIES.forEach(ability => {
             const option = document.createElement('option');
             option.value = ability;
             option.textContent = ability;
             selectEl.appendChild(option);
         });
+    }
+}
+
+// --- 保存された投稿者名・削除キーの復元 ---
+function loadSavedCredentials() {
+    const savedAuthor = localStorage.getItem(STORAGE_KEY_AUTHOR);
+    const savedDeleteKey = localStorage.getItem(STORAGE_KEY_DELETE_KEY);
+
+    if (savedAuthor) {
+        document.getElementById('author').value = savedAuthor;
+    }
+    if (savedDeleteKey) {
+        document.getElementById('delete-key').value = savedDeleteKey;
     }
 }
 
@@ -120,7 +135,6 @@ function renderRegisteredTable(posts) {
             </td>
         `;
 
-        // 編集ボタンが押されたときの処理
         const editBtn = tr.querySelector('.edit-btn');
         editBtn.addEventListener('click', () => {
             startEditing(data);
@@ -130,16 +144,14 @@ function renderRegisteredTable(posts) {
     });
 }
 
-// 編集モードに入る関数（基本情報 ＋ プルダウンへのアビリティセット）
+// 編集モードに入る関数
 function startEditing(postData) {
     editingPostId = postData.id;
 
-    // 基本情報のセット
     document.getElementById('unit-number').value = postData.unitNumber || '';
     document.getElementById('unit-name').value = postData.unitName || '';
     document.getElementById('author').value = postData.author || '';
 
-    // 特殊能力（No.1〜No.9）のプルダウンをリセットしてから値をセット
     for (let i = 1; i <= 9; i++) {
         const selectEl = document.getElementById(`ability-${i}`);
         if (selectEl) selectEl.value = '';
@@ -153,7 +165,6 @@ function startEditing(postData) {
         }
     });
 
-    // 送信ボタンの見た目を「更新用」に変更
     submitBtn.textContent = 'データを更新する';
     submitBtn.style.backgroundColor = '#ff9800';
 
@@ -165,27 +176,23 @@ imageFileInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    // 編集中でない、または新規投稿時のみOCR自動入力を走らせる（お好みで調整可能）
     if (editingPostId) return; 
 
     try {
         submitBtn.disabled = true;
         submitBtn.textContent = 'OCR解析中...';
 
-        // プルダウンを一旦リセット
         for (let i = 1; i <= 9; i++) {
             const selectEl = document.getElementById(`ability-${i}`);
             if (selectEl) selectEl.value = '';
         }
 
-        // OCR解析実行（upload_ocr-processor.js の関数）
         const detectedAbilities = await analyzeImageAbilities(file);
 
-        // 検出された結果を対応するNo.のプルダウンに自動選択
         detectedAbilities.forEach(item => {
             const selectEl = document.getElementById(`ability-${item.no}`);
             if (selectEl) {
-                selectEl.value = item.text; // マッチしていれば自動選択される
+                selectEl.value = item.text;
             }
         });
 
@@ -295,7 +302,10 @@ form.addEventListener('submit', async (e) => {
     const author = document.getElementById('author').value.trim();
     const deleteKey = document.getElementById('delete-key').value.trim();
 
-    // プルダウンから選択されたNo.1〜No.9の特殊能力を収集（未選択は除外）
+    // ★ 投稿者名と削除キーをブラウザに保存（次回も自動入力されるようにする）
+    localStorage.setItem(STORAGE_KEY_AUTHOR, author);
+    localStorage.setItem(STORAGE_KEY_DELETE_KEY, deleteKey);
+
     const selectedAbilities = [];
     for (let i = 1; i <= 9; i++) {
         const selectEl = document.getElementById(`ability-${i}`);
@@ -319,7 +329,7 @@ form.addEventListener('submit', async (e) => {
                 unitNumber: unitNumber,
                 unitName: unitName,
                 author: author,
-                abilities: selectedAbilities, // プルダウンで選択・修正されたアビリティリストを保存
+                abilities: selectedAbilities,
                 updatedAt: new Date()
             });
 
@@ -329,6 +339,10 @@ form.addEventListener('submit', async (e) => {
             editingPostId = null;
             submitBtn.textContent = '投稿する';
             submitBtn.style.backgroundColor = '';
+            
+            // 更新時も保存した名前とキーは維持・再適用する
+            loadSavedCredentials();
+
             searchInput.value = '';
             tableSearchInput.value = '';
             await loadPosts();
@@ -341,9 +355,7 @@ form.addEventListener('submit', async (e) => {
         }
 
     } else {
-        // --- 新規登録処理（abilitiesを渡して保存するようにハンドラーを呼び出し） ---
-        // ※ upload_post-handler.js 側で abilities を受け取れるようにしている前提ですが、
-        // もし自動解析をそのまま使いたい場合はこれまで通りの処理に合わせます。
+        // --- 新規登録処理 ---
         const success = await handlePostSubmit({
             db,
             file,
@@ -352,11 +364,21 @@ form.addEventListener('submit', async (e) => {
             author,
             deleteKey,
             submitBtn,
-            customAbilities: selectedAbilities // 手動選択・修正されたアビリティがある場合
+            customAbilities: selectedAbilities
         });
 
         if (success) {
             form.reset();
+            
+            // フォームリセットで消えてしまうため、直前の投稿者名と削除キーを再セットする
+            loadSavedCredentials();
+
+            // 画像ファイル選択や特殊能力プルダウン、機体No/機体名などを綺麗にする（必要に応じて）
+            for (let i = 1; i <= 9; i++) {
+                const selectEl = document.getElementById(`ability-${i}`);
+                if (selectEl) selectEl.value = '';
+            }
+
             searchInput.value = '';
             tableSearchInput.value = '';
             await loadPosts();
@@ -370,7 +392,7 @@ function escapeHTML(str) {
     );
 }
 
-// ページ読み込み時にプルダウンを初期化してマスター辞書をセット
+// 初期化処理
 initAbilityDropdowns();
-// 初期データ読み込み
+loadSavedCredentials(); // ページ読み込み時に保存された名前とキーを復元
 loadPosts();
