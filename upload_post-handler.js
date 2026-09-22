@@ -20,11 +20,13 @@ export function loadSavedPostCredentials() {
 }
 
 /**
- * 画像をImgBBにアップロードする処理
+ * 画像をImgBBにアップロードする処理（ファイル名の安全化対応）
  */
 export async function uploadImageToImgBB(file, postNo, unitNumber, unitName) {
-    const fileExtension = file.name.substring(file.name.lastIndexOf('.'));
-    const newFileName = `PostNo${postNo}_${unitNumber}_${unitName}${fileExtension}`;
+    const fileExtension = file.name.substring(file.name.lastIndexOf('.')) || '.png';
+    // 機体名に含まれる日本語や特殊文字によるImgBBのバリデーションエラーを防ぐため安全な形式に変換
+    const safeUnitName = encodeURIComponent(unitName || 'unit').replace(/[%]/g, '_');
+    const newFileName = `post_${postNo}_${unitNumber}_${safeUnitName}${fileExtension}`;
     const renamedFile = new File([file], newFileName, { type: file.type });
 
     const formData = new FormData();
@@ -37,7 +39,7 @@ export async function uploadImageToImgBB(file, postNo, unitNumber, unitName) {
 
     const result = await response.json();
     if (!result.success) {
-        throw new Error("画像のアップロードに失敗しました。");
+        throw new Error("画像のアップロードに失敗しました (ImgBB APIエラー)");
     }
 
     return result.data.url;
