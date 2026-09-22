@@ -19,13 +19,13 @@
     <div class="container">
         <h1 class="page-title">SS Upload (スクリーンショット投稿)</h1>
 
-        <!-- ▼ タブ切り替えボタン（大きく見やすく改善） -->
+        <!-- ▼ タブ切り替えボタン -->
         <div class="tab-buttons">
             <button class="tab-btn active" data-target="post-tab">📝 投稿・投稿一覧</button>
             <button class="tab-btn" data-target="list-tab">📋 登録済機体一覧</button>
         </div>
 
-        <!-- ▼ 投稿タブのコンテンツ（登録済機体一覧以外のすべて） -->
+        <!-- ▼ 投稿タブのコンテンツ -->
         <div id="post-tab" class="tab-content active">
             <!-- 投稿者向けの使い方説明エリア -->
             <div class="guide-card">
@@ -99,7 +99,7 @@
             <div id="post-list" class="post-list"></div>
         </div>
 
-        <!-- ▼ 登録済機体一覧タブのコンテンツ（登録済機体一覧のみ） -->
+        <!-- ▼ 登録済機体一覧タブのコンテンツ -->
         <div id="list-tab" class="tab-content">
             <div class="registered-units-area">
                 <div class="table-header-area">
@@ -110,15 +110,18 @@
                     <table>
                         <thead>
                             <tr>
-                                <th style="width: 100px;">機体 No.</th>
-                                <th style="width: 200px;">機体名</th>
-                                <th>特殊能力 (No.1 〜 No.9)</th>
-                                <th style="width: 110px;">画像リンク</th>
+                                <!-- ▼ 各ヘッダーに data-sort を付与し、クリックでソート可能に -->
+                                <th style="width: 90px; cursor: pointer;" data-sort="unitNo">機体 No. <span class="sort-icon">🔼</span></th>
+                                <th style="width: 180px; cursor: pointer;" data-sort="unitName">機体名 <span class="sort-icon"></span></th>
+                                <th style="cursor: pointer;" data-sort="abilities">特殊能力 (No.1 〜 No.9) <span class="sort-icon"></span></th>
+                                <th style="width: 100px; cursor: pointer;" data-sort="image">画像リンク <span class="sort-icon"></span></th>
+                                <th style="width: 90px; cursor: pointer;" data-sort="postId">投稿No. <span class="sort-icon"></span></th>
+                                <th style="width: 130px; cursor: pointer;" data-sort="author">投稿者 <span class="sort-icon"></span></th>
                             </tr>
                         </thead>
                         <tbody id="registered-table-body">
                             <tr>
-                                <td colspan="4" style="text-align: center; color: var(--sub-text);">データを読み込み中...</td>
+                                <td colspan="6" style="text-align: center; color: var(--sub-text);">データを読み込み中...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -150,7 +153,7 @@
         });
     </script>
 
-    <!-- 共通ヘッダーを読み込んで現在地をアクティブにする処理 -->
+    <!-- 共通ヘッダー読み込み -->
     <script>
         fetch('header.html')
             .then(response => response.text())
@@ -167,7 +170,7 @@
             });
     </script>
 
-    <!-- メインのJavaScript（モジュールとして読み込み） -->
+    <!-- メインのJavaScript -->
     <script type="module" src="upload.js"></script>
 </body>
 </html>
