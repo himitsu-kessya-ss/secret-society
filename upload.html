@@ -19,13 +19,13 @@
     <div class="container">
         <h1 class="page-title">SS Upload (スクリーンショット投稿)</h1>
 
-        <!-- ▼ タブ切り替えボタン -->
+        <!-- ▼ タブ切り替えボタン（大きく見やすく改善） -->
         <div class="tab-buttons">
-            <button class="tab-btn active" data-target="post-tab">投稿</button>
-            <button class="tab-btn" data-target="list-tab">登録済機体一覧</button>
+            <button class="tab-btn active" data-target="post-tab">📝 投稿・投稿一覧</button>
+            <button class="tab-btn" data-target="list-tab">📋 登録済機体一覧</button>
         </div>
 
-        <!-- ▼ 投稿タブのコンテンツ -->
+        <!-- ▼ 投稿タブのコンテンツ（登録済機体一覧以外のすべて） -->
         <div id="post-tab" class="tab-content active">
             <!-- 投稿者向けの使い方説明エリア -->
             <div class="guide-card">
@@ -89,7 +89,7 @@
                 </form>
             </div>
 
-            <!-- 投稿一覧エリア（投稿タブ内に配置） -->
+            <!-- 投稿一覧エリア -->
             <div class="list-header-area" style="margin-top: 30px;">
                 <h2 style="margin: 0;">投稿一覧</h2>
                 <input type="text" id="search-input" class="search-box" placeholder="🔍 投稿No.・機体名・機体No.で検索...">
@@ -99,11 +99,11 @@
             <div id="post-list" class="post-list"></div>
         </div>
 
-        <!-- ▼ 登録済機体一覧タブのコンテンツ -->
+        <!-- ▼ 登録済機体一覧タブのコンテンツ（登録済機体一覧のみ） -->
         <div id="list-tab" class="tab-content">
             <div class="registered-units-area">
                 <div class="table-header-area">
-                    <h2 class="section-title">📋 登録済み機体一覧データ[cite: 2]</h2>
+                    <h2 class="section-title">📋 登録済み機体一覧データ</h2>
                     <input type="text" id="table-search-input" class="table-search-box" placeholder="🔍 機体名・機体No.・能力でフィルタ...">
                 </div>
                 <div class="table-container">
