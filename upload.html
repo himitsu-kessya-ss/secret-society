@@ -19,102 +19,136 @@
     <div class="container">
         <h1 class="page-title">SS Upload (スクリーンショット投稿)</h1>
 
-        <!-- 投稿者向けの使い方説明エリア -->
-        <div class="guide-card">
-            <h2 class="guide-title">ℹ️ SS投稿の使い方・ルール</h2>
-            <ul class="guide-list">
-                <li><strong>機体ナンバー：</strong> 対象となる機体の4桁の番号（例：0001）を入力してください。</li>
-                <li><strong>機体名：</strong> 画像に映っている機体の名称を入力してください。</li>
-                <li><strong>投稿者：</strong> ゲーム内でのキャラクター名（パイロット名）を入力してください。</li>
-                <li><strong>削除キー：</strong> 投稿後に自分で削除したい場合に使用する<span class="guide-highlight">数字4桁の暗証番号</span>を設定してください。</li>
-                <li><strong>特殊能力解析：</strong> 画像から特殊能力を自動抽出します。プルダウンから手動で変更・追加も可能です。</li>
-            </ul>
+        <!-- ▼ タブ切り替えボタン -->
+        <div class="tab-buttons">
+            <button class="tab-btn active" data-target="post-tab">投稿</button>
+            <button class="tab-btn" data-target="list-tab">登録済機体一覧</button>
         </div>
 
-        <!-- 投稿フォーム -->
-        <div class="upload-form-card">
-            <form id="upload-form">
-                <div class="form-row">
-                    <div class="form-group small">
-                        <label for="unit-number">機体ナンバー</label>
-                        <input type="text" id="unit-number" placeholder="0001" maxlength="4" pattern="\d{4}" required title="4桁の数字を入力してください">
-                    </div>
-                    <div class="form-group">
-                        <label for="unit-name">機体名</label>
-                        <input type="text" id="unit-name" placeholder="例：ガンダム" required>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="author">投稿者（キャラ名）</label>
-                        <input type="text" id="author" placeholder="例：名無しパイロット" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="delete-key">削除キー（数字4桁）</label>
-                        <input type="password" id="delete-key" placeholder="例：1234" maxlength="4" pattern="\d{4}" required title="数字4桁で入力してください">
-                    </div>
-                </div>
-
-                <div class="form-group file-input-wrapper">
-                    <label for="image-file">添付画像</label>
-                    <input type="file" id="image-file" accept="image/*" required>
-                </div>
-
-                <!-- ▼ 特殊能力 プルダウン選択エリア (No.1 〜 No.9) -->
-                <div class="form-group" style="margin-top: 20px; border-top: 1px dashed #444; padding-top: 15px;">
-                    <label style="margin-bottom: 8px; display: block; color: var(--accent-color, #ff9800);">✨ 特殊能力の選択・手動修正 (No.1 〜 No.9)</label>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px;">
-                        <div><label style="font-size: 12px;">No.1</label><select id="ability-1" style="width: 100%; padding: 6px; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;"><option value="">-- 未選択 --</option></select></div>
-                        <div><label style="font-size: 12px;">No.2</label><select id="ability-2" style="width: 100%; padding: 6px; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;"><option value="">-- 未選択 --</option></select></div>
-                        <div><label style="font-size: 12px;">No.3</label><select id="ability-3" style="width: 100%; padding: 6px; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;"><option value="">-- 未選択 --</option></select></div>
-                        <div><label style="font-size: 12px;">No.4</label><select id="ability-4" style="width: 100%; padding: 6px; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;"><option value="">-- 未選択 --</option></select></div>
-                        <div><label style="font-size: 12px;">No.5</label><select id="ability-5" style="width: 100%; padding: 6px; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;"><option value="">-- 未選択 --</option></select></div>
-                        <div><label style="font-size: 12px;">No.6</label><select id="ability-6" style="width: 100%; padding: 6px; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;"><option value="">-- 未選択 --</option></select></div>
-                        <div><label style="font-size: 12px;">No.7</label><select id="ability-7" style="width: 100%; padding: 6px; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;"><option value="">-- 未選択 --</option></select></div>
-                        <div><label style="font-size: 12px;">No.8</label><select id="ability-8" style="width: 100%; padding: 6px; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;"><option value="">-- 未選択 --</option></select></div>
-                        <div><label style="font-size: 12px;">No.9</label><select id="ability-9" style="width: 100%; padding: 6px; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;"><option value="">-- 未選択 --</option></select></div>
-                    </div>
-                </div>
-
-                <button type="submit" id="submit-btn" class="submit-btn">投稿する</button>
-            </form>
-        </div>
-
-        <!-- 登録済み機体一覧データ -->
-        <div class="registered-units-area">
-            <div class="table-header-area">
-                <h2 class="section-title">📋 登録済み機体一覧データ</h2>
-                <input type="text" id="table-search-input" class="table-search-box" placeholder="🔍 機体名・機体No.・能力でフィルタ...">
+        <!-- ▼ 投稿タブのコンテンツ -->
+        <div id="post-tab" class="tab-content active">
+            <!-- 投稿者向けの使い方説明エリア -->
+            <div class="guide-card">
+                <h2 class="guide-title">ℹ️ SS投稿の使い方・ルール</h2>
+                <ul class="guide-list">
+                    <li><strong>機体ナンバー：</strong> 対象となる機体の4桁の番号（例：0001）を入力してください。</li>
+                    <li><strong>機体名：</strong> 画像に映っている機体の名称を入力してください。</li>
+                    <li><strong>投稿者：</strong> ゲーム内でのキャラクター名（パイロット名）を入力してください。</li>
+                    <li><strong>削除キー：</strong> 投稿後に自分で削除したい場合に使用する<span class="guide-highlight">数字4桁の暗証番号</span>を設定してください。</li>
+                    <li><strong>特殊能力解析：</strong> 画像から特殊能力を自動抽出します。プルダウンから手動で変更・追加も可能です。</li>
+                </ul>
             </div>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="width: 100px;">機体 No.</th>
-                            <th style="width: 200px;">機体名</th>
-                            <th>特殊能力 (No.1 〜 No.9)</th>
-                            <th style="width: 110px;">画像リンク</th>
-                        </tr>
-                    </thead>
-                    <tbody id="registered-table-body">
-                        <tr>
-                            <td colspan="4" style="text-align: center; color: var(--sub-text);">データを読み込み中...</td>
-                        </tr>
-                    </tbody>
-                </table>
+
+            <!-- 投稿フォーム -->
+            <div class="upload-form-card">
+                <form id="upload-form">
+                    <div class="form-row">
+                        <div class="form-group small">
+                            <label for="unit-number">機体ナンバー</label>
+                            <input type="text" id="unit-number" placeholder="0001" maxlength="4" pattern="\d{4}" required title="4桁の数字を入力してください">
+                        </div>
+                        <div class="form-group">
+                            <label for="unit-name">機体名</label>
+                            <input type="text" id="unit-name" placeholder="例：ガンダム" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="author">投稿者（キャラ名）</label>
+                            <input type="text" id="author" placeholder="例：名無しパイロット" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="delete-key">削除キー（数字4桁）</label>
+                            <input type="password" id="delete-key" placeholder="例：1234" maxlength="4" pattern="\d{4}" required title="数字4桁で入力してください">
+                        </div>
+                    </div>
+
+                    <div class="form-group file-input-wrapper">
+                        <label for="image-file">添付画像</label>
+                        <input type="file" id="image-file" accept="image/*" required>
+                    </div>
+
+                    <!-- ▼ 特殊能力 プルダウン選択エリア (No.1 〜 No.9) -->
+                    <div class="form-group" style="margin-top: 20px; border-top: 1px dashed #444; padding-top: 15px;">
+                        <label style="margin-bottom: 8px; display: block; color: var(--accent-color, #ff9800);">✨ 特殊能力の選択・手動修正 (No.1 〜 No.9)</label>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px;">
+                            <div><label style="font-size: 12px;">No.1</label><select id="ability-1" style="width: 100%; padding: 6px; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;"><option value="">-- 未選択 --</option></select></div>
+                            <div><label style="font-size: 12px;">No.2</label><select id="ability-2" style="width: 100%; padding: 6px; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;"><option value="">-- 未選択 --</option></select></div>
+                            <div><label style="font-size: 12px;">No.3</label><select id="ability-3" style="width: 100%; padding: 6px; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;"><option value="">-- 未選択 --</option></select></div>
+                            <div><label style="font-size: 12px;">No.4</label><select id="ability-4" style="width: 100%; padding: 6px; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;"><option value="">-- 未選択 --</option></select></div>
+                            <div><label style="font-size: 12px;">No.5</label><select id="ability-5" style="width: 100%; padding: 6px; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;"><option value="">-- 未選択 --</option></select></div>
+                            <div><label style="font-size: 12px;">No.6</label><select id="ability-6" style="width: 100%; padding: 6px; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;"><option value="">-- 未選択 --</option></select></div>
+                            <div><label style="font-size: 12px;">No.7</label><select id="ability-7" style="width: 100%; padding: 6px; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;"><option value="">-- 未選択 --</option></select></div>
+                            <div><label style="font-size: 12px;">No.8</label><select id="ability-8" style="width: 100%; padding: 6px; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;"><option value="">-- 未選択 --</option></select></div>
+                            <div><label style="font-size: 12px;">No.9</label><select id="ability-9" style="width: 100%; padding: 6px; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;"><option value="">-- 未選択 --</option></select></div>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="submit-btn" class="submit-btn">投稿する</button>
+                </form>
+            </div>
+
+            <!-- 投稿一覧エリア（投稿タブ内に配置） -->
+            <div class="list-header-area" style="margin-top: 30px;">
+                <h2 style="margin: 0;">投稿一覧</h2>
+                <input type="text" id="search-input" class="search-box" placeholder="🔍 投稿No.・機体名・機体No.で検索...">
+            </div>
+
+            <div id="loading-msg">データを読み込み中...</div>
+            <div id="post-list" class="post-list"></div>
+        </div>
+
+        <!-- ▼ 登録済機体一覧タブのコンテンツ -->
+        <div id="list-tab" class="tab-content">
+            <div class="registered-units-area">
+                <div class="table-header-area">
+                    <h2 class="section-title">📋 登録済み機体一覧データ[cite: 2]</h2>
+                    <input type="text" id="table-search-input" class="table-search-box" placeholder="🔍 機体名・機体No.・能力でフィルタ...">
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 100px;">機体 No.</th>
+                                <th style="width: 200px;">機体名</th>
+                                <th>特殊能力 (No.1 〜 No.9)</th>
+                                <th style="width: 110px;">画像リンク</th>
+                            </tr>
+                        </thead>
+                        <tbody id="registered-table-body">
+                            <tr>
+                                <td colspan="4" style="text-align: center; color: var(--sub-text);">データを読み込み中...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
-
-        <!-- 投稿一覧エリア -->
-        <div class="list-header-area">
-            <h2 style="margin: 0;">投稿一覧</h2>
-            <input type="text" id="search-input" class="search-box" placeholder="🔍 投稿No.・機体名・機体No.で検索...">
-        </div>
-
-        <div id="loading-msg">データを読み込み中...</div>
-        <div id="post-list" class="post-list"></div>
     </div>
+
+    <!-- タブ切り替え制御スクリプト -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetId = button.getAttribute('data-target');
+
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+
+                    button.classList.add('active');
+                    const targetContent = document.getElementById(targetId);
+                    if (targetContent) {
+                        targetContent.classList.add('active');
+                    }
+                });
+            });
+        });
+    </script>
 
     <!-- 共通ヘッダーを読み込んで現在地をアクティブにする処理 -->
     <script>
@@ -123,7 +157,6 @@
             .then(data => {
                 document.getElementById('header-container').innerHTML = data;
                 
-                // 現在開いているページを自動判定してナビに active クラスをつける
                 const currentPath = window.location.pathname.split('/').pop();
                 const navLinks = document.querySelectorAll('.nav-links a');
                 navLinks.forEach(link => {
