@@ -108,6 +108,12 @@ async function loadPosts() {
             allPosts.push({ id: docSnap.id, ...docSnap.data() });
         });
 
+        // ▼ タブの2段目に登録機体数を反映
+        const countSpan = document.getElementById('total-unit-count');
+        if (countSpan) {
+            countSpan.textContent = allPosts.length;
+        }
+
         displayLimit = 10;
         renderPosts(allPosts);
         
