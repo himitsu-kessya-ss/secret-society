@@ -1,5 +1,3 @@
-<!-- upload.js -->
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getFirestore, collection, getDocs, query, orderBy, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
@@ -208,7 +206,6 @@ function renderPosts(postsToRender) {
         return;
     }
 
-    // 表示する件数を制限
     const slicedPosts = postsToRender.slice(0, displayLimit);
 
     slicedPosts.forEach((data) => {
@@ -216,7 +213,6 @@ function renderPosts(postsToRender) {
         const postNoStr = data.postNo ? `投稿 No.${data.postNo}` : '投稿 No.--';
         const unitNoStr = data.unitNumber ? `機体 No.${escapeHTML(data.unitNumber)}` : '機体 No.----';
 
-        // 特殊能力一覧のHTML生成
         let abilityBadgesHTML = '';
         if (data.abilities && Array.isArray(data.abilities) && data.abilities.length > 0) {
             abilityBadgesHTML = data.abilities.map(item => `
@@ -248,7 +244,6 @@ function renderPosts(postsToRender) {
                 <span>${escapeHTML(data.unitName || '名称未設定')}</span>
             </h3>
             
-            <!-- ▼ 画像と特殊能力リストを横並びにするエリア -->
             <div class="card-body-content" style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start;">
                 ${data.imageUrl ? `<div style="flex: 1; min-width: 280px; max-width: 500px;"><img src="${data.imageUrl}" class="post-image" alt="投稿画像" loading="lazy" style="width: 100%; height: auto; border-radius: 4px;"></div>` : ''}
                 <div style="flex: 1; min-width: 220px; background: #1e1e1e; padding: 12px 16px; border-radius: 6px; border: 1px solid #333;">
@@ -257,14 +252,12 @@ function renderPosts(postsToRender) {
                 </div>
             </div>
 
-            <!-- ▼ インライン編集用コンテナ -->
             <div class="inline-edit-container" id="inline-edit-${data.id}" style="display: none; margin-top: 15px; padding: 15px; background: #2a2a2a; border-radius: 6px; border: 1px solid #444;"></div>
         `;
 
         const inlineEditContainer = card.querySelector(`#inline-edit-${data.id}`);
         const inlineEditToggleBtn = card.querySelector('.inline-edit-toggle-btn');
 
-        // 「編集」ボタンのクリック処理（認証チェック＆エディタ表示切替）
         inlineEditToggleBtn.addEventListener('click', () => {
             const isVisible = inlineEditContainer.style.display === 'block';
             if (isVisible) {
@@ -273,7 +266,6 @@ function renderPosts(postsToRender) {
                 return;
             }
 
-            // 編集時の認証
             const inputKey = prompt('投稿データを編集するには削除キー（または管理者パスワード）を入力してください：');
             if (inputKey === null) return;
             const trimmedKey = inputKey.trim();
@@ -283,7 +275,6 @@ function renderPosts(postsToRender) {
                 return;
             }
 
-            // 既存のアビリティデータをマップ化
             const currentAbilitiesMap = {};
             if (data.abilities && Array.isArray(data.abilities)) {
                 data.abilities.forEach(item => {
@@ -291,10 +282,8 @@ function renderPosts(postsToRender) {
                 });
             }
 
-            // インディケーター（エディタUI）を組み立て（機体ナンバー・機体名・特殊能力）
             let editorHTML = `<h4 style="margin-top:0; margin-bottom:12px; color:#ff9800; font-size:14px;">🛠 投稿データの直接編集</h4>`;
             
-            // 機体ナンバー・機体名入力エリア
             editorHTML += `
                 <div style="display: grid; grid-template-columns: 120px 1fr; gap: 10px; margin-bottom: 15px; background: #1f1f1f; padding: 10px; border-radius: 4px; border: 1px solid #444;">
                     <div>
@@ -334,7 +323,6 @@ function renderPosts(postsToRender) {
             inlineEditContainer.style.display = 'block';
             inlineEditToggleBtn.textContent = '閉じる';
 
-            // インラインエディタ内のセレクトボックスにも背景色制御を適用
             const inlineSelects = inlineEditContainer.querySelectorAll('.inline-ability-select');
             inlineSelects.forEach(sel => {
                 updateSelectBackground(sel);
@@ -343,13 +331,11 @@ function renderPosts(postsToRender) {
                 });
             });
 
-            // キャンセルボタンのイベント
             inlineEditContainer.querySelector('.inline-cancel-btn').addEventListener('click', () => {
                 inlineEditContainer.style.display = 'none';
                 inlineEditToggleBtn.textContent = '編集';
             });
 
-            // 保存ボタンのイベント
             inlineEditContainer.querySelector('.inline-save-btn').addEventListener('click', async (e) => {
                 const saveBtn = e.target;
                 saveBtn.disabled = true;
@@ -377,7 +363,6 @@ function renderPosts(postsToRender) {
                         }
                     });
 
-                    // Firestoreの該当ドキュメントを更新（unitNumber, unitName, abilities）
                     const postRef = doc(db, "posts", data.id);
                     await updateDoc(postRef, {
                         unitNumber: newUnitNumber,
@@ -386,7 +371,7 @@ function renderPosts(postsToRender) {
                     });
 
                     alert('投稿データを更新しました！');
-                    await loadPosts(); // リロードして最新状態に
+                    await loadPosts();
 
                 } catch (err) {
                     console.error("更新エラー:", err);
@@ -397,7 +382,6 @@ function renderPosts(postsToRender) {
             });
         });
 
-        // 削除ボタンイベント
         const deleteBtn = card.querySelector('.delete-btn');
         deleteBtn.addEventListener('click', () => {
             handlePostDelete(db, data.id, data.deleteKey, loadPosts);
@@ -406,7 +390,6 @@ function renderPosts(postsToRender) {
         postList.appendChild(card);
     });
 
-    // まだ全件表示しきれていない場合、「もっと見る」ボタンをリストの最後に追加
     if (displayLimit < postsToRender.length) {
         const loadMoreContainer = document.createElement('div');
         loadMoreContainer.style.cssText = 'text-align: center; margin: 25px 0;';
@@ -419,7 +402,7 @@ function renderPosts(postsToRender) {
         loadMoreBtn.onmouseout = () => loadMoreBtn.style.backgroundColor = '#333';
 
         loadMoreBtn.addEventListener('click', () => {
-            displayLimit += 10; // 10件ずつ増やす
+            displayLimit += 10;
             renderPosts(postsToRender);
         });
 
@@ -428,7 +411,6 @@ function renderPosts(postsToRender) {
     }
 }
 
-// テーブル検索フィルター
 tableSearchInput.addEventListener('input', (e) => {
     const keyword = e.target.value.toLowerCase().trim();
 
@@ -452,12 +434,11 @@ tableSearchInput.addEventListener('input', (e) => {
     renderRegisteredTable(filteredTableData);
 });
 
-// 投稿カード検索フィルター
 searchInput.addEventListener('input', (e) => {
     const keyword = e.target.value.toLowerCase().trim();
 
     if (!keyword) {
-        displayLimit = 10; // 検索解除時は10件制限に戻す
+        displayLimit = 10;
         renderPosts(allPosts);
         return;
     }
@@ -473,11 +454,10 @@ searchInput.addEventListener('input', (e) => {
         return unitNameMatch || unitNumberMatch || authorMatch || postNoMatch;
     });
 
-    displayLimit = filteredPosts.length; // 検索時は該当分を一括表示
+    displayLimit = filteredPosts.length;
     renderPosts(filteredPosts);
 });
 
-// フォーム送信処理（新規登録）
 form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -487,7 +467,6 @@ form.addEventListener('submit', async (e) => {
     const author = document.getElementById('author').value.trim();
     const deleteKey = document.getElementById('delete-key').value.trim();
 
-    // 特殊能力プルダウンから選択されている内容を収集
     const selectedAbilities = [];
     for (let i = 1; i <= 9; i++) {
         const selectEl = document.getElementById(`ability-${i}`);
@@ -500,7 +479,6 @@ form.addEventListener('submit', async (e) => {
         }
     }
 
-    // 新規登録処理
     const success = await handlePostSubmit({
         db,
         file,
@@ -514,7 +492,7 @@ form.addEventListener('submit', async (e) => {
 
     if (success) {
         form.reset();
-        loadSavedCredentials(); // 保存された投稿者名・削除キーを再適用
+        loadSavedCredentials();
 
         for (let i = 1; i <= 9; i++) {
             const selectEl = document.getElementById(`ability-${i}`);
@@ -536,7 +514,9 @@ function escapeHTML(str) {
     );
 }
 
-// ページ読み込み時の初期化処理
-initAbilityDropdowns();
-loadSavedCredentials();
-loadPosts();
+// ページ読み込み時の初期化処理（DOM構築完了後に実行するように安全対策を追加）
+document.addEventListener('DOMContentLoaded', () => {
+    initAbilityDropdowns();
+    loadSavedCredentials();
+    loadPosts();
+});
