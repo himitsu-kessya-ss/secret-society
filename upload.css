@@ -75,7 +75,7 @@ header {
     margin-bottom: 25px;
 }
 
-/* ▼ タブ切り替えボタンのスタイル（大きく見やすく調整） */
+/* ▼ タブ切り替えボタンのスタイル（2段表示対応） */
 .tab-buttons {
     display: flex;
     gap: 12px;
@@ -89,12 +89,30 @@ header {
     color: var(--sub-text);
     border: 1px solid #444;
     border-bottom: none;
-    padding: 14px 28px;
+    padding: 10px 24px;
     cursor: pointer;
     font-size: 1.1rem;
-    font-weight: bold;
     border-radius: 8px 8px 0 0;
     transition: background-color 0.2s, color 0.2s, border-color 0.2s, transform 0.1s;
+    
+    /* 2段レイアウト用 */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+}
+
+.tab-btn .tab-title {
+    font-size: 1.05rem;
+    font-weight: bold;
+}
+
+.tab-btn .tab-subtitle {
+    font-size: 0.75rem;
+    color: var(--sub-text);
+    font-weight: normal;
+    opacity: 0.8;
 }
 
 .tab-btn:hover {
@@ -106,18 +124,23 @@ header {
     background-color: var(--card-bg);
     color: var(--accent-color);
     border-color: var(--accent-color);
-    border-bottom: 3px solid var(--card-bg); /* タブとコンテンツの一体感アップ */
+    border-bottom: 3px solid var(--card-bg);
     margin-bottom: -3px;
     transform: translateY(-2px);
 }
 
+.tab-btn.active .tab-subtitle {
+    color: var(--accent-color);
+    opacity: 1;
+}
+
 /* ▼ タブコンテンツの表示制御スタイル */
 .tab-content {
-    display: none; /* デフォルトは非表示 */
+    display: none;
 }
 
 .tab-content.active {
-    display: block; /* アクティブなものだけ表示 */
+    display: block;
 }
 
 .guide-card {
