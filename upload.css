@@ -72,27 +72,29 @@ header {
     border-bottom: 1px solid #333;
     padding-bottom: 10px;
     margin-top: 10px;
+    margin-bottom: 25px;
 }
 
-/* ▼ タブ切り替えボタン用のスタイル */
+/* ▼ タブ切り替えボタンのスタイル（大きく見やすく調整） */
 .tab-buttons {
     display: flex;
-    gap: 10px;
-    margin-bottom: 25px;
-    border-bottom: 2px solid #333;
-    padding-bottom: 10px;
+    gap: 12px;
+    margin-bottom: 30px;
+    border-bottom: 3px solid #333;
+    padding-bottom: 0;
 }
 
 .tab-btn {
     background-color: #222;
     color: var(--sub-text);
     border: 1px solid #444;
-    padding: 10px 24px;
+    border-bottom: none;
+    padding: 14px 28px;
     cursor: pointer;
-    font-size: 1rem;
+    font-size: 1.1rem;
     font-weight: bold;
-    border-radius: 6px 6px 0 0;
-    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+    border-radius: 8px 8px 0 0;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s, transform 0.1s;
 }
 
 .tab-btn:hover {
@@ -101,9 +103,12 @@ header {
 }
 
 .tab-btn.active {
-    background-color: var(--accent-color);
-    color: #1a1c1e;
+    background-color: var(--card-bg);
+    color: var(--accent-color);
     border-color: var(--accent-color);
+    border-bottom: 3px solid var(--card-bg); /* タブとコンテンツの一体感アップ */
+    margin-bottom: -3px;
+    transform: translateY(-2px);
 }
 
 /* ▼ タブコンテンツの表示制御スタイル */
@@ -257,7 +262,7 @@ header {
     border: 1px solid var(--border-color);
     border-radius: 8px;
     background: var(--card-bg);
-    max-height: 450px;
+    max-height: 550px;
     overflow-y: auto;
     position: relative;
 }
