@@ -1,4 +1,4 @@
-<!-- upload.js -->
+// upload.js
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getFirestore, collection, getDocs, query, orderBy, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -39,7 +39,11 @@ const STORAGE_KEY_DELETE_KEY = 'ss_upload_delete_key';
 let allPosts = [];
 let displayLimit = 10; // 初期表示件数
 
-// --- 初期化：No.1 〜 No.9 のセレクトボックスにマスター辞書の選択肢を流し込む（共通ヘルパー） ---
+// --- ソート状態管理用の変数 ---
+let currentSortColumn = 'unitNo';  // デフォルトのソート列 (HTMLの data-sort と一致させる)
+let currentSortDirection = 'asc';  // デフォルト: 昇順 ('asc' または 'desc')
+
+// --- 初期化：No.1 〜 No.9 のセレクトボックスにマスター辞書の選択肢を流し込む ---
 function createAbilityOptionsHTML(selectedValue = '') {
     let html = '<option value="">-- 未選択 --</option>';
     MASTER_ABILITIES.forEach(ability => {
@@ -52,12 +56,10 @@ function createAbilityOptionsHTML(selectedValue = '') {
 // 選択状態に応じてプルダウンの背景色を切り替えるヘルパー
 function updateSelectBackground(selectEl) {
     if (selectEl.value) {
-        // 選択されている場合（アクセントカラー：暗めのオレンジ/ブラウン系）
         selectEl.style.backgroundColor = '#3a2711';
         selectEl.style.borderColor = '#d97706';
         selectEl.style.color = '#ffedd5';
     } else {
-        // 未選択の場合（デフォルトの暗い背景）
         selectEl.style.backgroundColor = '#1a1a1a';
         selectEl.style.borderColor = '#555';
         selectEl.style.color = '#fff';
@@ -71,7 +73,6 @@ function initAbilityDropdowns() {
         selectEl.innerHTML = createAbilityOptionsHTML();
         updateSelectBackground(selectEl);
         
-        // 値変更時にも色を動的に変更
         selectEl.addEventListener('change', () => {
             updateSelectBackground(selectEl);
         });
@@ -107,15 +108,86 @@ async function loadPosts() {
             allPosts.push({ id: docSnap.id, ...docSnap.data() });
         });
 
-        displayLimit = 10; // データ再読み込み時は10件にリセット
+        displayLimit = 10;
         renderPosts(allPosts);
-        renderRegisteredTable(allPosts);
+        
+        // テーブルを描画（ソートと検索フィルタを適用）
+        applySortAndRenderTable();
 
     } catch (error) {
         console.error("読み込みエラー:", error);
         loadingMsg.textContent = 'データの読み込みに失敗しました。画面を再読み込みしてください。';
-        tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--danger-color);">データの読み込みに失敗しました。</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--danger-color);">データの読み込みに失敗しました。</td></tr>';
     }
+}
+
+// --- テーブルのソート・検索および描画処理 ---
+function applySortAndRenderTable() {
+    const keyword = tableSearchInput ? tableSearchInput.value.toLowerCase().trim() : '';
+
+    // 検索フィルタリング
+    let filtered = allPosts.filter(post => {
+        const textToSearch = `${post.unitNumber || ''} ${post.unitName || ''} ${post.author || ''} ${post.postId || post.postNo || ''} ${(post.abilities || []).map(a => typeof a === 'string' ? a : a.text).join(' ')}`.toLowerCase();
+        return textToSearch.includes(keyword);
+    });
+
+    // ソート処理
+    filtered.sort((a, b) => {
+        let valA, valB;
+
+        switch (currentSortColumn) {
+            case 'unitNo':
+                valA = parseInt(a.unitNumber, 10) || 0;
+                valB = parseInt(b.unitNumber, 10) || 0;
+                break;
+            case 'unitName':
+                valA = a.unitName || '';
+                valB = b.unitName || '';
+                break;
+            case 'abilities':
+                valA = (a.abilities || []).map(item => item.text || item).join(', ');
+                valB = (b.abilities || []).map(item => item.text || item).join(', ');
+                break;
+            case 'image':
+                valA = a.imageUrl || '';
+                valB = b.imageUrl || '';
+                break;
+            case 'postId':
+                valA = parseInt(a.postId || a.postNo, 10) || 0;
+                valB = parseInt(b.postId || b.postNo, 10) || 0;
+                break;
+            case 'author':
+                valA = a.author || '';
+                valB = b.author || '';
+                break;
+            default:
+                valA = 0;
+                valB = 0;
+        }
+
+        if (valA < valB) return currentSortDirection === 'asc' ? -1 : 1;
+        if (valA > valB) return currentSortDirection === 'asc' ? 1 : -1;
+        return 0;
+    });
+
+    renderRegisteredTable(filtered);
+    updateSortIcons();
+}
+
+// ヘッダーのソート矢印アイコンを更新
+function updateSortIcons() {
+    document.querySelectorAll('#list-tab th[data-sort]').forEach(th => {
+        const column = th.getAttribute('data-sort');
+        const iconSpan = th.querySelector('.sort-icon');
+        if (!iconSpan) return;
+
+        if (column === currentSortColumn) {
+            iconSpan.textContent = currentSortDirection === 'asc' ? ' 🔼' : ' 🔽';
+            iconSpan.style.color = 'var(--accent-color, #00d4ff)';
+        } else {
+            iconSpan.textContent = '';
+        }
+    });
 }
 
 // 登録済み機体一覧テーブルの描画
@@ -123,31 +195,30 @@ function renderRegisteredTable(posts) {
     tableBody.innerHTML = '';
 
     if (posts.length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--sub-text);">該当する機体データはありません。</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--sub-text);">該当する機体データはありません。</td></tr>';
         return;
     }
 
-    const sortedPosts = [...posts].sort((a, b) => {
-        const numA = parseInt(a.unitNumber, 10) || 0;
-        const numB = parseInt(b.unitNumber, 10) || 0;
-        return numA - numB;
-    });
-
-    sortedPosts.forEach(data => {
+    posts.forEach(data => {
         const tr = document.createElement('tr');
         const unitNo = escapeHTML(data.unitNumber || '----');
         const unitName = escapeHTML(data.unitName || '名称未設定');
+        const postIdStr = data.postId || data.postNo ? `No.${data.postId || data.postNo}` : '----';
+        const authorStr = escapeHTML(data.author || '名無し');
         const imgUrl = data.imageUrl || '#';
 
         let abilityBadgesHTML = '';
-        
         if (data.abilities && Array.isArray(data.abilities) && data.abilities.length > 0) {
-            abilityBadgesHTML = data.abilities.map(item => `
-                <span class="ability-badge">
-                    <span class="ability-num">No.${item.no}</span>
-                    ${escapeHTML(item.text)}
-                </span>
-            `).join('');
+            abilityBadgesHTML = data.abilities.map((item, idx) => {
+                const no = item.no || (idx + 1);
+                const text = typeof item === 'string' ? item : item.text;
+                return `
+                    <span class="ability-badge">
+                        <span class="ability-num">No.${no}</span>
+                        ${escapeHTML(text)}
+                    </span>
+                `;
+            }).join('');
         } else {
             abilityBadgesHTML = '<span style="color:#666;">-</span>';
         }
@@ -156,13 +227,32 @@ function renderRegisteredTable(posts) {
             <td><span class="unit-no-badge">${unitNo}</span></td>
             <td><strong>${unitName}</strong></td>
             <td><div class="ability-container">${abilityBadgesHTML}</div></td>
-            <td>
-                <a href="${imgUrl}" target="_blank" rel="noopener noreferrer" class="img-link-btn">🔗 画像を見る</a>
-            </td>
+            <td><a href="${imgUrl}" target="_blank" rel="noopener noreferrer" class="img-link-btn">🔗 画像を見る</a></td>
+            <td><span style="color: #aaa; font-size: 13px;">${postIdStr}</span></td>
+            <td><span style="color: #fff; font-size: 13px;">${authorStr}</span></td>
         `;
         tableBody.appendChild(tr);
     });
 }
+
+// --- テーブルヘッダーのクリックによるソートイベント設定 ---
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('#list-tab th[data-sort]').forEach(th => {
+        th.style.cursor = 'pointer';
+        th.addEventListener('click', () => {
+            const column = th.getAttribute('data-sort');
+
+            if (currentSortColumn === column) {
+                currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSortColumn = column;
+                currentSortDirection = 'asc';
+            }
+
+            applySortAndRenderTable();
+        });
+    });
+});
 
 // --- 画像選択時にOCR解析を行い、自動でプルダウンに結果をセットする処理 ---
 imageFileInput.addEventListener('change', async (e) => {
@@ -212,17 +302,21 @@ function renderPosts(postsToRender) {
 
     slicedPosts.forEach((data) => {
         const dateStr = data.createdAt ? new Date(data.createdAt.toDate()).toLocaleString('ja-JP') : '日時不明';
-        const postNoStr = data.postNo ? `投稿 No.${data.postNo}` : '投稿 No.--';
+        const postNoStr = data.postNo || data.postId ? `投稿 No.${data.postNo || data.postId}` : '投稿 No.--';
         const unitNoStr = data.unitNumber ? `機体 No.${escapeHTML(data.unitNumber)}` : '機体 No.----';
 
         let abilityBadgesHTML = '';
         if (data.abilities && Array.isArray(data.abilities) && data.abilities.length > 0) {
-            abilityBadgesHTML = data.abilities.map(item => `
-                <div style="display: flex; align-items: center; margin-bottom: 6px; font-size: 13px;">
-                    <span style="background: #333; color: #ff9800; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-right: 8px; font-weight: bold; min-width: 42px; text-align: center;">No.${item.no}</span>
-                    <span style="color: #fff;">${escapeHTML(item.text)}</span>
-                </div>
-            `).join('');
+            abilityBadgesHTML = data.abilities.map((item, idx) => {
+                const no = item.no || (idx + 1);
+                const text = typeof item === 'string' ? item : item.text;
+                return `
+                    <div style="display: flex; align-items: center; margin-bottom: 6px; font-size: 13px;">
+                        <span style="background: #333; color: #ff9800; padding: 2px 6px; border-radius: 4px; font-size: 11px; margin-right: 8px; font-weight: bold; min-width: 42px; text-align: center;">No.${no}</span>
+                        <span style="color: #fff;">${escapeHTML(text)}</span>
+                    </div>
+                `;
+            }).join('');
         } else {
             abilityBadgesHTML = '<div style="color: #666; font-size: 13px;">特殊能力の登録はありません</div>';
         }
@@ -279,13 +373,14 @@ function renderPosts(postsToRender) {
 
             const currentAbilitiesMap = {};
             if (data.abilities && Array.isArray(data.abilities)) {
-                data.abilities.forEach(item => {
-                    currentAbilitiesMap[item.no] = item.text;
+                data.abilities.forEach((item, idx) => {
+                    const no = item.no || (idx + 1);
+                    const text = typeof item === 'string' ? item : item.text;
+                    currentAbilitiesMap[no] = text;
                 });
             }
 
             let editorHTML = `<h4 style="margin-top:0; margin-bottom:12px; color:#ff9800; font-size:14px;">🛠 投稿データの直接編集</h4>`;
-            
             editorHTML += `
                 <div style="display: grid; grid-template-columns: 120px 1fr; gap: 10px; margin-bottom: 15px; background: #1f1f1f; padding: 10px; border-radius: 4px; border: 1px solid #444;">
                     <div>
@@ -413,29 +508,12 @@ function renderPosts(postsToRender) {
     }
 }
 
-tableSearchInput.addEventListener('input', (e) => {
-    const keyword = e.target.value.toLowerCase().trim();
-
-    if (!keyword) {
-        renderRegisteredTable(allPosts);
-        return;
-    }
-
-    const filteredTableData = allPosts.filter(post => {
-        const unitNumberMatch = (post.unitNumber || '').toLowerCase().includes(keyword);
-        const unitNameMatch = (post.unitName || '').toLowerCase().includes(keyword);
-        
-        let abilityMatch = false;
-        if (post.abilities && Array.isArray(post.abilities)) {
-            abilityMatch = post.abilities.some(item => item.text.toLowerCase().includes(keyword));
-        }
-
-        return unitNameMatch || unitNumberMatch || abilityMatch;
-    });
-
-    renderRegisteredTable(filteredTableData);
+// 登録済みテーブルの検索入力イベント
+tableSearchInput.addEventListener('input', () => {
+    applySortAndRenderTable();
 });
 
+// カードリストの検索入力イベント
 searchInput.addEventListener('input', (e) => {
     const keyword = e.target.value.toLowerCase().trim();
 
@@ -511,12 +589,13 @@ form.addEventListener('submit', async (e) => {
 });
 
 function escapeHTML(str) {
-    return str.replace(/[&<>'"]/g, 
+    if (!str) return '';
+    return String(str).replace(/[&<>'"]/g, 
         tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
     );
 }
 
-// ページ読み込み時の初期化処理（DOM構築完了後に実行するように安全対策を追加）
+// ページ読み込み時の初期化処理
 document.addEventListener('DOMContentLoaded', () => {
     initAbilityDropdowns();
     loadSavedCredentials();
