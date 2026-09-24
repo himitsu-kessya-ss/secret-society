@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>MSタクティクスSR - 機体派生ルート・総コストシミュレーター</title>
+<style type="text/css">
+  body {
+    background: #141a24 url("https://mstactics.xsrv.jp/mst2/img/bg.gif");
+    color: #d9d9d9;
+    font-family: sans-serif;
+    margin: 0;
+    padding: 15px;
+  }
+  a { color: #99ccff; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+  th, td { border: 1px solid #3a4c6a; padding: 8px 10px; font-size: 13px; }
+  .b2 { background-color: #242c3d; }
+  select, button {
+    background-color: #1a2230;
+    color: #d9d9d9;
+    border: 1px solid #3a4c6a;
+    padding: 5px 10px;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  select:hover, button:hover { background-color: #3a4c6a; }
+  .total-box {
+    background-color: #1a2230;
+    border: 1px solid #4a628a;
+    padding: 15px;
+    margin-top: 15px;
+    border-radius: 4px;
+  }
+  .total-title { color: #99ccff; font-weight: bold; font-size: 15px; margin-bottom: 8px; }
+  .total-value { font-size: 18px; color: #ffcc66; font-weight: bold; }
+  hr { border: none; border-top: 1px solid #3a4c6a; margin: 15px 0; }
+  .arrow-row { text-align: center; color: #99ccff; font-weight: bold; background-color: #1a1f2b; }
+</style>
+</head>
+<body>
+
+<table border="0" style="width:auto;">
+  <tr>
+    <td><font size="+2"><B>機体派生ルート・総コストシミュレーター</b></font>&nbsp;</td>
+  </tr>
+</table>
+
+<p>派生ルートを選択すると、開発に必要な各機体の個別コストと、合計の総コストが自動で計算されます。</p>
+
+<!-- 派生ルート選択フォーム -->
+<div class="b2" style="padding: 12px; border: 1px solid #3a4c6a;">
+  <label for="routeSelect"><b>派生ルート選択：</b></label>
+  <select id="routeSelect" onchange="changeRoute()">
+    <!-- JavaScriptでここにルートの選択肢が入ります -->
+  </select>
+</div>
+
+<hr size="1">
+
+<!-- 選択されたルートの機体一覧テーブル -->
+<h3>ルート構成・個別コスト</h3>
+<table>
+  <tr class="b2">
+    <th>No</th>
+    <th>機体名</th>
+    <th>必要クレジット</th>
+    <th>必要名声</th>
+  </tr>
+  <tbody id="route-table-body">
+    <!-- JavaScriptでここにルートの明細が差し込まれます -->
+  </tbody>
+</table>
+
+<!-- 総コスト出力ボックス -->
+<div class="total-box">
+  <div class="total-title">▼ 派生ルート総合計コスト</div>
+  <div>累計必要クレジット： <span id="total-credit" class="total-value">0</span> クレジット</div>
+  <div style="margin-top: 5px;">累計必要名声： <span id="total-mesei" class="total-value">0</span> 名声</div>
+</div>
+
+<script>
+// ==========================================
+// 1. 機体データベース（機体ごとのコスト情報）
+// ==========================================
+const unitsDatabase = {
+    3400: { no: 3400, name: "Gスカイ・イージー(ガンダム搭載)", credit: 7050, mesei: 40 },
+    3401: { no: 3401, name: "ランドキャリバー", credit: 12000, mesei: 30 },
+    3402: { no: 3402, name: "バトルフロンティア", credit: 452000, mesei: 150 },
+    3403: { no: 3403, name: "バトルフロンティア強攻型", credit: 85000, mesei: 50 },
+    3404: { no: 3404, name: "プロトタイプガンダム", credit: 5000, mesei: 20 },
+    3405: { no: 3405, name: "ガンダム", credit: 15000, mesei: 60 }
+};
+
+// ==========================================
+// 2. 派生ルートの定義（A → B → C → D のつながり）
+// ==========================================
+// ここに新しいルートを自由に追加・編集していけます！
+const routeData = [
+    {
+        id: "route_1",
+        name: "【ルート1】Gスカイ系からバトルフロンティアへ (3400 → 3401 → 3403)",
+        units: [3400, 3401, 3403] 
+    },
+    {
+        id: "route_2",
+        name: "【ルート2】ガンダム直通ルート (3404 → 3405 → 3402)",
+        units: [3404, 3405, 3402] 
+    }
+];
+
+// ページ読み込み時の初期化
+window.onload = function() {
+    const selectBox = document.getElementById('routeSelect');
+    
+    // プルダウンの選択肢を作成
+    routeData.forEach(route => {
+        let option = document.createElement('option');
+        option.value = route.id;
+        option.textContent = route.name;
+        selectBox.appendChild(option);
+    });
+    
+    // 最初のルートで計算を実行
+    changeRoute();
+};
+
+// ルートが変更されたときの処理
+function changeRoute() {
+    const selectedId = document.getElementById('routeSelect').value;
+    const currentRoute = routeData.find(r => r.id === selectedId);
+    
+    const tbody = document.getElementById('route-table-body');
+    let html = '';
+    
+    let sumCredit = 0;
+    let sumMesei = 0;
+    
+    currentRoute.units.forEach((unitNo, index) => {
+        const unit = unitsDatabase[unitNo];
+        if (unit) {
+            sumCredit += unit.credit;
+            sumMesei += unit.mesei;
+            
+            // 機体の行を表示
+            html += `<tr>
+                <td align="center">${unit.no}</td>
+                <td><b>${unit.name}</b></td>
+                <td align="right">${unit.credit.toLocaleString()} クレジット</td>
+                <td align="right">${unit.mesei.toLocaleString()} 名声</td>
+            </tr>`;
+            
+            // 最後の機体以外には「▼ 派生 ▼」の矢印行を挟む
+            if (index < currentRoute.units.length - 1) {
+                html += `<tr class="arrow-row"><td colspan="4">▼ 派生 ▼</td></tr>`;
+            }
+        }
+    });
+    
+    tbody.innerHTML = html;
+    
+    // 合計値を画面に反映
+    document.getElementById('total-credit').textContent = sumCredit.toLocaleString();
+    document.getElementById('total-mesei').textContent = sumMesei.toLocaleString();
+}
+</script>
+
+</body>
+</html>
