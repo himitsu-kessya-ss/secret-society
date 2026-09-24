@@ -122,7 +122,7 @@
 
     <div class="log-box" id="logBox">
         【動作確認ログ】<br>
-        routeフォルダからCSVファイルを読み込んでいます...
+        CSVファイルを読み込んでいます...
     </div>
 
     <div class="route-display" id="routeDisplay">
@@ -175,14 +175,12 @@
     </div>
 
     <script>
-        // ▼ routeフォルダ内の正確なファイル名を指定
         const MECH_CSV = "route/GL)機体一覧 - 機体一覧.csv";
         const ROUTE_CSV = "route/GL)機体派生ルート_260924 - 派生ルート.csv";
 
         let mechDataList = []; 
         let routeData = [];    
 
-        // ページ読み込み時にCSVファイルを読み込む
         window.onload = function() {
             Promise.all([
                 fetch(MECH_CSV).then(res => res.text()),
@@ -197,11 +195,10 @@
             })
             .catch(error => {
                 document.getElementById("logBox").innerHTML = 
-                    `【動作確認ログ】<br><span style="color:#ff6b6b;">読み込みエラー: ${error.message}</span><br>※routeフォルダの中に指定したファイル名のCSVがあるか確認してください。`;
+                    `【動作確認ログ】<br><span style="color:#ff6b6b;">読み込みエラー: ${error.message}</span>`;
             });
         };
 
-        // CSVテキストをきれいな二次元配列に変換する関数
         function parseCSV(text) {
             let lines = text.split("\n");
             let result = [];
@@ -236,7 +233,6 @@
             }
         }
 
-        // 検索・計算処理
         function searchRoute() {
             if (mechDataList.length === 0 || routeData.length === 0) {
                 alert("まだデータの読み込みが完了していません。");
@@ -249,7 +245,9 @@
                 return;
             }
 
-            const targetRow = routeData.find(row => row[4] && row[4] === keyword);
+            const targetRow = routeData.find(row => {
+                return row.some(col => col && col === keyword);
+            });
 
             if (!targetRow) {
                 document.getElementById("routeDisplay").innerText = "派生ルート：見つかりませんでした";
@@ -260,7 +258,7 @@
             }
 
             let rawRouteNames = [];
-            for (let i = 6; i < targetRow.length; i++) {
+            for (let i = 0; i < targetRow.length; i++) {
                 let val = targetRow[i];
                 if (val !== undefined && val !== "" && val !== "0" && val !== "-") {
                     rawRouteNames.push(val);
@@ -268,10 +266,21 @@
             }
 
             let routeNames = [];
+            let found = false;
             for (let name of rawRouteNames) {
                 routeNames.push(name);
                 if (name === keyword) {
+                    found = true;
                     break;
+                }
+            }
+
+            if (!found && rawRouteNames.length > 0) {
+                routeNames = rawRouteNames.filter(name => {
+                    return mechDataList.some(row => row.includes(name));
+                });
+                if (!routeNames.includes(keyword)) {
+                    routeNames.push(keyword);
                 }
             }
 
@@ -287,34 +296,33 @@
 
             routeNames.forEach((mechName, index) => {
                 let mechInfo = mechDataList.find(row => {
-                    for (let col of row) {
-                        if (col === mechName) return true;
-                    }
-                    return false;
+                    return row.some(col => col === mechName);
                 });
 
                 if (mechInfo) {
-                    let hp = mechInfo[2] || "-";
-                    let armor = mechInfo[3] || "-";
-                    let mobility = mechInfo[4] || "-";
-                    let search = mechInfo[5] || "-";
-                    let en = mechInfo[6] || "-";
-                    let weight = mechInfo[7] || "-";
-                    let intuition = mechInfo[8] || "-";
-                    let control = mechInfo[9] || "-";
-                    let closeAtk = mechInfo[10] || "-";
-                    let midAtk = mechInfo[11] || "-";
-                    let longAtk = mechInfo[12] || "-";
-                    let fame = mechInfo[13] || "0";
-                    let nt = mechInfo[14] || "-";
-                    let size = mechInfo[15] || "-";
-                    let cost = mechInfo[16] || "0";
-                    let credit = mechInfo[17] || "0";
-                    let land = mechInfo[18] || "-";
-                    let water = mechInfo[19] || "-";
-                    let space = mechInfo[20] || "-";
-                    let air = mechInfo[21] || "-";
-                    let type = mechInfo[22] || "-";
+                    // いただいたカラム構造に合わせて列番号を調整（★変形flagが追加されたため、以降の番号が+1されています）
+                    // 0:No, 1:機体名, 2:★変形flag, 3:HP, 4:装甲, 5:運動, 6:索敵, 7:EN, 8:重量, 9:直感, 10:操縦, 11:近, 12:中, 13:遠, 14:名声, 15:NT, 16:SIZE, 17:コスト, 18:クレジット, 19:地上, 20:水中, 21:宇宙, 22:空中, 23:種別
+                    let hp = mechInfo[3] !== undefined ? mechInfo[3] : "-";
+                    let armor = mechInfo[4] !== undefined ? mechInfo[4] : "-";
+                    let mobility = mechInfo[5] !== undefined ? mechInfo[5] : "-";
+                    let search = mechInfo[6] !== undefined ? mechInfo[6] : "-";
+                    let en = mechInfo[7] !== undefined ? mechInfo[7] : "-";
+                    let weight = mechInfo[8] !== undefined ? mechInfo[8] : "-";
+                    let intuition = mechInfo[9] !== undefined ? mechInfo[9] : "-";
+                    let control = mechInfo[10] !== undefined ? mechInfo[10] : "-";
+                    let closeAtk = mechInfo[11] !== undefined ? mechInfo[11] : "-";
+                    let midAtk = mechInfo[12] !== undefined ? mechInfo[12] : "-";
+                    let longAtk = mechInfo[13] !== undefined ? mechInfo[13] : "-";
+                    let fame = mechInfo[14] !== undefined ? mechInfo[14] : "0";
+                    let nt = mechInfo[15] !== undefined ? mechInfo[15] : "-";
+                    let size = mechInfo[16] !== undefined ? mechInfo[16] : "-";
+                    let cost = mechInfo[17] !== undefined ? mechInfo[17] : "0";
+                    let credit = mechInfo[18] !== undefined ? mechInfo[18] : "0";
+                    let land = mechInfo[19] !== undefined ? mechInfo[19] : "-";
+                    let water = mechInfo[20] !== undefined ? mechInfo[20] : "-";
+                    let space = mechInfo[21] !== undefined ? mechInfo[21] : "-";
+                    let air = mechInfo[22] !== undefined ? mechInfo[22] : "-";
+                    let type = mechInfo[23] !== undefined ? mechInfo[23] : "-";
 
                     let creditNum = parseInt(String(credit).replace(/,/g, '')) || 0;
                     let fameNum = parseInt(String(fame).replace(/,/g, '')) || 0;
