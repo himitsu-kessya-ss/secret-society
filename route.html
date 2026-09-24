@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>MSタクティクスSR - 機体派生ルート・総コストシミュレーター</title>
+<title>MSタクティクスSR - 機体派生ルート検索・総コストシミュレーター</title>
 <style type="text/css">
   body {
     background: #141a24 url("https://mstactics.xsrv.jp/mst2/img/bg.gif");
@@ -16,15 +16,16 @@
   table { border-collapse: collapse; width: 100%; margin-top: 10px; }
   th, td { border: 1px solid #3a4c6a; padding: 6px 8px; font-size: 12px; }
   .b2 { background-color: #242c3d; }
-  select, button {
+  input[type="text"], button {
     background-color: #1a2230;
     color: #d9d9d9;
     border: 1px solid #3a4c6a;
-    padding: 5px 10px;
+    padding: 6px 12px;
     font-size: 14px;
-    cursor: pointer;
   }
-  select:hover, button:hover { background-color: #3a4c6a; }
+  input[type="text"] { width: 300px; }
+  button { cursor: pointer; }
+  button:hover { background-color: #3a4c6a; }
   .total-box {
     background-color: #1a2230;
     border: 1px solid #4a628a;
@@ -38,6 +39,16 @@
   .arrow-row { text-align: center; color: #99ccff; font-weight: bold; background-color: #1a1f2b; }
   .loading { text-align: center; padding: 20px; color: #99ccff; font-size: 14px; }
   .table-container { overflow-x: auto; }
+  .route-path-display {
+    background: #1a2230;
+    border: 1px solid #3a4c6a;
+    padding: 10px 15px;
+    margin-top: 10px;
+    font-weight: bold;
+    color: #99ccff;
+    border-radius: 4px;
+  }
+  .error-msg { text-align: center; padding: 20px; color: #ff9999; font-size: 14px; }
 </style>
 
 <!-- CSVを高速で読み込むためのライブラリ（PapaParse） -->
@@ -47,27 +58,54 @@
   // GoogleスプレッドシートのCSVエクスポート用URL
   const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1-Mqv3evqw4tHu9QPYpG8KBDijcAIBgWYLhNKzjArED4/export?format=csv";
 
-  // 機体データを格納する箱（キー名: 機体名、またはNo）
+  // データを格納する箱
   let unitsDatabaseByName = {};
   let unitsDatabaseByNo = {};
-
-  // 全ての抽出された派生ルートを格納する配列
-  let allRoutes = [];
+  
+  // 機体名から「親の機体名」を引くための辞書（例: childToParent["コロンブス"] = "スーツキャリアー"）
+  let childToParent = {};
 
   // ==========================================
-  // 【元の派生ツリーテキストデータ】
-  // 罫線（├や└、│）で表されたツリー構造をここにそのまま貼り付けておきます。
-  // （※ここをご自身の元データのテキストに書き換えていくと、自動でルートが生成されます）
+  // 【派生ツリーテキストデータ】
+  // 画像のような罫線ツリーをここに貼り付けておきます。
+  // （※ここをどんどん増やしていけば、全機体のルートが網羅されます！）
   // ==========================================
   const rawTreeText = `
 ボール
-├ボール改
-│├機雷散布ポッド装備仕様ボール
-│└ボール（第08MS小隊版）
-└先行量産型ボール
+├ボールK型
+│├ボール改
+││├機雷散布ポッド装備仕様ボール
+││├トロハチ
+││└ソロモン攻略戦仕様ボール
+│├フィッシュアイ
+│└連邦宇宙輸送艇
+│ │ └スーツキャリアー
+│ │   └コロンブス
+│ │     ├フリーデン
+│ │     │ ├アオヤギ
+│ │     │ │ ├アマネセル
+│ │     │ │ ├アストラーーザ
+│ │     │ │ │ └ガーベラ
+│ │     │ │ └バルトーク
+│ │     │ ├フリーデンII
+│ │     │ ├グリーツ艦
+│ │     │ ├トリエステ
+│ │     │ ├シーバルチャー艦
+│ │     │ │ └ドリテア護衛艦
+│ │     │ │   ├ドリテア
+│ │     │ │   └ポリペイモス
+│ │     │ ├超大型輸送機
+│ │     │ └フォート・セバーン
+│ │     ├ヨーツンヘイム
+│ │     └コロンブス改
+│ ├サンダーボルト仕様ボール
+│ ├ボール・ボーイ
+│ ├ロウ専用キメラ
+│ ├リーアム専用キメラ
+│ └樹里専用キメラ
 `;
 
-  // ページ読み込み時にスプレッドシートのデータを読み込む
+  // ページ読み込み時にスプレッドシートデータとツリー解析を行う
   window.addEventListener('DOMContentLoaded', () => {
       const tbody = document.getElementById('route-table-body');
       tbody.innerHTML = '<tr><td colspan="23" class="loading">Googleスプレッドシートからデータを読み込んでいます...</td></tr>';
@@ -77,118 +115,116 @@
           header: true,
           skipEmptyLines: true,
           complete: function(results) {
-              // 読み込んだデータを名前とNoの両方で引けるように整理
               results.data.forEach(row => {
                   let no = row["No"] ? row["No"].trim() : "";
                   let name = row["機体名"] ? row["機体名"].trim() : "";
-                  if (name) {
-                      unitsDatabaseByName[name] = row;
-                  }
-                  if (no) {
-                      unitsDatabaseByNo[no] = row;
-                  }
+                  if (name) unitsDatabaseByName[name] = row;
+                  if (no) unitsDatabaseByNo[no] = row;
               });
 
-              // 罫線ツリーテキストから派生ルートを自動解析する
-              parseTreeTextToRoutes(rawTreeText);
+              // ツリー構造を解析して親子関係マップを作る
+              parseTreeTextToMap(rawTreeText);
 
-              // プルダウンの選択肢を作成
-              const selectBox = document.getElementById('routeSelect');
-              allRoutes.forEach((route, index) => {
-                  let option = document.createElement('option');
-                  option.value = index;
-                  option.textContent = route.name;
-                  selectBox.appendChild(option);
-              });
-
-              // 初期ルートで計算を実行
-              if (allRoutes.length > 0) {
-                  changeRoute();
-              } else {
-                  tbody.innerHTML = '<tr><td colspan="23" style="color:#ff9999;" align="center">有効な派生ルートが見つかりませんでした。</td></tr>';
-              }
+              tbody.innerHTML = '<tr><td colspan="23" style="text-align:center; padding:20px; color:#99ccff;">上の検索窓に機体名（例: コロンブス、ボール改 など）を入力して検索ボタンを押してください。</td></tr>';
           },
           error: function(err) {
               console.error("CSV読み込みエラー:", err);
-              tbody.innerHTML = '<tr><td colspan="23" style="color:#ff9999;" align="center">データの読み込みに失敗しました。スプレッドシートの公開設定を確認してください。</td></tr>';
+              tbody.innerHTML = '<tr><td colspan="23" class="error-msg">データの読み込みに失敗しました。スプレッドシートの公開設定を確認してください。</td></tr>';
           }
       });
   });
 
-  // 罫線ツリーテキストを解析して、各末端までのルートリストを自動生成する関数
-  function parseTreeTextToRoutes(text) {
+  // ツリーテキストから「子→親」の繋がりを自動解析する関数
+  function parseTreeTextToMap(text) {
       const lines = text.split('\n');
       let stack = [];
-      allRoutes = [];
 
       lines.forEach(line => {
           if (!line.trim()) return;
 
-          // インデントの深さを計算（空白や罫線の文字数・構造から階層を推測）
-          // 簡易的に、行頭のスペース、'│', '├', '└' の位置や個数から階層を割り出す
-          let cleanLine = line.replace(/[│├└─]/g, '');
+          // 「改」などのマークや余分な説明テキスト（例: ◆設計...）を除去して綺麗にする汚染防止
+          let cleanLine = line.replace(/[│├└─]/g, '').trim();
+          // 設計情報や余分なメモがあれば機体名だけ抜き出す
+          if (cleanLine.includes('◆')) {
+              cleanLine = cleanLine.split('◆')[0].trim();
+          }
+
+          // インデントの深さを計算
           let depth = 0;
           for (let i = 0; i < line.length; i++) {
               let char = line[i];
               if (char === ' ' || char === ' ' || char === '│' || char === '├' || char === '└' || char === '─') {
                   if (char === ' ' || char === ' ') depth++;
-                  else depth += 2; // 罫線1文字分
+                  else depth += 2;
               } else {
                   break;
               }
           }
-          // 階層の深さを安全に丸める（2文字分を1階層程度に換算）
           let level = Math.floor(depth / 2);
-          let unitName = cleanLine.trim();
+          let unitName = cleanLine;
 
           if (!unitName) return;
 
-          // スタックの深さを調整
           stack = stack.slice(0, level);
-          stack.push(unitName);
-
-          // もし対応するスプレッドシートのデータ（または次の分岐）があればルートとして登録候補にする
-          // ここでは「スタックに2つ以上（親から子へ繋がっている）溜まったら、1つのルートとしてみなす」
-          if (stack.length >= 2) {
-              let routeUnits = [...stack];
-              // 機体名から対応するNo（または名前）の配列を作る
-              let routeNos = routeUnits.map(name => {
-                  return unitsDatabaseByName[name] ? unitsDatabaseByName[name]["No"] : name;
-              });
-
-              allRoutes.push({
-                  name: `【ルート】 ${routeUnits[0]} ➔ ... ➔ ${routeUnits[routeUnits.length - 1]}`,
-                  units: routeNos,
-                  names: routeUnits
-              });
+          
+          if (stack.length > 0) {
+              let parentName = stack[stack.length - 1];
+              childToParent[unitName] = parentName;
           }
+          
+          stack.push(unitName);
       });
   }
 
-  // ルートが変更されたときの処理
-  function changeRoute() {
-      const selectedIndex = document.getElementById('routeSelect').value;
-      const currentRoute = allRoutes[selectedIndex];
-      
+  // 検索ボタンが押されたときの処理
+  function searchRoute() {
+      let query = document.getElementById('searchInput').value.trim();
       const tbody = document.getElementById('route-table-body');
-      let html = '';
+      const pathDisplay = document.getElementById('routePathText');
       
+      if (!query) {
+          alert('機体名を入力してください。');
+          return;
+      }
+
+      // 入力された機体から遡ってルート（配列）を組み立てる
+      let current = query;
+      let path = [current];
+      let safetyCount = 0;
+
+      // 親を辿ってトップまで遡る
+      while (childToParent[current] && safetyCount < 50) {
+          current = childToParent[current];
+          path.unshift(current); // 先頭に追加していく
+          safetyCount++;
+      }
+
+      // もしツリー内に見つからなかった場合（単体機体などの場合）
+      if (path.length === 1 && !unitsDatabaseByName[query]) {
+          tbody.innerHTML = `<tr><td colspan="23" class="error-msg">機体名「${query}」が見つかりませんでした。（ツリー構造に登録されていないか、名前が一致していません）</td></tr>`;
+          pathDisplay.textContent = "ルートなし";
+          document.getElementById('total-credit').textContent = "0";
+          document.getElementById('total-mesei').textContent = "0";
+          return;
+      }
+
+      // 派生ルートの文字列を表示
+      pathDisplay.textContent = path.join(" ➔ ");
+
+      let html = '';
       let sumCredit = 0;
       let sumMesei = 0;
-      
-      if (!currentRoute) return;
 
-      currentRoute.names.forEach((unitName, index) => {
-          // まず機体名で検索、見つからなければNoで検索
-          let u = unitsDatabaseByName[unitName] || unitsDatabaseByNo[currentRoute.units[index]];
-          
+      path.forEach((unitName, index) => {
+          let u = unitsDatabaseByName[unitName];
+
           if (u) {
               let credit = Number(String(u["クレジット"] || "0").replace(/,/g, ''));
               let mesei = Number(String(u["名声"] || "0").replace(/,/g, ''));
               
               sumCredit += credit;
               sumMesei += mesei;
-              
+
               html += `<tr>
                   <td align="center">${u["No"] || ''}</td>
                   <td><b>${u["機体名"] || unitName}</b></td>
@@ -219,11 +255,11 @@
           }
 
           // 最後の機体以外には「▼ 派生 ▼」の矢印行を挟む
-          if (index < currentRoute.names.length - 1) {
+          if (index < path.length - 1) {
               html += `<tr class="arrow-row"><td colspan="23">▼ 派生 ▼</td></tr>`;
           }
       });
-      
+
       tbody.innerHTML = html;
       document.getElementById('total-credit').textContent = sumCredit.toLocaleString();
       document.getElementById('total-mesei').textContent = sumMesei.toLocaleString();
@@ -234,18 +270,22 @@
 
 <table border="0" style="width:auto;">
   <tr>
-    <td><font size="+2"><B>機体派生ルート・総コストシミュレーター</b></font>&nbsp;</td>
+    <td><font size="+2"><B>機体派生ルート検索・総コストシミュレーター</b></font>&nbsp;</td>
   </tr>
 </table>
 
-<p>派生ツリーからルートを選択すると、Googleスプレッドシートから全ステータスを読み込み、総コストを自動計算します。</p>
+<p>作りたい最終機体の名前を入力して検索すると、そこまでの派生ルート、全ステータス、および総コストを自動計算します。</p>
 
-<!-- 派生ルート選択フォーム -->
+<!-- 検索フォーム -->
 <div class="b2" style="padding: 12px; border: 1px solid #3a4c6a;">
-  <label for="routeSelect"><b>派生ルート選択：</b></label>
-  <select id="routeSelect" onchange="changeRoute()">
-    <!-- 選択肢 -->
-  </select>
+  <label for="searchInput"><b>最終機体名で検索：</b></label>
+  <input type="text" id="searchInput" placeholder="例: コロンبス、ボール改 など" onkeydown="if(event.key==='Enter')searchRoute();">
+  <button onclick="searchRoute()">検索・計算</button>
+</div>
+
+<!-- 派生ルートの可視化表示 -->
+<div class="route-path-display">
+  派生ルート： <span id="routePathText" style="color:#ffffff;">未検索</span>
 </div>
 
 <hr size="1">
@@ -279,7 +319,7 @@
       <th>種別</th>
     </tr>
     <tbody id="route-table-body">
-      <!-- 読み込み中 -->
+      <!-- 初期メッセージ -->
     </tbody>
   </table>
 </div>
