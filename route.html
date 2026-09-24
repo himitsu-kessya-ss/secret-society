@@ -14,7 +14,7 @@
   a { color: #99ccff; text-decoration: none; }
   a:hover { text-decoration: underline; }
   table { border-collapse: collapse; width: 100%; margin-top: 10px; }
-  th, td { border: 1px solid #3a4c6a; padding: 8px 10px; font-size: 13px; }
+  th, td { border: 1px solid #3a4c6a; padding: 6px 8px; font-size: 12px; }
   .b2 { background-color: #242c3d; }
   select, button {
     background-color: #1a2230;
@@ -36,7 +36,123 @@
   .total-value { font-size: 18px; color: #ffcc66; font-weight: bold; }
   hr { border: none; border-top: 1px solid #3a4c6a; margin: 15px 0; }
   .arrow-row { text-align: center; color: #99ccff; font-weight: bold; background-color: #1a1f2b; }
+  .loading { text-align: center; padding: 20px; color: #99ccff; font-size: 14px; }
+  .table-container { overflow-x: auto; }
 </style>
+
+<!-- Firebase SDK（v9 モジュール版）の読み込み -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+  // ▼ あなたのFirebaseプロジェクト設定 ▼
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "himitsukessya-aa509.firebaseapp.com",
+    projectId: "himitsukessya-aa509",
+    storageBucket: "himitsukessya-aa509.appspot.com",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  };
+  // ▲ 必要に応じて設定を埋め込んでください ▲
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // 派生ルートの定義（機体番号の配列でルートを指定）
+  const routeData = [
+      {
+          id: "route_1",
+          name: "【ルート1】Gスカイ系からバトルフロンティアへ",
+          units: [3400, 3401, 3403] 
+      },
+      {
+          id: "route_2",
+          name: "【ルート2】ガンダム直通ルート",
+          units: [3404, 3405, 3402] 
+      }
+  ];
+
+  window.addEventListener('DOMContentLoaded', () => {
+      const selectBox = document.getElementById('routeSelect');
+      routeData.forEach(route => {
+          let option = document.createElement('option');
+          option.value = route.id;
+          option.textContent = route.name;
+          selectBox.appendChild(option);
+      });
+
+      window.changeRoute();
+  });
+
+  window.changeRoute = async function() {
+      const selectedId = document.getElementById('routeSelect').value;
+      const currentRoute = routeData.find(r => r.id === selectedId);
+      
+      const tbody = document.getElementById('route-table-body');
+      tbody.innerHTML = '<tr><td colspan="23" class="loading">データベースからルート情報を取得中...</td></tr>';
+      
+      let html = '';
+      let sumCredit = 0;
+      let sumMesei = 0;
+      
+      if (!currentRoute) return;
+
+      for (let i = 0; i < currentRoute.units.length; i++) {
+          const unitNo = currentRoute.units[i];
+          
+          try {
+              const docRef = doc(db, "units", String(unitNo));
+              const docSnap = await getDoc(docRef);
+              
+              if (docSnap.exists()) {
+                  const u = docSnap.data();
+                  sumCredit += Number(u.credit || 0);
+                  sumMesei += Number(u.mesei || 0);
+                  
+                  html += `<tr>
+                      <td align="center">${u.no}</td>
+                      <td><b>${u.name}</b></td>
+                      <td align="right">${u.hp || 0}</td>
+                      <td align="right">${u.soko || 0}</td>
+                      <td align="right">${u.undo || 0}</td>
+                      <td align="right">${u.sakuteki || 0}</td>
+                      <td align="right">${u.engy || 0}</td>
+                      <td align="right">${u.jyuryo || 0}</td>
+                      <td align="right">${u.tyokan || 0}</td>
+                      <td align="right">${u.sojyu || 0}</td>
+                      <td align="right">${u.kin || 0}</td>
+                      <td align="right">${u.tyu || 0}</td>
+                      <td align="right">${u.en || 0}</td>
+                      <td align="right">${u.mesei || 0}</td>
+                      <td align="center">${u.nt || '－'}</td>
+                      <td align="center">${u.size || '－'}</td>
+                      <td align="right">${u.cost || 0}</td>
+                      <td align="right"><font color="#99CCFF">${Number(u.credit || 0).toLocaleString()}</font></td>
+                      <td align="right">${u.tijyo || 0}</td>
+                      <td align="right">${u.suityu || 0}</td>
+                      <td align="right">${u.utyu || 0}</td>
+                      <td align="right">${u.kutyu || 0}</td>
+                      <td>${u.category || ''}</td>
+                  </tr>`;
+              } else {
+                  html += `<tr><td colspan="23" style="color:#ff9999;" align="center">機体番号 ${unitNo} のデータがデータベースに見つかりません</td></tr>`;
+              }
+          } catch (error) {
+              console.error("データ取得エラー: ", error);
+              html += `<tr><td colspan="23" style="color:#ff9999;" align="center">データの取得に失敗しました</td></tr>`;
+          }
+
+          if (i < currentRoute.units.length - 1) {
+              html += `<tr class="arrow-row"><td colspan="23">▼ 派生 ▼</td></tr>`;
+          }
+      }
+      
+      tbody.innerHTML = html;
+      document.getElementById('total-credit').textContent = sumCredit.toLocaleString();
+      document.getElementById('total-mesei').textContent = sumMesei.toLocaleString();
+  };
+</script>
 </head>
 <body>
 
@@ -46,31 +162,51 @@
   </tr>
 </table>
 
-<p>派生ルートを選択すると、開発に必要な各機体の個別コストと、合計の総コストが自動で計算されます。</p>
+<p>派生ルートを選択すると、データベースから全ステータスとコストを呼び出し、総コストを自動計算します。</p>
 
 <!-- 派生ルート選択フォーム -->
 <div class="b2" style="padding: 12px; border: 1px solid #3a4c6a;">
   <label for="routeSelect"><b>派生ルート選択：</b></label>
   <select id="routeSelect" onchange="changeRoute()">
-    <!-- JavaScriptでここにルートの選択肢が入ります -->
+    <!-- 選択肢 -->
   </select>
 </div>
 
 <hr size="1">
 
-<!-- 選択されたルートの機体一覧テーブル -->
-<h3>ルート構成・個別コスト</h3>
-<table>
-  <tr class="b2">
-    <th>No</th>
-    <th>機体名</th>
-    <th>必要クレジット</th>
-    <th>必要名声</th>
-  </tr>
-  <tbody id="route-table-body">
-    <!-- JavaScriptでここにルートの明細が差し込まれます -->
-  </tbody>
-</table>
+<h3>ルート構成・機体詳細と個別コスト</h3>
+<div class="table-container">
+  <table>
+    <tr class="b2">
+      <th>No</th>
+      <th>機体名</th>
+      <th>ＨＰ</th>
+      <th>装甲</th>
+      <th>運動</th>
+      <th>索敵</th>
+      <th>ＥＮ</th>
+      <th>重量</th>
+      <th>直感</th>
+      <th>操縦</th>
+      <th>近</th>
+      <th>中</th>
+      <th>遠</th>
+      <th>名声</th>
+      <th>NT</th>
+      <th>SIZE</th>
+      <th>コスト</th>
+      <th>クレジット</th>
+      <th>地上</th>
+      <th>水中</th>
+      <th>宇宙</th>
+      <th>空中</th>
+      <th>種別</th>
+    </tr>
+    <tbody id="route-table-body">
+      <!-- 読み込み中 -->
+    </tbody>
+  </table>
+</div>
 
 <!-- 総コスト出力ボックス -->
 <div class="total-box">
@@ -78,92 +214,6 @@
   <div>累計必要クレジット： <span id="total-credit" class="total-value">0</span> クレジット</div>
   <div style="margin-top: 5px;">累計必要名声： <span id="total-mesei" class="total-value">0</span> 名声</div>
 </div>
-
-<script>
-// ==========================================
-// 1. 機体データベース（機体ごとのコスト情報）
-// ==========================================
-const unitsDatabase = {
-    3400: { no: 3400, name: "Gスカイ・イージー(ガンダム搭載)", credit: 7050, mesei: 40 },
-    3401: { no: 3401, name: "ランドキャリバー", credit: 12000, mesei: 30 },
-    3402: { no: 3402, name: "バトルフロンティア", credit: 452000, mesei: 150 },
-    3403: { no: 3403, name: "バトルフロンティア強攻型", credit: 85000, mesei: 50 },
-    3404: { no: 3404, name: "プロトタイプガンダム", credit: 5000, mesei: 20 },
-    3405: { no: 3405, name: "ガンダム", credit: 15000, mesei: 60 }
-};
-
-// ==========================================
-// 2. 派生ルートの定義（A → B → C → D のつながり）
-// ==========================================
-// ここに新しいルートを自由に追加・編集していけます！
-const routeData = [
-    {
-        id: "route_1",
-        name: "【ルート1】Gスカイ系からバトルフロンティアへ (3400 → 3401 → 3403)",
-        units: [3400, 3401, 3403] 
-    },
-    {
-        id: "route_2",
-        name: "【ルート2】ガンダム直通ルート (3404 → 3405 → 3402)",
-        units: [3404, 3405, 3402] 
-    }
-];
-
-// ページ読み込み時の初期化
-window.onload = function() {
-    const selectBox = document.getElementById('routeSelect');
-    
-    // プルダウンの選択肢を作成
-    routeData.forEach(route => {
-        let option = document.createElement('option');
-        option.value = route.id;
-        option.textContent = route.name;
-        selectBox.appendChild(option);
-    });
-    
-    // 最初のルートで計算を実行
-    changeRoute();
-};
-
-// ルートが変更されたときの処理
-function changeRoute() {
-    const selectedId = document.getElementById('routeSelect').value;
-    const currentRoute = routeData.find(r => r.id === selectedId);
-    
-    const tbody = document.getElementById('route-table-body');
-    let html = '';
-    
-    let sumCredit = 0;
-    let sumMesei = 0;
-    
-    currentRoute.units.forEach((unitNo, index) => {
-        const unit = unitsDatabase[unitNo];
-        if (unit) {
-            sumCredit += unit.credit;
-            sumMesei += unit.mesei;
-            
-            // 機体の行を表示
-            html += `<tr>
-                <td align="center">${unit.no}</td>
-                <td><b>${unit.name}</b></td>
-                <td align="right">${unit.credit.toLocaleString()} クレジット</td>
-                <td align="right">${unit.mesei.toLocaleString()} 名声</td>
-            </tr>`;
-            
-            // 最後の機体以外には「▼ 派生 ▼」の矢印行を挟む
-            if (index < currentRoute.units.length - 1) {
-                html += `<tr class="arrow-row"><td colspan="4">▼ 派生 ▼</td></tr>`;
-            }
-        }
-    });
-    
-    tbody.innerHTML = html;
-    
-    // 合計値を画面に反映
-    document.getElementById('total-credit').textContent = sumCredit.toLocaleString();
-    document.getElementById('total-mesei').textContent = sumMesei.toLocaleString();
-}
-</script>
 
 </body>
 </html>
