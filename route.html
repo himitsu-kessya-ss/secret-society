@@ -49,24 +49,22 @@
     border-radius: 4px;
   }
   .error-msg { text-align: center; padding: 20px; color: #ff9999; font-size: 14px; }
+  .debug-box { background: #1f1a1a; border: 1px dashed #ff9999; padding: 10px; margin-top: 10px; font-size: 11px; color: #ffcccc; display: none; }
 </style>
 
 <!-- PapaParse（CSV高速読み込みライブラリ） -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
 <script>
-  // ご提示いただいた新しい派生ルート用スプレッドシートのCSV出力URL
-  // （※必要に応じてシートの公開設定およびURLのID部分をご確認ください）
+  // 派生ルート用スプレッドシートのCSV出力URL
   const ROUTE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1lgpuRctrziQcRPtPGjEHTSyWf0sH1KW9tq-nJBnh-zU/export?format=csv";
   
-  // 元々のステータス用スプレッドシートのURL（以前のもの）
+  // ステータス用スプレッドシートのURL
   const STATUS_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1-Mqv3evqw4tHu9QPYpG8KBDijcAIBgWYLhNKzjArED4/export?format=csv";
 
-  // データ格納用
-  let unitsDatabase = {}; // 機体名ごとのステータスデータ
-  let routeDatabase = {};  // 機体名ごとの派生ルート配列（G列以降のリスト）
+  let unitsDatabase = {}; 
+  let routeDatabase = {};  
 
-  // ページ読み込み時に両方のスプレッドシートデータを取得する
   window.addEventListener('DOMContentLoaded', () => {
       const tbody = document.getElementById('route-table-body');
       tbody.innerHTML = '<tr><td colspan="23" class="loading">スプレッドシートからデータを読み込んでいます...</td></tr>';
@@ -84,39 +82,51 @@
                   }
               });
 
-              // 2. 派生ルートデータの読み込み（E列＝機体名、G列以降＝ルート）
+              // 2. 派生ルートデータの読み込み
               Papa.parse(ROUTE_SHEET_CSV_URL, {
                   download: true,
-                  header: false, // ヘッダー行を自動判定させず配列として取得
+                  header: false, 
                   skipEmptyLines: true,
                   complete: function(routeResults) {
                       let rows = routeResults.data;
+                      let loadedCount = 0;
+                      let sampleKeys = [];
                       
-                      // 1行目はヘッダー等の可能性があるためスキップ、2行目以降を走査
+                      // 2行目以降を走査（1行目はヘッダーと仮定）
                       for (let i = 1; i < rows.length; i++) {
                           let cols = rows[i];
-                          let targetUnit = cols[4] ? cols[4].trim(); // E列 (index 4) が機体名
+                          // E列はインデックス4番目
+                          let targetUnit = cols[4] ? cols[4].trim() : "";
 
                           if (targetUnit) {
                               let pathParts = [];
-                              // G列 (index 6) から右側のセルを順に確認し、空欄でなければルートに追加
+                              // G列（インデックス6番目）から右側のセルを順に確認
                               for (let c = 6; c < cols.length; c++) {
                                   let val = cols[c] ? cols[c].trim() : "";
                                   if (val !== "") {
                                       pathParts.push(val);
                                   }
                               }
-                              // 最後に検索対象の機体自身を追加して完全なルートにする
+                              // 最後に検索対象の機体自身を追加
                               pathParts.push(targetUnit);
                               routeDatabase[targetUnit] = pathParts;
+                              loadedCount++;
+                              if(sampleKeys.length < 5) sampleKeys.push(targetUnit);
                           }
                       }
 
-                      tbody.innerHTML = '<tr><td colspan="23" style="text-align:center; padding:20px; color:#99ccff;">上の検索窓に機体名（例: コロンブス など）を入力して検索ボタンを押してください。</td></tr>';
+                      if (loadedCount === 0) {
+                          showDebug("警告: 派生ルートのデータが0件です。スプレッドシートのE列に機体名が正しく入力されているか、ウェブに公開されているかご確認ください。");
+                      } else {
+                          showDebug(`正常読み込み完了: 派生ルート登録数 ${loadedCount}件 (例: ${sampleKeys.join(', ')})`);
+                      }
+
+                      tbody.innerHTML = '<tr><td colspan="23" style="text-align:center; padding:20px; color:#99ccff;">準備完了しました。上の検索窓に機体名（例: コロンブス など）を入力して検索してください。</td></tr>';
                   },
                   error: function(err) {
                       console.error("ルートCSV読み込みエラー:", err);
-                      tbody.innerHTML = '<tr><td colspan="23" class="error-msg">派生ルート用スプレッドシートの読み込みに失敗しました。公開設定を確認してください。</td></tr>';
+                      showDebug("エラー: 派生ルート用スプレッドシートの読み込みに失敗しました。リンクや共有設定をご確認ください。");
+                      tbody.innerHTML = '<tr><td colspan="23" class="error-msg">派生ルート用スプレッドシートの読み込みに失敗しました。下のデバッグ情報をご確認ください。</td></tr>';
                   }
               });
           },
@@ -126,6 +136,12 @@
           }
       });
   });
+
+  function showDebug(msg) {
+      const dbg = document.getElementById('debugInfo');
+      dbg.style.display = 'block';
+      dbg.innerHTML += '<div>' + msg + '</div>';
+  }
 
   // 検索ボタンが押されたときの処理
   function searchRoute() {
@@ -142,14 +158,14 @@
       let path = routeDatabase[query];
 
       if (!path || path.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="23" class="error-msg">機体名「${query}」の派生ルートがルート表（E列）に見つかりませんでした。</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="23" class="error-msg">機体名「${query}」の派生ルートがルート表に見つかりませんでした。<br>（ヒント: スプレッドシートのE列に「${query}」という機体名が正確に入力されているかご確認ください）</td></tr>`;
           pathDisplay.textContent = "ルートなし";
           document.getElementById('total-credit').textContent = "0";
           document.getElementById('total-mesei').textContent = "0";
           return;
       }
 
-      // 派生ルートの文字列を表示（例: ボール → ボールK型 → … → コロンブス）
+      // 派生ルートの文字列を表示
       pathDisplay.textContent = path.join(" ➔ ");
 
       let html = '';
@@ -192,7 +208,6 @@
                   <td>${u["種別"] || ''}</td>
               </tr>`;
           } else {
-              // 派生ルートには載っているが、ステータス表側にデータがない場合
               html += `<tr>
                   <td align="center">-</td>
                   <td><b>${unitName}</b></td>
@@ -200,7 +215,6 @@
               </tr>`;
           }
 
-          // 最後の機体以外には「▼ 派生 ▼」の矢印行を挟む
           if (index < path.length - 1) {
               html += `<tr class="arrow-row"><td colspan="23">▼ 派生 ▼</td></tr>`;
           }
@@ -228,6 +242,9 @@
   <input type="text" id="searchInput" placeholder="例: コロンブス など" onkeydown="if(event.key==='Enter')searchRoute();">
   <button onclick="searchRoute()">検索・計算</button>
 </div>
+
+<!-- デバッグ表示エリア -->
+<div id="debugInfo" class="debug-box"><b>【動作確認ログ】</b><br></div>
 
 <!-- 派生ルートの可視化表示 -->
 <div class="route-path-display">
