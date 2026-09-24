@@ -178,34 +178,48 @@
         // 設定されたWebアプリのURL
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxI97mT7mMwgKkdPT0LM4IGJmdOpTb5PCD5mqaXlOEPSmEkKLQ9WivR4_-mLqKGw1eA/exec";
 
-        let routeData = [];    // 派生ルートシートのデータ
-        let mechDataList = []; // 機体一覧シートのデータ
+        let routeData = [];    
+        let mechDataList = []; 
 
         // ページ読み込み時に自動でデータを取得する
         window.onload = function() {
             fetch(WEB_APP_URL)
-                .then(response => response.json())
-                .then(data => {
-                    routeData = data.routes;
-                    mechDataList = data.mechs;
-                    document.getElementById("logBox").innerHTML = 
-                        `【動作確認ログ】<br>正常読み込み完了：派生ルート ${routeData.length}件 / 機体一覧 ${mechDataList.length}件のデータを取得しました。`;
+                .then(response => {
+                    return response.text(); // まずテキストとして受け取ることでエラー内容を確認しやすくする
+                })
+                .then(text => {
+                    try {
+                        const data = JSON.parse(text);
+                        routeData = data.routes;
+                        mechDataList = data.mechs;
+                        document.getElementById("logBox").innerHTML = 
+                            `【動作確認ログ】<br><span style="color:#69f0ae;">正常読み込み完了！</span> 派生ルート ${routeData.length}件 / 機体一覧 ${mechDataList.length}件`;
+                    } catch(e) {
+                        // JSONに変換できなかった場合（GASのエラー画面などが返ってきたとき）
+                        document.getElementById("logBox").innerHTML = 
+                            `【動作確認ログ】<br><span style="color:#ff6b6b;">データ形式エラー:</span> ${text.substring(0, 100)}`;
+                    }
                 })
                 .catch(error => {
                     document.getElementById("logBox").innerHTML = 
-                        `【動作確認ログ】<br><span style="color:#ff6b6b;">データの読み込みに失敗しました: ${error}</span>`;
+                        `【動作確認ログ】<br><span style="color:#ff6b6b;">通信エラー: ${error}</span>`;
                 });
         };
 
         // 検索ボタンが押されたときの処理
         function searchRoute() {
+            if (routeData.length === 0) {
+                alert("まだデータが読み込まれていません。少し待ってからもう一度お試しください。");
+                return;
+            }
+
             const keyword = document.getElementById("searchInput").value.trim();
             if (!keyword) {
                 alert("検索する機体名を入力してください。");
                 return;
             }
 
-            // 1. 「派生ルート」シート側から、E列（インデックス4）が一致する行を探す
+            // 「派生ルート」シート側から、E列（インデックス4）が一致する行を探す
             const targetRow = routeData.find(row => row[4] && String(row[4]).trim() === keyword);
 
             if (!targetRow) {
@@ -216,7 +230,7 @@
                 return;
             }
 
-            // 2. G列以降（インデックス6以降）の派生ルート機体名リストを抽出
+            // G列以降（インデックス6以降）の派生ルート機体名リストを抽出
             let rawRouteNames = [];
             for (let i = 6; i < targetRow.length; i++) {
                 let val = targetRow[i];
@@ -228,7 +242,6 @@
                 }
             }
 
-            // ルート途中で目的の機体に到達した時点で打ち切る（重複防止）
             let routeNames = [];
             for (let name of rawRouteNames) {
                 routeNames.push(name);
@@ -243,13 +256,11 @@
 
             document.getElementById("routeDisplay").innerText = "派生ルート：" + routeNames.join(" ⇒ ");
 
-            // 3. ルートに含まれる各機体の詳細データを「機体一覧」シートから逆引きしてテーブルに並べる
             let tableHtml = "";
             let totalCredit = 0;
             let totalFame = 0;
 
             routeNames.forEach((mechName, index) => {
-                // 「機体一覧」シート側で、機体名が含まれている行を探す（安全のため行全体のどこかに一致するものがあるかチェック）
                 let mechInfo = mechDataList.find(row => {
                     for (let col of row) {
                         if (col && String(col).trim() === mechName) return true;
@@ -258,8 +269,6 @@
                 });
 
                 if (mechInfo) {
-                    // 機体一覧の列並び（インデックス）に応じたパラメータの割り当て
-                    // ※もし「機体一覧」側の列の並びが違う場合は、ここの数字（2, 3, 4...）を調整できます
                     let hp = mechInfo[2] || "-";
                     let armor = mechInfo[3] || "-";
                     let mobility = mechInfo[4] || "-";
@@ -273,7 +282,7 @@
                     let longAtk = mechInfo[12] || "-";
                     let fame = mechInfo[13] || "0";
                     let nt = mechInfo[14] || "-";
-                    let size = mechInfo[15] || "-";
+-                   let size = mechInfo[15] || "-";
                     let cost = mechInfo[16] || "0";
                     let credit = mechInfo[17] || "0";
                     let land = mechInfo[18] || "-";
