@@ -47,54 +47,66 @@
   // GoogleスプレッドシートのCSVエクスポート用URL
   const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/1-Mqv3evqw4tHu9QPYpG8KBDijcAIBgWYLhNKzjArED4/export?format=csv";
 
-  // 機体データを格納する箱
-  let unitsDatabase = {};
+  // 機体データを格納する箱（キー名: 機体名、またはNo）
+  let unitsDatabaseByName = {};
+  let unitsDatabaseByNo = {};
 
-  // 派生ルートの定義（機体番号の配列でルートを指定）
-  // ※後からここにご自身の好きなルートを追加・編集できます！
-  const routeData = [
-      {
-          id: "route_1",
-          name: "【ルート1】Gスカイ系からバトルフロンティアへ",
-          units: [3400, 3401, 3403] 
-      },
-      {
-          id: "route_2",
-          name: "【ルート2】ガンダム直通ルート",
-          units: [3404, 3405, 3402] 
-      }
-  ];
+  // 全ての抽出された派生ルートを格納する配列
+  let allRoutes = [];
+
+  // ==========================================
+  // 【元の派生ツリーテキストデータ】
+  // 罫線（├や└、│）で表されたツリー構造をここにそのまま貼り付けておきます。
+  // （※ここをご自身の元データのテキストに書き換えていくと、自動でルートが生成されます）
+  // ==========================================
+  const rawTreeText = `
+ボール
+├ボール改
+│├機雷散布ポッド装備仕様ボール
+│└ボール（第08MS小隊版）
+└先行量産型ボール
+`;
 
   // ページ読み込み時にスプレッドシートのデータを読み込む
   window.addEventListener('DOMContentLoaded', () => {
       const tbody = document.getElementById('route-table-body');
       tbody.innerHTML = '<tr><td colspan="23" class="loading">Googleスプレッドシートからデータを読み込んでいます...</td></tr>';
 
-      // PapaParseを使ってスプレッドシートを読み込む
       Papa.parse(SHEET_CSV_URL, {
           download: true,
-          header: true, // 1行目を項目名として扱う
+          header: true,
           skipEmptyLines: true,
           complete: function(results) {
-              // 読み込んだデータを機体番号(No)をキーにして整理
+              // 読み込んだデータを名前とNoの両方で引けるように整理
               results.data.forEach(row => {
                   let no = row["No"] ? row["No"].trim() : "";
+                  let name = row["機体名"] ? row["機体名"].trim() : "";
+                  if (name) {
+                      unitsDatabaseByName[name] = row;
+                  }
                   if (no) {
-                      unitsDatabase[no] = row;
+                      unitsDatabaseByNo[no] = row;
                   }
               });
 
+              // 罫線ツリーテキストから派生ルートを自動解析する
+              parseTreeTextToRoutes(rawTreeText);
+
               // プルダウンの選択肢を作成
               const selectBox = document.getElementById('routeSelect');
-              routeData.forEach(route => {
+              allRoutes.forEach((route, index) => {
                   let option = document.createElement('option');
-                  option.value = route.id;
+                  option.value = index;
                   option.textContent = route.name;
                   selectBox.appendChild(option);
               });
 
               // 初期ルートで計算を実行
-              changeRoute();
+              if (allRoutes.length > 0) {
+                  changeRoute();
+              } else {
+                  tbody.innerHTML = '<tr><td colspan="23" style="color:#ff9999;" align="center">有効な派生ルートが見つかりませんでした。</td></tr>';
+              }
           },
           error: function(err) {
               console.error("CSV読み込みエラー:", err);
@@ -103,10 +115,60 @@
       });
   });
 
+  // 罫線ツリーテキストを解析して、各末端までのルートリストを自動生成する関数
+  function parseTreeTextToRoutes(text) {
+      const lines = text.split('\n');
+      let stack = [];
+      allRoutes = [];
+
+      lines.forEach(line => {
+          if (!line.trim()) return;
+
+          // インデントの深さを計算（空白や罫線の文字数・構造から階層を推測）
+          // 簡易的に、行頭のスペース、'│', '├', '└' の位置や個数から階層を割り出す
+          let cleanLine = line.replace(/[│├└─]/g, '');
+          let depth = 0;
+          for (let i = 0; i < line.length; i++) {
+              let char = line[i];
+              if (char === ' ' || char === ' ' || char === '│' || char === '├' || char === '└' || char === '─') {
+                  if (char === ' ' || char === ' ') depth++;
+                  else depth += 2; // 罫線1文字分
+              } else {
+                  break;
+              }
+          }
+          // 階層の深さを安全に丸める（2文字分を1階層程度に換算）
+          let level = Math.floor(depth / 2);
+          let unitName = cleanLine.trim();
+
+          if (!unitName) return;
+
+          // スタックの深さを調整
+          stack = stack.slice(0, level);
+          stack.push(unitName);
+
+          // もし対応するスプレッドシートのデータ（または次の分岐）があればルートとして登録候補にする
+          // ここでは「スタックに2つ以上（親から子へ繋がっている）溜まったら、1つのルートとしてみなす」
+          if (stack.length >= 2) {
+              let routeUnits = [...stack];
+              // 機体名から対応するNo（または名前）の配列を作る
+              let routeNos = routeUnits.map(name => {
+                  return unitsDatabaseByName[name] ? unitsDatabaseByName[name]["No"] : name;
+              });
+
+              allRoutes.push({
+                  name: `【ルート】 ${routeUnits[0]} ➔ ... ➔ ${routeUnits[routeUnits.length - 1]}`,
+                  units: routeNos,
+                  names: routeUnits
+              });
+          }
+      });
+  }
+
   // ルートが変更されたときの処理
   function changeRoute() {
-      const selectedId = document.getElementById('routeSelect').value;
-      const currentRoute = routeData.find(r => r.id === selectedId);
+      const selectedIndex = document.getElementById('routeSelect').value;
+      const currentRoute = allRoutes[selectedIndex];
       
       const tbody = document.getElementById('route-table-body');
       let html = '';
@@ -116,9 +178,9 @@
       
       if (!currentRoute) return;
 
-      currentRoute.units.forEach((unitNo, index) => {
-          // 数値を文字列に変換して検索
-          const u = unitsDatabase[String(unitNo)];
+      currentRoute.names.forEach((unitName, index) => {
+          // まず機体名で検索、見つからなければNoで検索
+          let u = unitsDatabaseByName[unitName] || unitsDatabaseByNo[currentRoute.units[index]];
           
           if (u) {
               let credit = Number(String(u["クレジット"] || "0").replace(/,/g, ''));
@@ -129,7 +191,7 @@
               
               html += `<tr>
                   <td align="center">${u["No"] || ''}</td>
-                  <td><b>${u["機体名"] || ''}</b></td>
+                  <td><b>${u["機体名"] || unitName}</b></td>
                   <td align="right">${u["ＨＰ"] || 0}</td>
                   <td align="right">${u["装甲"] || 0}</td>
                   <td align="right">${u["運動"] || 0}</td>
@@ -153,11 +215,11 @@
                   <td>${u["種別"] || ''}</td>
               </tr>`;
           } else {
-              html += `<tr><td colspan="23" style="color:#ff9999;" align="center">機体番号 ${unitNo} のデータがスプレッドシートに見つかりません</td></tr>`;
+              html += `<tr><td colspan="23" style="color:#ff9999;" align="center">機体名「${unitName}」のデータがスプレッドシートに見つかりません</td></tr>`;
           }
 
           // 最後の機体以外には「▼ 派生 ▼」の矢印行を挟む
-          if (index < currentRoute.units.length - 1) {
+          if (index < currentRoute.names.length - 1) {
               html += `<tr class="arrow-row"><td colspan="23">▼ 派生 ▼</td></tr>`;
           }
       });
@@ -176,7 +238,7 @@
   </tr>
 </table>
 
-<p>派生ルートを選択すると、Googleスプレッドシートから全ステータスを読み込み、総コストを自動計算します。</p>
+<p>派生ツリーからルートを選択すると、Googleスプレッドシートから全ステータスを読み込み、総コストを自動計算します。</p>
 
 <!-- 派生ルート選択フォーム -->
 <div class="b2" style="padding: 12px; border: 1px solid #3a4c6a;">
