@@ -112,7 +112,7 @@
 <body>
 
     <h1>機体派生ルート検索・総コストシミュレーター</h1>
-    <p>作りたい最終機体の名前（E列の機体）を検索すると、スプレッドシートのG列以降に記録された派生ルートを順番に並べ、総コストを自動計算します。</p>
+    <p>作りたい最終機体の名前を検索すると、「派生ルート」シートからルートを読み込み、「機体一覧」シートから各機体の詳細データを引いて総コストを自動計算します。</p>
 
     <div class="search-box">
         <label for="searchInput">最終機体名で検索：</label>
@@ -162,7 +162,7 @@
             </thead>
             <tbody id="tableBody">
                 <tr>
-                    <td colspan="23" style="padding: 20px; color: #8da4c4;">準備完了しました。上の検索窓に機体名（例: コロンブス など）を入力して検索してください。</td>
+                    <td colspan="23" style="padding: 20px; color: #8da4c4;">準備完了しました。上の検索窓に機体名を入力して検索してください。</td>
                 </tr>
             </tbody>
         </table>
@@ -174,21 +174,22 @@
         <p>累計必要名声： <span class="total-value" id="totalFame">0</span> 名声</p>
     </div>
 
-    <!-- Google Apps Script (GAS) からデータを取得するためのJavaScript -->
     <script>
-        // ★ここにあなたのスプレッドシート連携用WebアプリのURLを貼り付けてください
+        // 設定されたWebアプリのURL
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxI97mT7mMwgKkdPT0LM4IGJmdOpTb5PCD5mqaXlOEPSmEkKLQ9WivR4_-mLqKGw1eA/exec";
 
-        let allData = []; // スプレッドシートからの全データ格納用
+        let routeData = [];    // 派生ルートシートのデータ
+        let mechDataList = []; // 機体一覧シートのデータ
 
         // ページ読み込み時に自動でデータを取得する
         window.onload = function() {
             fetch(WEB_APP_URL)
                 .then(response => response.json())
                 .then(data => {
-                    allData = data;
+                    routeData = data.routes;
+                    mechDataList = data.mechs;
                     document.getElementById("logBox").innerHTML = 
-                        `【動作確認ログ】<br>正常読み込み完了：派生ルート登録数 ${allData.length}件（例: 目的派生検索, ボール, ボールK型, ボール改, トロハチ）`;
+                        `【動作確認ログ】<br>正常読み込み完了：派生ルート ${routeData.length}件 / 機体一覧 ${mechDataList.length}件のデータを取得しました。`;
                 })
                 .catch(error => {
                     document.getElementById("logBox").innerHTML = 
@@ -204,23 +205,21 @@
                 return;
             }
 
-            // 1. 一致する最終機体データをスプレッドシートの全データから探す (E列＝Index 4 が機体名と仮定)
-            // ※データ構造に合わせて列インデックスを調整してください
-            const targetRow = allData.find(row => row[4] && row[4].trim() === keyword);
+            // 1. 「派生ルート」シート側から、E列（インデックス4）が一致する行を探す
+            const targetRow = routeData.find(row => row[4] && String(row[4]).trim() === keyword);
 
             if (!targetRow) {
                 document.getElementById("routeDisplay").innerText = "派生ルート：見つかりませんでした";
-                document.getElementById("tableBody").innerHTML = `<tr><td colspan="23" style="padding: 20px; color: #ff6b6b;">「${keyword}」に一致する機体が見つかりませんでした。</td></tr>`;
+                document.getElementById("tableBody").innerHTML = `<tr><td colspan="23" style="padding: 20px; color: #ff6b6b;">「${keyword}」に一致する派生ルートが見つかりませんでした。</td></tr>`;
                 document.getElementById("totalCredit").innerText = "0";
                 document.getElementById("totalFame").innerText = "0";
                 return;
             }
 
-            // 2. G列以降（Index 6以降）の派生ルート機体名リストを抽出し、空白や "0" を除外する
+            // 2. G列以降（インデックス6以降）の派生ルート機体名リストを抽出
             let rawRouteNames = [];
             for (let i = 6; i < targetRow.length; i++) {
                 let val = targetRow[i];
-                // 値が存在し、空欄でなく、"0" や "-" でない場合のみルートに追加
                 if (val !== undefined && val !== null) {
                     let valStr = String(val).trim();
                     if (valStr !== "" && valStr !== "0" && valStr !== "-") {
@@ -229,61 +228,62 @@
                 }
             }
 
-            // 3. ルート途中で目的の機体に到達した（またはループした）時点で末尾をカットして重複を防ぐ
+            // ルート途中で目的の機体に到達した時点で打ち切る（重複防止）
             let routeNames = [];
             for (let name of rawRouteNames) {
                 routeNames.push(name);
-                // もし検索ワードと同じ機体名に到達したら、そこでルートを打ち切る（重複表示防止）
                 if (name === keyword) {
                     break;
                 }
             }
 
-            // もしルートが空っぽの場合のフォールバック
             if (routeNames.length === 0) {
                 routeNames = [keyword];
             }
 
-            // 画面の「派生ルート：〇〇 ⇒ 〇〇」を更新
             document.getElementById("routeDisplay").innerText = "派生ルート：" + routeNames.join(" ⇒ ");
 
-            // 4. ルートに含まれる各機体の詳細データを全データから逆引きしてテーブルに並べる
+            // 3. ルートに含まれる各機体の詳細データを「機体一覧」シートから逆引きしてテーブルに並べる
             let tableHtml = "";
             let totalCredit = 0;
             let totalFame = 0;
 
             routeNames.forEach((mechName, index) => {
-                // 機体名が一致する行を全データから探す
-                let mechData = allData.find(row => row[4] && row[4].trim() === mechName);
+                // 「機体一覧」シート側で、機体名が含まれている行を探す（安全のため行全体のどこかに一致するものがあるかチェック）
+                let mechInfo = mechDataList.find(row => {
+                    for (let col of row) {
+                        if (col && String(col).trim() === mechName) return true;
+                    }
+                    return false;
+                });
 
-                if (mechData) {
-                    // スプレッドシートの列並び（A列〜W列など）に合わせてデータを埋め込む
-                    // 例: 0:No, 1:B列, 2:C列... に応じて調整してください
-                    let hp = mechData[5] || "-";
-                    let armor = mechData[6] || "-";
-                    let mobility = mechData[7] || "-";
-                    let search = mechData[8] || "-";
-                    let en = mechData[9] || "-";
-                    let weight = mechData[10] || "-";
-                    let intuition = mechData[11] || "-";
-                    let control = mechData[12] || "-";
-                    let closeAtk = mechData[13] || "-";
-                    let midAtk = mechData[14] || "-";
-                    let longAtk = mechData[15] || "-";
-                    let fame = mechData[16] || "0";
-                    let nt = mechData[17] || "-";
-                    let size = mechData[18] || "-";
-                    let cost = mechData[19] || "0";
-                    let credit = mechData[20] || "0";
-                    let land = mechData[21] || "-";
-                    let water = mechData[22] || "-";
-                    let space = mechData[23] || "-";
-                    let air = mechData[24] || "-";
-                    let type = mechData[25] || "-";
+                if (mechInfo) {
+                    // 機体一覧の列並び（インデックス）に応じたパラメータの割り当て
+                    // ※もし「機体一覧」側の列の並びが違う場合は、ここの数字（2, 3, 4...）を調整できます
+                    let hp = mechInfo[2] || "-";
+                    let armor = mechInfo[3] || "-";
+                    let mobility = mechInfo[4] || "-";
+                    let search = mechInfo[5] || "-";
+                    let en = mechInfo[6] || "-";
+                    let weight = mechInfo[7] || "-";
+                    let intuition = mechInfo[8] || "-";
+                    let control = mechInfo[9] || "-";
+                    let closeAtk = mechInfo[10] || "-";
+                    let midAtk = mechInfo[11] || "-";
+                    let longAtk = mechInfo[12] || "-";
+                    let fame = mechInfo[13] || "0";
+                    let nt = mechInfo[14] || "-";
+                    let size = mechInfo[15] || "-";
+                    let cost = mechInfo[16] || "0";
+                    let credit = mechInfo[17] || "0";
+                    let land = mechInfo[18] || "-";
+                    let water = mechInfo[19] || "-";
+                    let space = mechInfo[20] || "-";
+                    let air = mechInfo[21] || "-";
+                    let type = mechInfo[22] || "-";
 
-                    // 数値として加算できるものは合計に足す
-                    let creditNum = parseInt(credit.toString().replace(/,/g, '')) || 0;
-                    let fameNum = parseInt(fame.toString().replace(/,/g, '')) || 0;
+                    let creditNum = parseInt(String(credit).replace(/,/g, '')) || 0;
+                    let fameNum = parseInt(String(fame).replace(/,/g, '')) || 0;
                     totalCredit += creditNum;
                     totalFame += fameNum;
 
@@ -315,12 +315,11 @@
                         </tr>
                     `;
                 } else {
-                    // データが見つからなかった場合の行
                     tableHtml += `
                         <tr>
                             <td>${index}</td>
                             <td class="name-col">${mechName}</td>
-                            <td colspan="21" style="color: #ff6b6b;">詳細データが見つかりません</td>
+                            <td colspan="21" style="color: #ff6b6b;">「機体一覧」シートに詳細データが見つかりません</td>
                         </tr>
                     `;
                 }
