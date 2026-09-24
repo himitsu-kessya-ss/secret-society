@@ -122,7 +122,7 @@
 
     <div class="log-box" id="logBox">
         【動作確認ログ】<br>
-        2つのスプレッドシートからデータを並行して取得しています...
+        スプレッドシートからデータを読み込んでいます...
     </div>
 
     <div class="route-display" id="routeDisplay">
@@ -175,38 +175,58 @@
     </div>
 
     <script>
-        // ▼ ここにそれぞれのスプレッドシートのウェブアプリURLを貼り付けています
+        // ▼ それぞれのスプレッドシートのウェブアプリURL
         const MECH_URL = "https://script.google.com/macros/s/AKfycbxI97mT7mMwgKkdPT0LM4IGJmdOpTb5PCD5mqaXlOEPSmEkKLQ9WivR4_-mLqKGw1eA/exec";
         const ROUTE_URL = "https://script.google.com/macros/s/AKfycby9a-1TnbX79IVUuzBnMbniR9l6_wCxQzemoFi8VtuuUzSWOxwMPEYMxUdy2URsLPIv/exec";
 
         let mechDataList = []; 
         let routeData = [];    
+        let loadedCount = 0;
 
-        // Enterキーで検索できるようにする補助関数
+        // JSONP用のコールバック関数（機体一覧用）
+        function setMechData(data) {
+            mechDataList = data || [];
+            checkLoaded();
+        }
+
+        // JSONP用のコールバック関数（派生ルート用）
+        function setRouteData(data) {
+            routeData = data || [];
+            checkLoaded();
+        }
+
+        function checkLoaded() {
+            loadedCount++;
+            if (loadedCount >= 2) {
+                document.getElementById("logBox").innerHTML = 
+                    `【動作確認ログ】<br><span style="color:#69f0ae;">読み込み成功！</span> 機体一覧: ${mechDataList.length}件 / 派生ルート: ${routeData.length}件`;
+            }
+        }
+
+        // ページ読み込み時にスクリプトタグを動的に埋め込んでデータを安全に取得
+        window.onload = function() {
+            // 機体一覧データ取得
+            let script1 = document.createElement('script');
+            script1.src = `${MECH_URL}?callback=setMechData`;
+            script1.onerror = function() {
+                document.getElementById("logBox").innerHTML = `【動作確認ログ】<br><span style="color:#ff6b6b;">機体一覧の読み込みに失敗しました。</span>`;
+            };
+            document.body.appendChild(script1);
+
+            // 派生ルートデータ取得
+            let script2 = document.createElement('script');
+            script2.src = `${ROUTE_URL}?callback=setRouteData`;
+            script2.onerror = function() {
+                document.getElementById("logBox").innerHTML = `【動作確認ログ】<br><span style="color:#ff6b6b;">派生ルートの読み込みに失敗しました。</span>`;
+            };
+            document.body.appendChild(script2);
+        };
+
         function handleKeyPress(event) {
             if (event.key === 'Enter') {
                 searchRoute();
             }
         }
-
-        // ページ読み込み時に2つのスプレッドシートから同時にデータを取得
-        window.onload = function() {
-            Promise.all([
-                fetch(MECH_URL).then(res => res.json()),
-                fetch(ROUTE_URL).then(res => res.json())
-            ])
-            .then(([mechData, routeResult]) => {
-                mechDataList = mechData || [];
-                routeData = routeResult || [];
-
-                document.getElementById("logBox").innerHTML = 
-                    `【動作確認ログ】<br><span style="color:#69f0ae;">読み込み成功！</span> 機体一覧: ${mechDataList.length}件 / 派生ルート: ${routeData.length}件`;
-            })
-            .catch(error => {
-                document.getElementById("logBox").innerHTML = 
-                    `【動作確認ログ】<br><span style="color:#ff6b6b;">読み込みエラー: ${error.message}</span><br>※それぞれのGASが正しく「全員」でデプロイされているか確認してください。`;
-            });
-        };
 
         // 検索・計算処理
         function searchRoute() {
@@ -221,7 +241,6 @@
                 return;
             }
 
-            // 派生ルートデータから該当する最終機体を探す (E列 = インデックス4 と仮定)
             const targetRow = routeData.find(row => row[4] && String(row[4]).trim() === keyword);
 
             if (!targetRow) {
@@ -232,7 +251,6 @@
                 return;
             }
 
-            // G列以降（インデックス6以降）からルート機体名を抽出
             let rawRouteNames = [];
             for (let i = 6; i < targetRow.length; i++) {
                 let val = targetRow[i];
@@ -263,7 +281,6 @@
             let totalFame = 0;
 
             routeNames.forEach((mechName, index) => {
-                // 機体一覧データから該当機体の詳細を探す
                 let mechInfo = mechDataList.find(row => {
                     for (let col of row) {
                         if (col && String(col).trim() === mechName) return true;
