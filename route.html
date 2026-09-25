@@ -117,7 +117,7 @@
 
     <div class="search-box">
         <label for="searchInput">最終機体名で検索：</label>
-        <input type="text" id="searchInput" placeholder="例: ガンダム など" onkeypress="handleKeyPress(event)">
+        <input type="text" id="searchInput" placeholder="例: コロンブス など" onkeypress="handleKeyPress(event)">
         <button onclick="searchRoute()">検索・計算</button>
     </div>
 
@@ -201,12 +201,14 @@
             });
         };
 
+        // 頑丈になったCSV解析パーサー（改行コードや空行をスマートに処理します）
         function parseCSV(text) {
-            let lines = text.split("\n");
+            let lines = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
             let result = [];
             for (let i = 0; i < lines.length; i++) {
-                let line = lines[i].trim();
-                if (line === "") continue;
+                let line = lines[i];
+                // 完全な空行のみスキップ（カンマだけの行やデータ行はしっかり拾います）
+                if (line.trim() === "") continue;
                 
                 let row = [];
                 let inQuotes = false;
@@ -260,15 +262,13 @@
                 return;
             }
 
-            // 新しくなった派生ルートの列から、機体一覧に存在する名前を順番に抽出し、重複を整理する
+            // 見つかった行の中から、機体一覧に存在する名前を順番に抽出する
             let routeNames = [];
             for (let i = 0; i < targetRow.length; i++) {
                 let val = targetRow[i];
                 if (val && val !== "0" && val !== "-") {
-                    // 機体一覧の中にこの名前が存在するかどうかをチェック
                     let existsInMech = mechDataList.some(mechRow => mechRow.includes(val));
                     if (existsInMech) {
-                        // 既にリストに入っていなければ追加（ルートの順番を保持）
                         if (!routeNames.includes(val)) {
                             routeNames.push(val);
                         }
@@ -276,7 +276,6 @@
                 }
             }
 
-            // もし抽出された中にキーワードが含まれていない場合は最後にキーワードを追加する
             if (routeNames.length === 0 || !routeNames.includes(keyword)) {
                 routeNames.push(keyword);
             }
