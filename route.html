@@ -60,6 +60,7 @@
             margin-bottom: 20px;
             font-size: 13px;
             color: #e8a0a0;
+            line-height: 1.5;
         }
         .route-display {
             background: #111a2e;
@@ -116,7 +117,7 @@
 
     <div class="search-box">
         <label for="searchInput">最終機体名で検索：</label>
-        <input type="text" id="searchInput" placeholder="例: コロンブス など" onkeypress="handleKeyPress(event)">
+        <input type="text" id="searchInput" placeholder="例: ガンダム など" onkeypress="handleKeyPress(event)">
         <button onclick="searchRoute()">検索・計算</button>
     </div>
 
@@ -137,6 +138,7 @@
                 <tr>
                     <th>No</th>
                     <th>機体名</th>
+                    <th>変形</th>
                     <th>HP</th>
                     <th>装甲</th>
                     <th>運動</th>
@@ -162,7 +164,7 @@
             </thead>
             <tbody id="tableBody">
                 <tr>
-                    <td colspan="23" style="padding: 20px; color: #8da4c4;">準備完了しました。上の検索窓に機体名を入力して検索してください。</td>
+                    <td colspan="24" style="padding: 20px; color: #8da4c4;">準備完了しました。上の検索窓に機体名を入力して検索してください。</td>
                 </tr>
             </tbody>
         </table>
@@ -245,47 +247,38 @@
                 return;
             }
 
+            // 派生ルートデータから、検索キーワード（機体名）が含まれている行を探す
             const targetRow = routeData.find(row => {
                 return row.some(col => col && col === keyword);
             });
 
             if (!targetRow) {
                 document.getElementById("routeDisplay").innerText = "派生ルート：見つかりませんでした";
-                document.getElementById("tableBody").innerHTML = `<tr><td colspan="23" style="padding: 20px; color: #ff6b6b;">「${keyword}」に一致する派生ルートが見つかりませんでした。</td></tr>`;
+                document.getElementById("tableBody").innerHTML = `<tr><td colspan="24" style="padding: 20px; color: #ff6b6b;">「${keyword}」に一致する派生ルートが見つかりませんでした。</td></tr>`;
                 document.getElementById("totalCredit").innerText = "0";
                 document.getElementById("totalFame").innerText = "0";
                 return;
             }
 
-            let rawRouteNames = [];
+            // 新しくなった派生ルートの列から、機体一覧に存在する名前を順番に抽出し、重複を整理する
+            let routeNames = [];
             for (let i = 0; i < targetRow.length; i++) {
                 let val = targetRow[i];
-                if (val !== undefined && val !== "" && val !== "0" && val !== "-") {
-                    rawRouteNames.push(val);
+                if (val && val !== "0" && val !== "-") {
+                    // 機体一覧の中にこの名前が存在するかどうかをチェック
+                    let existsInMech = mechDataList.some(mechRow => mechRow.includes(val));
+                    if (existsInMech) {
+                        // 既にリストに入っていなければ追加（ルートの順番を保持）
+                        if (!routeNames.includes(val)) {
+                            routeNames.push(val);
+                        }
+                    }
                 }
             }
 
-            let routeNames = [];
-            let found = false;
-            for (let name of rawRouteNames) {
-                routeNames.push(name);
-                if (name === keyword) {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found && rawRouteNames.length > 0) {
-                routeNames = rawRouteNames.filter(name => {
-                    return mechDataList.some(row => row.includes(name));
-                });
-                if (!routeNames.includes(keyword)) {
-                    routeNames.push(keyword);
-                }
-            }
-
-            if (routeNames.length === 0) {
-                routeNames = [keyword];
+            // もし抽出された中にキーワードが含まれていない場合は最後にキーワードを追加する
+            if (routeNames.length === 0 || !routeNames.includes(keyword)) {
+                routeNames.push(keyword);
             }
 
             document.getElementById("routeDisplay").innerText = "派生ルート：" + routeNames.join(" ⇒ ");
@@ -300,8 +293,7 @@
                 });
 
                 if (mechInfo) {
-                    // いただいたカラム構造に合わせて列番号を調整（★変形flagが追加されたため、以降の番号が+1されています）
-                    // 0:No, 1:機体名, 2:★変形flag, 3:HP, 4:装甲, 5:運動, 6:索敵, 7:EN, 8:重量, 9:直感, 10:操縦, 11:近, 12:中, 13:遠, 14:名声, 15:NT, 16:SIZE, 17:コスト, 18:クレジット, 19:地上, 20:水中, 21:宇宙, 22:空中, 23:種別
+                    let transform = mechInfo[2] !== undefined ? mechInfo[2] : "-";
                     let hp = mechInfo[3] !== undefined ? mechInfo[3] : "-";
                     let armor = mechInfo[4] !== undefined ? mechInfo[4] : "-";
                     let mobility = mechInfo[5] !== undefined ? mechInfo[5] : "-";
@@ -333,6 +325,7 @@
                         <tr>
                             <td>${index}</td>
                             <td class="name-col">${mechName}</td>
+                            <td>${transform}</td>
                             <td>${hp}</td>
                             <td>${armor}</td>
                             <td>${mobility}</td>
@@ -361,7 +354,7 @@
                         <tr>
                             <td>${index}</td>
                             <td class="name-col">${mechName}</td>
-                            <td colspan="21" style="color: #ff6b6b;">「機体一覧」CSVに詳細データが見つかりません</td>
+                            <td colspan="22" style="color: #ff6b6b;">「機体一覧」CSVに詳細データが見つかりません</td>
                         </tr>
                     `;
                 }
