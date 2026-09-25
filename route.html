@@ -201,34 +201,50 @@
             });
         };
 
-        // 頑丈になったCSV解析パーサー（改行コードや空行をスマートに処理します）
+        // 【改良版】ダブルクォーテーションやセル内改行を完全考慮したプロ仕様のCSVパーサー
         function parseCSV(text) {
-            let lines = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
-            let result = [];
-            for (let i = 0; i < lines.length; i++) {
-                let line = lines[i];
-                // 完全な空行のみスキップ（カンマだけの行やデータ行はしっかり拾います）
-                if (line.trim() === "") continue;
-                
-                let row = [];
-                let inQuotes = false;
-                let currentVal = "";
-                
-                for (let j = 0; j < line.length; j++) {
-                    let char = line[j];
-                    if (char === '"') {
-                        inQuotes = !inQuotes;
-                    } else if (char === ',' && !inQuotes) {
-                        row.push(currentVal.trim());
-                        currentVal = "";
+            let rows = [];
+            let currentRow = [];
+            let currentVal = "";
+            let inQuotes = false;
+
+            for (let i = 0; i < text.length; i++) {
+                let char = text[i];
+                let nextChar = text[i + 1];
+
+                if (char === '"') {
+                    if (inQuotes && nextChar === '"') {
+                        currentVal += '"';
+                        i++; // エスケープされたクォーテーションをスキップ
                     } else {
-                        currentVal += char;
+                        inQuotes = !inQuotes;
                     }
+                } else if (char === ',' && !inQuotes) {
+                    currentRow.push(currentVal.trim());
+                    currentVal = "";
+                } else if ((char === '\r' && nextChar === '\n') && !inQuotes) {
+                    currentRow.push(currentVal.trim());
+                    rows.push(currentRow);
+                    currentRow = [];
+                    currentVal = "";
+                    i++; // \nもスキップ
+                } else if (char === '\n' && !inQuotes) {
+                    currentRow.push(currentVal.trim());
+                    rows.push(currentRow);
+                    currentRow = [];
+                    currentVal = "";
+                } else {
+                    currentVal += char;
                 }
-                row.push(currentVal.trim());
-                result.push(row);
             }
-            return result;
+            // 最後の行の処理
+            if (currentVal !== "" || currentRow.length > 0) {
+                currentRow.push(currentVal.trim());
+                rows.push(currentRow);
+            }
+
+            // 完全な空行を除外
+            return rows.filter(row => row.length > 0 && row.some(val => val !== ""));
         }
 
         function handleKeyPress(event) {
@@ -309,7 +325,7 @@
                     let size = mechInfo[16] !== undefined ? mechInfo[16] : "-";
                     let cost = mechInfo[17] !== undefined ? mechInfo[17] : "0";
                     let credit = mechInfo[18] !== undefined ? mechInfo[18] : "0";
-                    let land = mechInfo[19] !== undefined ? mechInfo[19] : "-";
+                    $land = mechInfo[19] !== undefined ? mechInfo[19] : "-";
                     let water = mechInfo[20] !== undefined ? mechInfo[20] : "-";
                     let space = mechInfo[21] !== undefined ? mechInfo[21] : "-";
                     let air = mechInfo[22] !== undefined ? mechInfo[22] : "-";
@@ -341,7 +357,7 @@
                             <td>${size}</td>
                             <td>${cost}</td>
                             <td>${credit}</td>
-                            <td>${land}</td>
+                            <td>${mechInfo[19] !== undefined ? mechInfo[19] : "-"}</td>
                             <td>${water}</td>
                             <td>${space}</td>
                             <td>${air}</td>
