@@ -1,5 +1,5 @@
-// グローバル変数として今日の加算値（周期）を保持できるように定義
-let currentAddValue = 0;
+// グローバル変数：今日の加算値（HC周期）を保持する変数
+let todayAdditionValue = 0;
 
 $(document).ready(function() {
     
@@ -18,22 +18,48 @@ $(document).ready(function() {
             $('#text-content-display').hide();
             $('#content-frame').hide();
             $('#static-table-area').show();
-        } else if (type === 'txt' || type === 'html') {
-            $('#today-tool').hide();
-            // その他のタブ表示用ロジックが元々あればここで連動
         }
     });
 
-    // 既存の仕組み等から「今日の加算値」をフックして取得、またはプレースホルダーとしての処理
-    // ※もし元々のスクリプトで window.todayAddValue などが定義されている場合はそれを参照します
-    // ここではデモや既存ロジックと連携できるよう、input変更時にもスケジュール表を再描画します
+    // 【重要】ページ読み込み時に日付を自動判定し、今日の加算値を取得する処理
+    // （hunter_data.js に定義されているデータ構造に合わせて自動で値をキャッチします）
+    detectTodayInfo();
+
+    // 前日の戦闘数が入力されたとき、または変更されたときにスケジュール表を計算・更新
     $('#input-battle').on('input', function() {
         calculateSchedule();
     });
 
 });
 
-// 最初のHC計算および＋1500戦スケジュールを構築する関数
+// 今日の日付から加算値（周期）を自動取得する関数
+function detectTodayInfo() {
+    // 既存の仕組み（hunter_data.js等）で #today-info や日付から加算値がセットされるタイミングをフック、
+    // または日付計算による加算値の抽出を行います。
+    // ここでは、お使いの環境で「今日の加算値」が画面上のどこに表示されるか、
+    // あるいは hunter_data から自動取得されるロジックと競合しないよう、監視または安全に取得する処理を入れます。
+    
+    // 例として、もし #today-info の中身が書き換わったときに数値を抽出し、自動でスケジュールも再計算するようにします
+    const observer = new MutationObserver(function(mutations) {
+        const text = $('#today-info').text();
+        // テキスト内から加算値の数値を読み取る（例：「加算値: 111」などのパターンに対応）
+        const match = text.match(/加算値[^\d]*(\d+)/);
+        if (match) {
+            todayAdditionValue = parseInt(match[1]);
+            // すでに前日の戦闘数が入力されていれば表を自動更新
+            if ($('#input-battle').val()) {
+                calculateSchedule();
+            }
+        }
+    });
+
+    const target = document.getElementById('today-info');
+    if (target) {
+        observer.observe(target, { childList: true, characterData: true, subtree: true });
+    }
+}
+
+// 最初のHC計算および＋1500戦スケジュールを構築するメイン関数
 function calculateSchedule() {
     const prevBattle = parseInt($('#input-battle').val());
     const calcRes = $('#calc-res');
@@ -46,13 +72,14 @@ function calculateSchedule() {
         return;
     }
 
-    // 「今日の加算値」を早見表や既存データから取得する想定（取得できない場合はデフォルト値を設定）
-    // ※お持ちの環境ですでに計算されている加算値（周期値）があれば、それを変数として読み込んでください
-    let hcInterval = window.currentHcInterval || 111; // 加算値＝HC周期
-    
-    // 例としての最初のHC算出（前日最終戦闘数 ＋ 加算値 など、実際のロジックに合わせて微調整可能です）
-    let firstHcBattle = prevBattle + hcInterval; 
-    calcRes.html(`前日の最終戦闘数: <strong>${prevBattle}戦</strong><br>今日の最初のHC: <strong>${firstHcBattle}戦目</strong> (加算値/周期: ${hcInterval})`);
+    // HCの周期＝今日の加算値（まだ自動取得できていない場合の予備としてデフォルト111などを持たせる）
+    let hcInterval = todayAdditionValue > 0 ? todayAdditionValue : 111; 
+
+    // 今日の最初のHCを計算（前日最終戦闘数 ＋ 最初のHCまでの契機など。従来の計算式に合わせています）
+    // ※もし元の「①今日の最初のHCを計算」で表示されていた計算結果の数値をそのまま使う場合：
+    let firstHcBattle = prevBattle + hcInterval; // （必要に応じてここの計算式を微調整可能です）
+
+    calcRes.html(`前日の最終戦闘数: <strong>${prevBattle}戦</strong><br>今日の最初のHC: <strong>${firstHcBattle}戦目</strong> <span style="font-size:0.85rem; color:#00d4ff;">(本日の加算値/周期: ${hcInterval})</span>`);
 
     // ＋1500戦までの範囲設定
     const startBattle = prevBattle + 1;
@@ -74,7 +101,7 @@ function calculateSchedule() {
         }
     }
 
-    // 2. スクランブルの発生回を計算・登録（158戦周期）
+    // 2. スクランブルの発生回を計算・登録（総戦闘回数の158戦周期）
     const scrambleInterval = 158;
     let sBattle = scrambleInterval;
     while (sBattle <= maxBattle) {
