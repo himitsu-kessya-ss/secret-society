@@ -1,5 +1,8 @@
-// hunter.js
+// hunter.js （完成版：総名声・総クレジットランキング対応）
 $(document).ready(function () {
+    let globalMechDataList = [];
+    let globalRouteData = [];
+
     // 早見表のHTMLを自動生成して埋め込む
     function initHayamiTable() {
         let tbodyHtml = '';
@@ -47,7 +50,7 @@ $(document).ready(function () {
         const maxBattle = prev + 1500;
         let events = {};
 
-        // 1. HCのスケジュール（最初のHCから「今日の加算値（data.addVal）」の周期で発生）
+        // 1. HCのスケジュール
         let currentHc = firstHc;
         let hcCount = 1;
         while (currentHc <= maxBattle) {
@@ -59,11 +62,10 @@ $(document).ready(function () {
             hcCount++;
         }
 
-        // 2. スクランブルのスケジュール（158戦周期。入力値より後に出現する最初の位置を「1回目」としてリセット）
+        // 2. スクランブルのスケジュール
         const scrambleInterval = 158;
-        // 入力値（prev）より大きい最初のスクランブル位置を計算
         let sBattle = Math.floor(prev / scrambleInterval) * scrambleInterval + scrambleInterval;
-        let scrambleCount = 1; // ここで強制的に「1回目」からスタート！
+        let scrambleCount = 1;
 
         while (sBattle <= maxBattle) {
             if (sBattle >= startBattle) {
@@ -71,10 +73,9 @@ $(document).ready(function () {
                 events[sBattle].scramble = `${scrambleCount}回目`;
             }
             sBattle += scrambleInterval;
-            scrambleCount++; // 次のスクランブルは2回目、3回目…とカウントアップ
+            scrambleCount++;
         }
 
-        // 戦闘回数の昇順に並び替え
         const sortedBattles = Object.keys(events).map(Number).sort((a, b) => a - b);
 
         tbody.innerHTML = '';
@@ -84,7 +85,6 @@ $(document).ready(function () {
                 const item = events[battle];
                 const tr = document.createElement('tr');
                 
-                // 行ごとの色分け（HCのみ、スクランブルのみ、両方）
                 if (item.hc && item.scramble) {
                     tr.className = 'row-both';
                 } else if (item.scramble) {
@@ -105,67 +105,192 @@ $(document).ready(function () {
         }
     });
 
-    // ② 今日のデータ更新 & ③ ランキング解析
+    // ② 今日のデータ更新 & ③ ランキング解析のトリガー
     function refreshTodayTab() {
         const data = getTodayData();
         $('#today-info').html(`本日は ${data.day}日： 加算値 <b style="color:var(--accent-color);">${data.addVal}</b> / 出現No <b style="color:var(--accent-color);">${data.range}</b>`);
         
         const [min, max] = data.range.split(' - ').map(s => parseInt(s.trim()));
-        loadAndRankUnits(min, max);
+        loadAndRankUnitsWithRoute(min, max);
     }
 
-    // ③ ユニットCSVの読み込みとソート
-    function loadAndRankUnits(min, max) {
-        if (typeof HUNTER_CONFIG === 'undefined' || !HUNTER_CONFIG.csvFile) return;
+    // CSVパーサー（ダブルクォーテーション対応）
+    function parseCSV(text) {
+        let rows = [];
+        let currentRow = [];
+        let currentVal = "";
+        let inQuotes = false;
 
-        Papa.parse(HUNTER_CONFIG.csvFile, {
-            download: true,
-            header: true,
-            skipEmptyLines: true,
-            trimHeaders: true, 
-            complete: function(results) {
-                const headers = results.meta.fields;
-                
-                const fameKey = headers.find(h => h.includes("名声")) || "名声";
-                const pointKey = headers.find(h => {
-                    const upperH = h.toUpperCase();
-                    return upperH.includes("POINT") || upperH.includes("ポイント");
-                }) || "POINT"; 
+        for (let i = 0; i < text.length; i++) {
+            let char = text[i];
+            let nextChar = text[i + 1];
 
-                const filtered = results.data.filter(u => {
-                    const no = parseInt(u["No"]);
-                    return no >= min && no <= max;
-                });
-
-                if (filtered.length === 0) {
-                    $('#unit-error').text(`範囲内の機体が見つかりません(No ${min}-${max})`);
-                    return;
+            if (char === '"') {
+                if (inQuotes && nextChar === '"') {
+                    currentVal += '"';
+                    i++;
+                } else {
+                    inQuotes = !inQuotes;
                 }
-                $('#unit-error').hide();
+            } else if (char === ',' && !inQuotes) {
+                currentRow.push(currentVal.trim());
+                currentVal = "";
+            } else if ((char === '\r' && nextChar === '\n') && !inQuotes) {
+                currentRow.push(currentVal.trim());
+                rows.push(currentRow);
+                currentRow = [];
+                currentVal = "";
+                i++;
+            } else if (char === '\n' && !inQuotes) {
+                currentRow.push(currentVal.trim());
+                rows.push(currentRow);
+                currentRow = [];
+                currentVal = "";
+            } else {
+                currentVal += char;
+            }
+        }
+        if (currentVal !== "" || currentRow.length > 0) {
+            currentRow.push(currentVal.trim());
+            rows.push(currentRow);
+        }
 
-                displayRank(filtered, fameKey, "#rank-fame");
-                displayRank(filtered, pointKey, "#rank-point");
-            },
-            error: function() { $('#unit-error').text("CSV読込失敗"); }
+        return rows.filter(row => row.length > 0 && row.some(val => val !== ""));
+    }
+
+    // 🌟 ルート上の全コスト（総名声・総クレジット）を計算する関数
+    function calculateCumulativeCost(targetMechName) {
+        let targetRow = null;
+        for (let i = 0; i < globalRouteData.length; i++) {
+            let row = globalRouteData[i];
+            if (row[2] && row[2] === targetMechName) {
+                targetRow = row;
+                break;
+            }
+        }
+        if (!targetRow) {
+            for (let i = 0; i < globalRouteData.length; i++) {
+                let row = globalRouteData[i];
+                if (row.some((col, colIndex) => colIndex >= 3 && col === targetMechName)) {
+                    targetRow = row;
+                    break;
+                }
+            }
+        }
+
+        if (!targetRow) {
+            let mechInfo = globalMechDataList.find(row => row.some(col => col === targetMechName));
+            if (mechInfo) {
+                let fame = parseInt(String(mechInfo[14] || "0").replace(/,/g, '')) || 0;
+                let credit = parseInt(String(mechInfo[18] || "0").replace(/,/g, '')) || 0;
+                return { totalFame: fame, totalCredit: credit };
+            }
+            return { totalFame: 0, totalCredit: 0 };
+        }
+
+        let routeNames = [];
+        for (let i = 3; i < targetRow.length; i++) {
+            let val = targetRow[i];
+            if (val && val !== "0" && val !== "-" && val !== "") {
+                let existsInMech = globalMechDataList.some(mechRow => mechRow.includes(val));
+                if (existsInMech) {
+                    if (!routeNames.includes(val)) {
+                        routeNames.push(val);
+                    }
+                }
+            }
+        }
+
+        let sumFame = 0;
+        let sumCredit = 0;
+
+        routeNames.forEach(mechName => {
+            let mechInfo = globalMechDataList.find(row => row.some(col => col === mechName));
+            if (mechInfo) {
+                let fame = parseInt(String(mechInfo[14] || "0").replace(/,/g, '')) || 0;
+                let credit = parseInt(String(mechInfo[18] || "0").replace(/,/g, '')) || 0;
+                sumFame += fame;
+                sumCredit += credit;
+            }
+        });
+
+        return { totalFame: sumFame, totalCredit: sumCredit };
+    }
+
+    // ③ 機体一覧と派生ルートCSVを両方読み込んで、範囲内の機体の総名声・総クレジットを算出・ランキング化
+    function loadAndRankUnitsWithRoute(min, max) {
+        if (typeof HUNTER_CONFIG === 'undefined' || !HUNTER_CONFIG.csvFile) {
+            $('#unit-error').text("設定ファイル(HUNTER_CONFIG)が見つかりません。").show();
+            return;
+        }
+
+        const MECH_CSV = HUNTER_CONFIG.csvFile; // "route/GL)機体一覧 - 機体一覧.csv"
+        const ROUTE_CSV = "route/GL)機体派生ルート_260924 - 派生ルート.csv";
+
+        // すでにデータが読み込まれている場合は再利用、なければfetchで取得
+        if (globalMechDataList.length > 0 && globalRouteData.length > 0) {
+            processRanking(min, max);
+            return;
+        }
+
+        Promise.all([
+            fetch(MECH_CSV).then(res => res.text()),
+            fetch(ROUTE_CSV).then(res => res.text())
+        ])
+        .then(([mechCsvText, routeCsvText]) => {
+            globalMechDataList = parseCSV(mechCsvText);
+            globalRouteData = parseCSV(routeCsvText);
+            processRanking(min, max);
+        })
+        .catch(err => {
+            $('#unit-error').text("CSVファイルの読み込みに失敗しました: " + err.message).show();
         });
     }
 
-    function displayRank(data, key, targetId) {
-        const sorted = [...data].sort((a, b) => {
-            const valA = parseFloat(String(a[key] || "0").replace(/,/g, '')) || 0;
-            const valB = parseFloat(String(b[key] || "0").replace(/,/g, '')) || 0;
-            return valB - valA;
-        }).slice(0, 3);
+    function processRanking(min, max) {
+        // 出現Noの範囲内でフィルタリング
+        const filtered = globalMechDataList.filter(row => {
+            let no = parseInt(row[0]);
+            return !isNaN(no) && no >= min && no <= max;
+        });
+
+        if (filtered.length === 0) {
+            $('#unit-error').text(`範囲内の機体が見つかりません(No ${min}-${max})`).show();
+            $('#rank-fame').html("データなし");
+            $('#rank-point').html("データなし");
+            return;
+        }
+        $('#unit-error').hide();
+
+        // 各機体の総名声と総クレジットを計算したオブジェクトの配列を作成
+        let processedUnits = filtered.map(row => {
+            let no = row[0];
+            let name = row[1] || ("No." + no);
+            let costs = calculateCumulativeCost(name);
+            return {
+                no: no,
+                name: name,
+                totalFame: costs.totalFame,
+                totalCredit: costs.totalCredit
+            };
+        });
+
+        // 総名声ランキング ベスト3 (降順)
+        displayCustomRank(processedUnits, 'totalFame', '#rank-fame', '総名声', '#00d4ff');
+        // 総クレジットランキング ベスト3 (降順)
+        displayCustomRank(processedUnits, 'totalCredit', '#rank-point', '総クレジット', '#ffeb3b');
+    }
+
+    function displayCustomRank(dataArray, sortKey, targetId, labelName, valColor) {
+        const sorted = [...dataArray].sort((a, b) => b[sortKey] - a[sortKey]).slice(0, 3);
 
         let html = '';
         sorted.forEach((u, i) => {
-            const val = u[key] || 0;
-            const displayVal = isNaN(parseFloat(String(val).replace(/,/g, ''))) ? val : parseFloat(String(val).replace(/,/g, '')).toLocaleString();
-            
+            let valStr = u[sortKey].toLocaleString();
             html += `<div class="unit-card">
-                        <span class="rank-badge">${i+1}</span><strong>${u["機体名"] || "No."+u["No"]}</strong>
-                        <span class="unit-val">${key}: ${displayVal}</span>
-                   </div>`;
+                <span class="rank-badge">${i+1}</span><strong>${u.name}</strong>
+                <span class="unit-val" style="color:${valColor};">${labelName}: ${valStr}</span>
+           </div>`;
         });
         $(targetId).html(html);
     }
