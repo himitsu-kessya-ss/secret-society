@@ -1,4 +1,4 @@
-// hunter.js （完全版：数値計算・列インデックス対応）
+// hunter.js （完全版：ヘッダー自動検出＆累積コスト計算対応）
 $(document).ready(function () {
     let globalMechDataList = [];
     let globalRouteData = [];
@@ -162,8 +162,32 @@ $(document).ready(function () {
         return isNaN(num) ? 0 : num;
     }
 
+    // ヘッダー行から機体名・名声・クレジットの列インデックスを自動検出する
+    function getColumnIndices() {
+        if (!globalMechDataList || globalMechDataList.length === 0) {
+            return { nameIdx: 1, fameIdx: 14, creditIdx: 18 };
+        }
+        let header = globalMechDataList[0];
+        let nameIdx = 1;
+        let fameIdx = -1;
+        let creditIdx = -1;
+
+        header.forEach((col, idx) => {
+            if (col.includes('機体名') || col === '名称') nameIdx = idx;
+            if (col.includes('名声')) fameIdx = idx;
+            if (col.includes('クレジット') || col.includes('ポイント')) creditIdx = idx;
+        });
+
+        // 万が一見つからない場合の安全なデフォルト値
+        if (fameIdx === -1) fameIdx = 14;
+        if (creditIdx === -1) creditIdx = 18;
+
+        return { nameIdx, fameIdx, creditIdx };
+    }
+
     // 累積コスト（総名声・総クレジット）の計算関数
     function calculateCumulativeCost(targetMechName) {
+        const { nameIdx, fameIdx, creditIdx } = getColumnIndices();
         let targetRow = null;
         
         // 1. 派生ルート側から該当機体を探す
@@ -186,11 +210,10 @@ $(document).ready(function () {
 
         // 派生ルートに載っていない場合のフォールバック
         if (!targetRow) {
-            let mechInfo = globalMechDataList.find(row => row[1] === targetMechName);
+            let mechInfo = globalMechDataList.find(row => row[nameIdx] === targetMechName);
             if (mechInfo) {
-                // インデックス14が名声、18がクレジット（一般的な構成に合わせた安全取得）
-                let fame = parseNumber(mechInfo[14]);
-                let credit = parseNumber(mechInfo[18]);
+                let fame = parseNumber(mechInfo[fameIdx]);
+                let credit = parseNumber(mechInfo[creditIdx]);
                 return { totalFame: fame, totalCredit: credit };
             }
             return { totalFame: 0, totalCredit: 0 };
@@ -200,7 +223,7 @@ $(document).ready(function () {
         for (let i = 3; i < targetRow.length; i++) {
             let val = targetRow[i];
             if (val && val !== "0" && val !== "-" && val !== "") {
-                let existsInMech = globalMechDataList.some(mechRow => mechRow[1] === val);
+                let existsInMech = globalMechDataList.some(mechRow => mechRow[nameIdx] === val);
                 if (existsInMech && !routeNames.includes(val)) {
                     routeNames.push(val);
                 }
@@ -211,10 +234,10 @@ $(document).ready(function () {
         let sumCredit = 0;
 
         routeNames.forEach(mechName => {
-            let mechInfo = globalMechDataList.find(row => row[1] === mechName);
+            let mechInfo = globalMechDataList.find(row => row[nameIdx] === mechName);
             if (mechInfo) {
-                sumFame += parseNumber(mechInfo[14]);
-                sumCredit += parseNumber(mechInfo[18]);
+                sumFame += parseNumber(mechInfo[fameIdx]);
+                sumCredit += parseNumber(mechInfo[creditIdx]);
             }
         });
 
@@ -273,7 +296,8 @@ $(document).ready(function () {
 
         // 各機体の総名声と総クレジットを計算
         let processedUnits = filtered.map(row => {
-            let name = row[1] !== undefined ? row[1] : "-";
+            const { nameIdx } = getColumnIndices();
+            let name = row[nameIdx] !== undefined ? row[nameIdx] : "-";
             let costs = calculateCumulativeCost(name);
             return {
                 name: name,
