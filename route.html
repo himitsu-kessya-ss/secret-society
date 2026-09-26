@@ -2,83 +2,139 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>機体派生ルート検索・総コストシミュレーター</title>
-    <!-- route.css を読み込みます -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Route Simulator - 秘密結社の部屋</title>
+    <!-- 外部CSSファイルの読み込み -->
     <link rel="stylesheet" href="route.css">
 </head>
 <body>
 
-    <h1>機体派生ルート検索・総コストシミュレーター</h1>
-    <p>「機体名」または「機体No.」のどちらか片方に条件を入力して、検索ボタンを押してください。</p>
+    <!-- ▼ 共通ヘッダーが自動でここに読み込まれます -->
+    <div id="header-container"></div>
 
-    <div class="search-box">
-        <div class="search-row">
-            <label for="searchName">機体名で検索：</label>
-            <input type="text" id="searchName" placeholder="例: ドリテア、ボール改 など" onkeypress="handleKeyPress(event)">
+    <div class="container">
+        <h1 class="page-title">Route Simulator (機体派生ルート検索・総コストシミュレーター)</h1>
+
+        <!-- ▼ タブ切り替えボタン（必要に応じて拡張可能） -->
+        <div class="tab-buttons">
+            <button class="tab-btn active" data-target="simulator-tab">🗺️ 派生ルート検索・計算</button>
+            <button class="tab-btn" data-target="saved-tab">💾 保存ルート一覧</button>
         </div>
-        <div class="search-row">
-            <label for="searchNo">機体No.で検索：</label>
-            <input type="text" id="searchNo" placeholder="例: 15、467 など" onkeypress="handleKeyPress(event)">
+
+        <!-- ▼ シミュレータータブのコンテンツ -->
+        <div id="simulator-tab" class="tab-content active">
+            <!-- 使い方説明エリア -->
+            <div class="guide-card">
+                <h2 class="guide-title">ℹ️ ルートシミュレーターの使い方</h2>
+                <ul class="guide-list">
+                    <li><strong>起点機体：</strong> 現在所有している、または出発点となる機体を選択・入力してください。</li>
+                    <li><strong>目標機体：</strong> 最終的に開発・到達したい目標の機体を選択してください。</li>
+                    <li><strong>ルート検索：</strong> 最短ルートや必要となる総コスト（資金・素材など）を自動で計算して表示します。</li>
+                </ul>
+            </div>
+
+            <!-- シミュレーション入力・操作エリア -->
+            <div class="upload-form-card" style="margin-top: 20px;">
+                <form id="route-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="start-unit">起点機体（スタート）</label>
+                            <input type="text" id="start-unit" placeholder="例：ジム または 機体No." required autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <label for="target-unit">目標機体（ゴール）</label>
+                            <input type="text" id="target-unit" placeholder="例：ガンダム または 機体No." required autocomplete="off">
+                        </div>
+                    </div>
+
+                    <button type="submit" id="calc-btn" class="submit-btn" style="margin-top: 15px;">派生ルートを検索・計算する</button>
+                </form>
+            </div>
+
+            <!-- 検索結果表示エリア -->
+            <div class="list-header-area" style="margin-top: 30px;">
+                <h2 style="margin: 0;">計算結果・派生ルート</h2>
+            </div>
+
+            <div id="loading-msg" style="display: none; padding: 20px; text-align: center; color: var(--sub-text);">ルートを計算中...</div>
+            
+            <!-- 結果が出力されるコンテナ -->
+            <div id="route-result-container" style="margin-top: 15px;">
+                <div class="guide-card" style="text-align: center; color: var(--sub-text);">
+                    起点と目標を設定して「派生ルートを検索・計算する」を押してください。
+                </div>
+            </div>
         </div>
-        <button onclick="searchRoute()">検索・計算</button>
+
+        <!-- ▼ 保存ルート一覧タブのコンテンツ -->
+        <div id="saved-tab" class="tab-content">
+            <div class="registered-units-area">
+                <div class="table-header-area">
+                    <h2 class="section-title">💾 保存済み・お気に入りルート</h2>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 120px;">起点</th>
+                                <th style="width: 120px;">目標</th>
+                                <th>経由ルート・メモ</th>
+                                <th style="width: 100px;">総コスト</th>
+                                <th style="width: 80px;">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="saved-route-table-body">
+                            <tr>
+                                <td colspan="5" style="text-align: center; color: var(--sub-text);">保存されたルートはありません</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="log-box" id="logBox">
-        【動作確認ログ】<br>
-        CSVファイルを読み込んでいます...
-    </div>
+    <!-- タブ切り替え制御スクリプト -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
 
-    <div class="route-display" id="routeDisplay">
-        派生ルート：未検索
-    </div>
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetId = button.getAttribute('data-target');
 
-    <h2>ルート構成・機体詳細と個別コスト</h2>
-    
-    <div style="overflow-x: auto;">
-        <table id="resultTable">
-            <thead>
-                <tr>
-                    <th>No</th>
-                    <th>機体名</th>
-                    <th>変形</th>
-                    <th>HP</th>
-                    <th>装甲</th>
-                    <th>運動</th>
-                    <th>索敵</th>
-                    <th>EN</th>
-                    <th>重量</th>
-                    <th>直感</th>
-                    <th>操縦</th>
-                    <th>近</th>
-                    <th>中</th>
-                    <th>遠</th>
-                    <th>名声</th>
-                    <th>NT</th>
-                    <th>SIZE</th>
-                    <th>コスト</th>
-                    <th>クレジット</th>
-                    <th>地上</th>
-                    <th>水中</th>
-                    <th>宇宙</th>
-                    <th>空中</th>
-                    <th>種別</th>
-                </tr>
-            </thead>
-            <tbody id="tableBody">
-                <tr>
-                    <td colspan="24" style="padding: 20px; color: #8da4c4;">準備完了しました。上の検索枠に条件を入力して検索してください。</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
 
-    <div class="total-box">
-        <h3>▼ 派生ルート総合計コスト</h3>
-        <p>累計必要クレジット： <span class="total-value" id="totalCredit">0</span> クレジット</p>
-        <p>累計必要名声： <span class="total-value" id="totalFame">0</span> 名声</p>
-    </div>
+                    button.classList.add('active');
+                    const targetContent = document.getElementById(targetId);
+                    if (targetContent) {
+                        targetContent.classList.add('active');
+                    }
+                });
+            });
+        });
+    </script>
 
-    <!-- route.js を読み込みます -->
-    <script src="route.js"></script>
+    <!-- 共通ヘッダー読み込み -->
+    <script>
+        fetch('header.html')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('header-container').innerHTML = data;
+                
+                const currentPath = window.location.pathname.split('/').pop();
+                const navLinks = document.querySelectorAll('.nav-links a');
+                navLinks.forEach(link => {
+                    if (link.getAttribute('href') === currentPath) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+    </script>
+
+    <!-- メインのJavaScript（後ほど作成・紐付けます） -->
+    <script type="module" src="route.js"></script>
 </body>
 </html>
