@@ -1,4 +1,4 @@
-// hunter.js （完全版：全列名ログ出力＆クレジット列の完全自動特定）
+// hunter.js （完全版：列15=名声、列16=POINT対応）
 $(document).ready(function () {
     let globalMechDataList = [];
     let globalRouteData = [];
@@ -162,39 +162,16 @@ $(document).ready(function () {
         return isNaN(num) ? 0 : num;
     }
 
-    // 機体一覧の列インデックス検出（全ヘッダーをコンソールに出力して確認）
+    // 機体名の列(1)、名声の列(15)、POINT/クレジットの列(16)を確実に指定
     function getMechColumnIndices() {
-        let nameIdx = 1;
-        let fameIdx = 15;
-        let creditIdx = 18;
-
-        if (globalMechDataList && globalMechDataList.length > 0) {
-            let header = globalMechDataList[0];
-            
-            // デバッグ用：すべての列名とインデックスをF12コンソールに一覧表示
-            console.log("--- 【CSV全列名チェック】 ---");
-            header.forEach((colName, idx) => {
-                console.log(`[列 ${idx}] : ${colName}`);
-            });
-
-            header.forEach((col, idx) => {
-                if (!col) return;
-                if (col.includes('機体名') || col === '名称') nameIdx = idx;
-                if (col.includes('名声')) fameIdx = idx;
-                // クレジットや資金、ポイント、Gに関連しそうな言葉をさらに広くキャッチ
-                if (col.includes('クレジット') || col.includes('ポイント') || col.includes('費用') || col.includes('資金') || col.includes('G') || col.includes('cost') || col.includes('価格')) {
-                    // 名声列より後ろにあるものを優先
-                    if (idx > 2) {
-                        creditIdx = idx;
-                    }
-                }
-            });
-        }
-        console.log(`=> 検出結果: 機体名[${nameIdx}], 名声[${fameIdx}], クレジット[${creditIdx}]`);
-        return { nameIdx, fameIdx, creditIdx };
+        return { 
+            nameIdx: 1,      // 機体名
+            fameIdx: 15,     // 名声
+            creditIdx: 16    // POINT（クレジット）
+        };
     }
 
-    // 派生ルートを辿って総名声・総クレジットを計算する関数
+    // 派生ルートを辿って総名声・総POINTを計算する関数
     function calculateCumulativeCost(targetMechName) {
         const { nameIdx, fameIdx, creditIdx } = getMechColumnIndices();
         
@@ -232,11 +209,6 @@ $(document).ready(function () {
                 }
             }
         });
-
-        // ゴル・ボドルザーの計算結果をコンソールで確認
-        if (targetMechName.includes('ゴル・ボドルザー')) {
-            console.log(`★ゴル・ボドルザー集計 -> 総名声: ${sumFame}, 総クレジット: ${sumCredit}`);
-        }
 
         return { totalFame: sumFame, totalCredit: sumCredit };
     }
