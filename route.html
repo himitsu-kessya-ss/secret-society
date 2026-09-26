@@ -203,7 +203,7 @@
             });
         };
 
-        // CSV解析パーサー
+        // ダブルクォーテーション内のカンマを安全に保護する高精度CSVパーサー
         function parseCSV(text) {
             let rows = [];
             let currentRow = [];
@@ -265,21 +265,22 @@
                 return;
             }
 
-            // 3列目（インデックス2）の機体名がキーワードと完全一致する行を探す
+            // 今回のCSV構造（先頭空欄、通番、NO、目的派生検索 = インデックス3）に合わせて検索
             let targetRow = null;
             for (let i = 1; i < routeData.length; i++) {
                 let row = routeData[i];
-                if (row[2] && row[2] === keyword) {
+                // インデックス3（目的派生検索の列）がキーワードと一致するか
+                if (row[3] && row[3] === keyword) {
                     targetRow = row;
                     break;
                 }
             }
 
-            // もし3列目で完全一致が見つからない場合は、4列目以降に含まれている行をフォールバックとして探す
+            // 万が一インデックス3で見つからない場合は、行全体からキーワードを探索
             if (!targetRow) {
                 for (let i = 1; i < routeData.length; i++) {
                     let row = routeData[i];
-                    if (row.some((col, colIndex) => colIndex >= 3 && col === keyword)) {
+                    if (row.some((col, colIndex) => colIndex >= 4 && col === keyword)) {
                         targetRow = row;
                         break;
                     }
@@ -294,12 +295,11 @@
                 return;
             }
 
-            // 【超重要】1〜3列目（通しNo、機体No、3列目の機体名）は絶対にルートとして読み取らず、
-            // 4列目以降（インデックス3以降）の純粋な派生データだけを抽出する！
+            // 【重要】最初の4列（0:空欄, 1:通番, 2:NO, 3:目的派生検索）を完全に無視し、
+            // 4列目以降（インデックス4以降）の純粋な派生データだけを抽出する！
             let routeNames = [];
-            for (let i = 3; i < targetRow.length; i++) {
+            for (let i = 4; i < targetRow.length; i++) {
                 let val = targetRow[i];
-                // 空欄や「0」「-」を除外し、さらに機体一覧に存在する名前だけを採用
                 if (val && val !== "0" && val !== "-" && val !== "") {
                     let existsInMech = mechDataList.some(mechRow => mechRow.includes(val));
                     if (existsInMech) {
@@ -312,7 +312,7 @@
 
             if (routeNames.length === 0) {
                 document.getElementById("routeDisplay").innerText = "派生ルート：有効なルートが見つかりませんでした";
-                document.getElementById("tableBody").innerHTML = `<tr><td colspan="24" style="padding: 20px; color: #ff6b6b;">「${keyword}」の派生ルートデータ（4列目以降）が見つかりませんでした。</td></tr>`;
+                document.getElementById("tableBody").innerHTML = `<tr><td colspan="24" style="padding: 20px; color: #ff6b6b;">「${keyword}」の派生ルートデータが見つかりませんでした。</td></tr>`;
                 document.getElementById("totalCredit").innerText = "0";
                 document.getElementById("totalFame").innerText = "0";
                 return;
@@ -325,7 +325,6 @@
             let totalFame = 0;
 
             routeNames.forEach((mechName, index) => {
-                // 機体一覧から該当機体の詳細データを取得
                 let mechInfo = mechDataList.find(row => {
                     return row.some(col => col === mechName);
                 });
