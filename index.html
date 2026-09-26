@@ -9,7 +9,7 @@
 </head>
 <body>
 
-    <!-- ヘッダー読み込み用プレースホルダー または 共通ヘッダー -->
+    <!-- ヘッダー読み込み用プレースホルダー -->
     <div id="header-container"></div>
 
     <div id="top-page" class="page active">
@@ -34,6 +34,17 @@
     <div id="main-page" class="page">
         <div class="container">
             <div class="grid">
+
+                <!-- 新規追加：Route Simulator（新・派生ルート検索）を先頭付近に配置 -->
+                <a href="route.html" class="card">
+                    <div class="card-img">
+                        <img src="route.gif" alt="Route Simulator" class="gif-icon">
+                    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">Route Simulator</h3>
+                        <p class="card-desc">機体派生ルート検索・総コスト計算</p>
+                    </div>
+                </a>
 
                 <!-- SS Upload -->
                  <a href="upload.html" class="card">
@@ -68,25 +79,14 @@
                     </div>
                  </a>
 
-                <!-- Derivative Table -->
-                 <a href="derivatives.html" class="card">
+                <!-- Derivative Table（古い派生表は非表示に設定） -->
+                 <a href="derivatives.html" class="card" style="display: none;">
                     <div class="card-img">
                         <img src="derivatives.gif" alt="Derivative Table" class="gif-icon">
                     </div>
                     <div class="card-content">
                         <h3 class="card-title">Derivative Table</h3>
                         <p class="card-desc">機体開発・派生表<br>※多言語版の機体DB更新未</p>
-                    </div>
-                </a>
-
-                <!-- 新規追加：Route Simulator -->
-                <a href="route.html" class="card">
-                    <div class="card-img">
-                        <img src="route.gif" alt="Route Simulator" class="gif-icon">
-                    </div>
-                    <div class="card-content">
-                        <h3 class="card-title">Route Simulator</h3>
-                        <p class="card-desc">機体派生ルート検索・総コスト計算</p>
                     </div>
                 </a>
 
@@ -192,7 +192,7 @@
         </div>
     </div>
 
-<!-- ヘッダーを読み込むためのスクリプト（ヘッダー読み込み式対応） -->
+<!-- ヘッダーを読み込むためのスクリプト -->
 <script>
     fetch('header.html')
         .then(response => response.text())
