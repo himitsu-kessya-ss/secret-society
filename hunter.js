@@ -1,4 +1,4 @@
-// hunter.js （完全版：派生ルート・名声・クレジット完全対応）
+// hunter.js （完全版：クレジット列の確実な検出＆派生ルート・名声・クレジット計算）
 $(document).ready(function () {
     let globalMechDataList = [];
     let globalRouteData = [];
@@ -162,30 +162,30 @@ $(document).ready(function () {
         return isNaN(num) ? 0 : num;
     }
 
-    // 機体一覧のヘッダーから、名声・クレジットの列番号を自動検出する（デバッグログ付き）
+    // 機体一覧のヘッダーから、名声・クレジットの列番号を自動検出する（強化版）
     function getMechColumnIndices() {
         if (!globalMechDataList || globalMechDataList.length === 0) {
-            return { nameIdx: 1, fameIdx: 14, creditIdx: 18 };
+            return { nameIdx: 1, fameIdx: 15, creditIdx: 18 };
         }
         let header = globalMechDataList[0];
         let nameIdx = 1;
-        let fameIdx = 14;
-        let creditIdx = 18;
+        let fameIdx = 15;
+        let creditIdx = 18; // デフォルトの安全値
 
         header.forEach((col, idx) => {
             if (col.includes('機体名') || col === '名称') nameIdx = idx;
             if (col.includes('名声')) fameIdx = idx;
-            if (col.includes('クレジット') || col.includes('ポイント') || col.includes('費用') || col.includes('G')) {
-                // クレジットらしい列を幅広くキャッチ
-                if (idx > 2) creditIdx = idx; 
+            // クレジット、資金、コスト、Gなど、それらしい言葉を広くキャッチ
+            if (col.includes('クレジット') || col.includes('ポイント') || col.includes('費用') || col.includes('資金') || col.includes('総クレジット')) {
+                creditIdx = idx;
             }
         });
 
-        console.log("【列自動検出】 機体名列:", nameIdx, "名声列:", fameIdx, "クレジット列:", creditIdx);
+        console.log("【列自動検出・修正版】 機体名列:", nameIdx, "名声列:", fameIdx, "クレジット列:", creditIdx);
         return { nameIdx, fameIdx, creditIdx };
     }
 
-    // 派生ルートを辿って総名声・総クレジットを計算する核心関数
+    // 派生ルートを辿って総名声・総クレジットを計算する関数
     function calculateCumulativeCost(targetMechName) {
         const { nameIdx, fameIdx, creditIdx } = getMechColumnIndices();
         
@@ -275,7 +275,7 @@ $(document).ready(function () {
             $('#rank-point').html("データなし");
             return;
         }
-        $('#unit-error').hide();
+        $('#unit-error'.).hide(); // 修正: ドット誤字防止のためそのまま記載
 
         let processedUnits = filtered.map(row => {
             let name = row[nameIdx] !== undefined ? row[nameIdx] : "-";
