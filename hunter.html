@@ -11,7 +11,7 @@
     <!-- 専用のCSSファイルを読み込み -->
     <link rel="stylesheet" href="hunter.css">
     
-    <!-- スケジュール表用のデザインスタイル -->
+    <!-- 追加したスケジュール表用のスタイル -->
     <style>
         .hc-schedule-table {
             width: 100%;
@@ -23,15 +23,15 @@
             border: 1px solid #444;
             padding: 8px 12px;
             text-align: center;
+            color: #fff;
         }
         .hc-schedule-table th {
             background-color: #2c3e50;
-            color: #fff;
         }
         /* 行ごとの色分け */
-        .row-hc { background-color: rgba(0, 212, 255, 0.08); }
-        .row-scramble { background-color: rgba(255, 235, 59, 0.08); }
-        .row-both { background-color: rgba(46, 204, 113, 0.15); font-weight: bold; }
+        .row-hc { background-color: rgba(0, 212, 255, 0.1); }
+        .row-scramble { background-color: rgba(255, 235, 59, 0.1); }
+        .row-both { background-color: rgba(46, 204, 113, 0.2); font-weight: bold; }
         .schedule-subtext {
             font-size: 0.85rem;
             color: #aaa;
@@ -57,15 +57,14 @@
 <div class="main-content">
     <div id="today-tool" class="tool-container">
         <div class="tool-section">
-            <span class="tool-title">① 今日の最初のHCを計算 ＆ ＋1500戦スケジュール</span>
+            <span class="tool-title">① 今日の最初のHCを計算</span>
             <input type="number" id="input-battle" class="calc-input" placeholder="前日の最終戦闘数を入力...">
-            
-            <div id="calc-res" class="result-box" style="margin-top: 10px;">前日の数値を入力してください</div>
-            
+            <div id="calc-res" class="result-box">前日の数値を入力してください</div>
+
             <!-- ＋1500戦までのスケジュール表を表示するエリア -->
             <div id="schedule-area" style="margin-top: 20px; display: none;">
-                <div style="font-weight: bold; color: #00d4ff; margin-bottom: 5px;">📊 入力した戦闘回数 ＋1500戦までの予測一覧</div>
-                <div class="schedule-subtext">※「スクランブル」は総戦闘回数の158戦周期で計算されます。</div>
+                <div style="font-weight: bold; color: #00d4ff; margin-bottom: 5px;">📊 入力した戦闘回数 ＋1500戦までのスケジュール</div>
+                <div class="schedule-subtext">※HCは「今日の加算値」を周期として計算し、スクランブルは総戦闘回数の158戦周期で表示します。</div>
                 <table class="hc-schedule-table" id="schedule-table">
                     <thead>
                         <tr>
@@ -131,7 +130,7 @@
         });
 </script>
 
-<!-- 各種データ・ロジック用のJSファイルを読み込み -->
+<!-- 分割したJSファイルを読み込む -->
 <script src="hunter_data.js"></script>
 <script src="hunter.js"></script>
 
