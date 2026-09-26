@@ -1,4 +1,4 @@
-// hunter.js （完全版：route.html完全一致のルート累計計算・クレジットランキング対応）
+// hunter.js （完全版：正しい機体一覧CSV＆派生ルートCSV参照対応）
 $(document).ready(function () {
     let globalMechDataList = [];
     let globalRouteData = [];
@@ -171,22 +171,19 @@ $(document).ready(function () {
         };
     }
 
-    // route.htmlと同じロジック：派生ルートの全機体を辿って累計コスト（名声・クレジット）を合算する
+    // 派生ルートを辿って累計コスト（名声・クレジット）を合算する関数
     function calculateCumulativeCost(targetMechName) {
         const { nameIdx, fameIdx, creditIdx } = getMechColumnIndices();
         
-        // 1. 派生ルートCSVから該当する機体が含まれる行を探す
         let targetRow = null;
         for (let i = 0; i < globalRouteData.length; i++) {
             let row = globalRouteData[i];
-            // 行のどこかに機体名が含まれているか、または最後の要素が一致するか
             if (row && row.some(col => col === targetMechName)) {
                 targetRow = row;
                 break;
             }
         }
 
-        // 派生ルートが見つからない場合のフォールバック
         if (!targetRow) {
             let mechInfo = globalMechDataList.find(row => row && row[nameIdx] === targetMechName);
             if (mechInfo) {
@@ -202,7 +199,6 @@ $(document).ready(function () {
         let sumCredit = 0;
         let countedMechs = new Set();
 
-        // 派生ルートに含まれるすべての機体名を取り出し、重複を除いてコストを合計する
         targetRow.forEach(val => {
             if (val && val !== "0" && val !== "-" && val !== "") {
                 let mechInfo = globalMechDataList.find(row => row && row[nameIdx] === val);
@@ -217,14 +213,10 @@ $(document).ready(function () {
         return { totalFame: sumFame, totalCredit: sumCredit };
     }
 
-    // ③ CSVデータの非同期取得 ＆ ランキング算出
+    // ③ 正しいCSVファイル（機体一覧 ＆ 派生ルート）の非同期取得 ＆ ランキング算出
     function loadAndRankUnits(min, max) {
-        if (typeof HUNTER_CONFIG === 'undefined' || !HUNTER_CONFIG.csvFile) {
-            $('#unit-error').text("設定ファイル(HUNTER_CONFIG)が見つかりません。").show();
-            return;
-        }
-
-        const MECH_CSV = HUNTER_CONFIG.csvFile;
+        // hunter.htmlの階層にある route フォルダ内の正しいCSVを指定
+        const MECH_CSV = "route/GL)機体一覧 - 機体一覧.csv";
         const ROUTE_CSV = "route/GL)機体派生ルート_260924 - 派生ルート.csv";
 
         if (globalMechDataList.length > 0 && globalRouteData.length > 0) {
