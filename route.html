@@ -10,8 +10,16 @@
             color: #c0d2ec;
             font-family: 'Helvetica Neue', Arial, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 0;
         }
+
+        /* ページ全体のコンテンツを包むコンテナ */
+        .main-container {
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
         h1 {
             border-bottom: 2px solid #3a506b;
             padding-bottom: 10px;
@@ -127,94 +135,101 @@
 </head>
 <body>
 
-    <!-- ▼ 共通ヘッダーが自動でここに読み込まれます -->
+    <!-- ▼ 共通ヘッダー読み込み用コンテナ -->
     <div id="header-container"></div>
 
-    <h1>機体派生ルート検索・総コストシミュレーター</h1>
-    <p>「機体名」または「機体No.」のどちらか片方に条件を入力して、検索ボタンを押してください。</p>
+    <div class="main-container">
+        <h1>機体派生ルート検索・総コストシミュレーター</h1>
+        <p>「機体名」または「機体No.」のどちらか片方に条件を入力して、検索ボタンを押してください。</p>
 
-    <div class="search-box">
-        <div class="search-row">
-            <label for="searchName">機体名で検索：</label>
-            <input type="text" id="searchName" placeholder="例: ドリテア、ボール改 など" onkeypress="handleKeyPress(event)">
+        <div class="search-box">
+            <div class="search-row">
+                <label for="searchName">機体名で検索：</label>
+                <input type="text" id="searchName" placeholder="例: ドリテア、ボール改 など" onkeypress="handleKeyPress(event)">
+            </div>
+            <div class="search-row">
+                <label for="searchNo">機体No.で検索：</label>
+                <input type="text" id="searchNo" placeholder="例: 15、467 など" onkeypress="handleKeyPress(event)">
+            </div>
+            <button onclick="searchRoute()">検索・計算</button>
         </div>
-        <div class="search-row">
-            <label for="searchNo">機体No.で検索：</label>
-            <input type="text" id="searchNo" placeholder="例: 15、467 など" onkeypress="handleKeyPress(event)">
+
+        <!-- 読み込み件数やステータスを表示するエリア -->
+        <div class="log-box" id="logBox">
+            【動作確認ログ】<br>
+            CSVファイルを読み込んでいます...
         </div>
-        <button onclick="searchRoute()">検索・計算</button>
+
+        <div class="route-display" id="routeDisplay">
+            派生ルート：未検索
+        </div>
+
+        <h2>ルート構成・機体詳細と個別コスト</h2>
+        
+        <div style="overflow-x: auto;">
+            <table id="resultTable">
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>機体名</th>
+                        <th>変形</th>
+                        <th>HP</th>
+                        <th>装甲</th>
+                        <th>運動</th>
+                        <th>索敵</th>
+                        <th>EN</th>
+                        <th>重量</th>
+                        <th>直感</th>
+                        <th>操縦</th>
+                        <th>近</th>
+                        <th>中</th>
+                        <th>遠</th>
+                        <th>名声</th>
+                        <th>NT</th>
+                        <th>SIZE</th>
+                        <th>コスト</th>
+                        <th>クレジット</th>
+                        <th>地上</th>
+                        <th>水中</th>
+                        <th>宇宙</th>
+                        <th>空中</th>
+                        <th>種別</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr>
+                        <td colspan="24" style="padding: 20px; color: #8da4c4;">準備完了しました。上の検索枠に条件を入力して検索してください。</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="total-box">
+            <h3>▼ 派生ルート総合計コスト</h3>
+            <p>累計必要クレジット： <span class="total-value" id="totalCredit">0</span> クレジット</p>
+            <p>累計必要名声： <span class="total-value" id="totalFame">0</span> 名声</p>
+        </div>
     </div>
 
-    <!-- 読み込み件数やステータスを表示するエリア -->
-    <div class="log-box" id="logBox">
-        【動作確認ログ】<br>
-        CSVファイルを読み込んでいます...
-    </div>
-
-    <div class="route-display" id="routeDisplay">
-        派生ルート：未検索
-    </div>
-
-    <h2>ルート構成・機体詳細と個別コスト</h2>
-    
-    <div style="overflow-x: auto;">
-        <table id="resultTable">
-            <thead>
-                <tr>
-                    <th>No</th>
-                    <th>機体名</th>
-                    <th>変形</th>
-                    <th>HP</th>
-                    <th>装甲</th>
-                    <th>運動</th>
-                    <th>索敵</th>
-                    <th>EN</th>
-                    <th>重量</th>
-                    <th>直感</th>
-                    <th>操縦</th>
-                    <th>近</th>
-                    <th>中</th>
-                    <th>遠</th>
-                    <th>名声</th>
-                    <th>NT</th>
-                    <th>SIZE</th>
-                    <th>コスト</th>
-                    <th>クレジット</th>
-                    <th>地上</th>
-                    <th>水中</th>
-                    <th>宇宙</th>
-                    <th>空中</th>
-                    <th>種別</th>
-                </tr>
-            </thead>
-            <tbody id="tableBody">
-                <tr>
-                    <td colspan="24" style="padding: 20px; color: #8da4c4;">準備完了しました。上の検索枠に条件を入力して検索してください。</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <div class="total-box">
-        <h3>▼ 派生ルート総合計コスト</h3>
-        <p>累計必要クレジット： <span class="total-value" id="totalCredit">0</span> クレジット</p>
-        <p>累計必要名声： <span class="total-value" id="totalFame">0</span> 名声</p>
-    </div>
-
-    <!-- 共通ヘッダー読み込みスクリプト -->
+    <!-- 共通ヘッダー非同期読み込み ＆ アクティブ判定スクリプト -->
     <script>
         fetch('header.html')
             .then(response => response.text())
             .then(data => {
                 document.getElementById('header-container').innerHTML = data;
                 
-                const currentPath = window.location.pathname.split('/').pop();
+                // 現在のファイル名を取得して、対応するナビゲーションに active クラスを付与
+                const currentPath = window.location.pathname.split('/').pop() || 'route.html';
                 const navLinks = document.querySelectorAll('.nav-links a');
                 navLinks.forEach(link => {
-                    if (link.getAttribute('href') === currentPath) {
+                    const href = link.getAttribute('href');
+                    if (href === currentPath) {
                         link.classList.add('active');
                     }
                 });
+            })
+            .catch(error => {
+                console.error('ヘッダーの読み込みに失敗しました:', error);
             });
     </script>
 
