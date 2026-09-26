@@ -1,4 +1,4 @@
-// hunter.js （修正完了版：総名声・総クレジットの正しい累積計算対応）
+// hunter.js （完全同期版：route.jsと同じCSVパース＆総クレジット計算ロジック）
 $(document).ready(function () {
     let globalMechDataList = [];
     let globalRouteData = [];
@@ -41,16 +41,13 @@ $(document).ready(function () {
             return; 
         }
         
-        // 今日の最初のHC戦闘回数を計算
         const firstHc = Math.floor((prev / data.addVal) + 1) * data.addVal;
         $('#calc-res').html(`今日の最初のHCは <strong style="color:var(--accent-color);">${firstHc.toLocaleString()}</strong> 戦目です`);
 
-        // --- ＋1500戦までのスケジュール生成 ---
         const startBattle = prev + 1;
         const maxBattle = prev + 1500;
         let events = {};
 
-        // 1. HCのスケジュール
         let currentHc = firstHc;
         let hcCount = 1;
         while (currentHc <= maxBattle) {
@@ -62,7 +59,6 @@ $(document).ready(function () {
             hcCount++;
         }
 
-        // 2. スクランブルのスケジュール
         const scrambleInterval = 158;
         let sBattle = Math.floor(prev / scrambleInterval) * scrambleInterval + scrambleInterval;
         let scrambleCount = 1;
@@ -114,7 +110,7 @@ $(document).ready(function () {
         loadAndRankUnitsWithRoute(min, max);
     }
 
-    // CSVパーサー（ダブルクォーテーション対応）
+    // 🌟 route.js と完全同一のCSVパーサー（ダブルクォーテーション対応）
     function parseCSV(text) {
         let rows = [];
         let currentRow = [];
@@ -158,7 +154,7 @@ $(document).ready(function () {
         return rows.filter(row => row.length > 0 && row.some(val => val !== ""));
     }
 
-    // 🌟 修正版：ルート上の全コスト（総名声・総クレジット）を正確に計算する関数
+    // 🌟 route.js と完全同一の累積コスト計算関数（インデックス14：名声、インデックス18：クレジット）
     function calculateCumulativeCost(targetMechName) {
         let targetRow = null;
         for (let i = 0; i < globalRouteData.length; i++) {
@@ -207,7 +203,6 @@ $(document).ready(function () {
         routeNames.forEach(mechName => {
             let mechInfo = globalMechDataList.find(row => row.some(col => col === mechName));
             if (mechInfo) {
-                // 列14: 名声, 列18: クレジット（インデックスを確実に一致させる）
                 let fame = parseInt(String(mechInfo[14] || "0").replace(/,/g, '')) || 0;
                 let credit = parseInt(String(mechInfo[18] || "0").replace(/,/g, '')) || 0;
                 sumFame += fame;
@@ -218,7 +213,7 @@ $(document).ready(function () {
         return { totalFame: sumFame, totalCredit: sumCredit };
     }
 
-    // ③ 機体一覧と派生ルートCSVを両方読み込んで、範囲内の機体の総名声・総クレジットを算出・ランキング化
+    // ③ 機体一覧と派生ルートCSVを読み込んでランキング算出
     function loadAndRankUnitsWithRoute(min, max) {
         if (typeof HUNTER_CONFIG === 'undefined' || !HUNTER_CONFIG.csvFile) {
             $('#unit-error').text("設定ファイル(HUNTER_CONFIG)が見つかりません。").show();
@@ -248,6 +243,7 @@ $(document).ready(function () {
     }
 
     function processRanking(min, max) {
+        // globalMechDataList はヘッダー行を含むため、Noが数値の行だけを正確にフィルタリング
         const filtered = globalMechDataList.filter(row => {
             let no = parseInt(row[0]);
             return !isNaN(no) && no >= min && no <= max;
@@ -275,7 +271,7 @@ $(document).ready(function () {
 
         // 総名声ランキング ベスト3 (降順)
         displayCustomRank(processedUnits, 'totalFame', '#rank-fame', '総名声', '#00d4ff');
-        // 🌟 修正：総クレジットランキング ベスト3 (降順)
+        // 総クレジットランキング ベスト3 (降順)
         displayCustomRank(processedUnits, 'totalCredit', '#rank-point', '総クレジット', '#ffeb3b');
     }
 
