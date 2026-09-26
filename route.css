@@ -1,0 +1,136 @@
+<!-- route.css -->
+
+body {
+    background-color: #0b0f19;
+    color: #c0d2ec;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+}
+
+h1 {
+    border-bottom: 2px solid #3a506b;
+    padding-bottom: 10px;
+    font-size: 22px;
+    letter-spacing: 1px;
+    display: inline-block;
+    background: #111a2e;
+    padding: 10px 20px;
+    border: 1px solid #2b4c7e;
+}
+
+p {
+    font-size: 14px;
+    color: #8da4c4;
+}
+
+.search-box {
+    background: #131c31;
+    border: 1px solid #2b4c7e;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+}
+
+.search-row {
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.search-row label {
+    width: 130px;
+    font-weight: bold;
+    color: #8ab4f8;
+    font-size: 14px;
+}
+
+input[type="text"] {
+    background: #070b14;
+    border: 1px solid #3a506b;
+    color: #fff;
+    padding: 8px 12px;
+    font-size: 15px;
+    width: 280px;
+}
+
+button {
+    background: #1e3a60;
+    color: #fff;
+    border: 1px solid #4a75ab;
+    padding: 10px 25px;
+    font-size: 15px;
+    cursor: pointer;
+    font-weight: bold;
+    margin-top: 5px;
+}
+
+button:hover {
+    background: #284e80;
+}
+
+.log-box {
+    background: #1a1215;
+    border: 1px dashed #7e3a3a;
+    padding: 10px 15px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: #e8a0a0;
+    line-height: 1.5;
+}
+
+.route-display {
+    background: #111a2e;
+    border: 1px solid #2b4c7e;
+    padding: 15px;
+    margin-bottom: 20px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #64b5f6;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #0d1424;
+    margin-top: 10px;
+    font-size: 13px;
+}
+
+th, td {
+    border: 1px solid #223454;
+    padding: 8px 4px;
+    text-align: center;
+}
+
+th {
+    background: #14223d;
+    color: #8ab4f8;
+    font-size: 12px;
+}
+
+td.name-col {
+    text-align: left;
+    padding-left: 8px;
+}
+
+.total-box {
+    background: #131c31;
+    border: 1px solid #2b4c7e;
+    padding: 15px 20px;
+    margin-top: 20px;
+}
+
+.total-box h3 {
+    margin-top: 0;
+    color: #64b5f6;
+    font-size: 16px;
+}
+
+.total-value {
+    font-size: 18px;
+    font-weight: bold;
+    color: #ffca28;
+}
