@@ -1,4 +1,4 @@
-// hunter.js （完全版：列ズレ修正・総クレジット一致対応）
+// hunter.js （完全版：route.html完全一致のルート累計計算・クレジットランキング対応）
 $(document).ready(function () {
     let globalMechDataList = [];
     let globalRouteData = [];
@@ -162,28 +162,31 @@ $(document).ready(function () {
         return isNaN(num) ? 0 : num;
     }
 
-    // 15列目を名声(インデックス14)、16列目をPOINT/クレジット(インデックス15)に設定
+    // 機体名の列(1)、名声の列(14 = 15列目)、POINT/クレジットの列(15 = 16列目)
     function getMechColumnIndices() {
         return { 
-            nameIdx: 1,       // 2列目（機体名）
-            fameIdx: 14,      // 15列目（名声）
-            creditIdx: 15     // 16列目（POINT / クレジット）
+            nameIdx: 1,      // 機体名
+            fameIdx: 14,     // 名声
+            creditIdx: 15    // POINT（クレジット）
         };
     }
 
-    // 派生ルートを辿って総名声・総POINTを計算する関数
+    // route.htmlと同じロジック：派生ルートの全機体を辿って累計コスト（名声・クレジット）を合算する
     function calculateCumulativeCost(targetMechName) {
         const { nameIdx, fameIdx, creditIdx } = getMechColumnIndices();
         
+        // 1. 派生ルートCSVから該当する機体が含まれる行を探す
         let targetRow = null;
         for (let i = 0; i < globalRouteData.length; i++) {
             let row = globalRouteData[i];
+            // 行のどこかに機体名が含まれているか、または最後の要素が一致するか
             if (row && row.some(col => col === targetMechName)) {
                 targetRow = row;
                 break;
             }
         }
 
+        // 派生ルートが見つからない場合のフォールバック
         if (!targetRow) {
             let mechInfo = globalMechDataList.find(row => row && row[nameIdx] === targetMechName);
             if (mechInfo) {
@@ -199,6 +202,7 @@ $(document).ready(function () {
         let sumCredit = 0;
         let countedMechs = new Set();
 
+        // 派生ルートに含まれるすべての機体名を取り出し、重複を除いてコストを合計する
         targetRow.forEach(val => {
             if (val && val !== "0" && val !== "-" && val !== "") {
                 let mechInfo = globalMechDataList.find(row => row && row[nameIdx] === val);
