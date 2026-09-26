@@ -13,7 +13,6 @@
             padding: 0;
         }
 
-        /* ページ全体のコンテンツを包むコンテナ */
         .main-container {
             padding: 20px;
             max-width: 1400px;
@@ -131,6 +130,10 @@
             font-weight: bold;
             color: #ffca28;
         }
+        .cost-col {
+            color: #ffca28;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -164,7 +167,7 @@
             派生ルート：未検索
         </div>
 
-        <h2>ルート構成・機体詳細と個別コスト</h2>
+        <h2>ルート構成・機体詳細と個別コスト（＋総作成コスト）</h2>
         
         <div style="overflow-x: auto;">
             <table id="resultTable">
@@ -194,11 +197,14 @@
                         <th>宇宙</th>
                         <th>空中</th>
                         <th>種別</th>
+                        <!-- 🌟 新規追加の列 -->
+                        <th style="background: #1a2c4e; color: #ffca28;">総名声</th>
+                        <th style="background: #1a2c4e; color: #ffca28;">総クレジット</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
                     <tr>
-                        <td colspan="24" style="padding: 20px; color: #8da4c4;">準備完了しました。上の検索枠に条件を入力して検索してください。</td>
+                        <td colspan="26" style="padding: 20px; color: #8da4c4;">準備完了しました。上の検索枠に条件を入力して検索してください。</td>
                     </tr>
                 </tbody>
             </table>
@@ -218,7 +224,6 @@
             .then(data => {
                 document.getElementById('header-container').innerHTML = data;
                 
-                // 現在のファイル名を取得して、対応するナビゲーションに active クラスを付与
                 const currentPath = window.location.pathname.split('/').pop() || 'route.html';
                 const navLinks = document.querySelectorAll('.nav-links a');
                 navLinks.forEach(link => {
@@ -314,6 +319,69 @@
             }
         }
 
+        // 🌟 指定された機体名までのルート上の全コスト（総名声・総クレジット）を逆引き・合算するヘルパー関数
+        function calculateCumulativeCost(targetMechName) {
+            // 派生ルートデータから該当機体がゴールになっている行を探す
+            let targetRow = null;
+            for (let i = 0; i < routeData.length; i++) {
+                let row = routeData[i];
+                if (row[2] && row[2] === targetMechName) {
+                    targetRow = row;
+                    break;
+                }
+            }
+            // 見つからない場合はルート全体のどこかに含まれていないか探す
+            if (!targetRow) {
+                for (let i = 0; i < routeData.length; i++) {
+                    let row = routeData[i];
+                    if (row.some((col, colIndex) => colIndex >= 3 && col === targetMechName)) {
+                        targetRow = row;
+                        break;
+                    }
+                }
+            }
+
+            if (!targetRow) {
+                // ルートデータにない場合は単体機のコストを返す
+                let mechInfo = mechDataList.find(row => row.some(col => col === targetMechName));
+                if (mechInfo) {
+                    let fame = parseInt(String(mechInfo[14]).replace(/,/g, '')) || 0;
+                    let credit = parseInt(String(mechInfo[18]).replace(/,/g, '')) || 0;
+                    return { totalFame: fame, totalCredit: credit, routeNames: [targetMechName] };
+                }
+                return { totalFame: 0, totalCredit: 0, routeNames: [] };
+            }
+
+            // ルート上の機体名を抽出
+            let routeNames = [];
+            for (let i = 3; i < targetRow.length; i++) {
+                let val = targetRow[i];
+                if (val && val !== "0" && val !== "-" && val !== "") {
+                    let existsInMech = mechDataList.some(mechRow => mechRow.includes(val));
+                    if (existsInMech) {
+                        if (!routeNames.includes(val)) {
+                            routeNames.push(val);
+                        }
+                    }
+                }
+            }
+
+            let sumFame = 0;
+            let sumCredit = 0;
+
+            routeNames.forEach(mechName => {
+                let mechInfo = mechDataList.find(row => row.some(col => col === mechName));
+                if (mechInfo) {
+                    let fame = parseInt(String(mechInfo[14]).replace(/,/g, '')) || 0;
+                    let credit = parseInt(String(mechInfo[18]).replace(/,/g, '')) || 0;
+                    sumFame += fame;
+                    sumCredit += credit;
+                }
+            });
+
+            return { totalFame: sumFame, totalCredit: sumCredit, routeNames: routeNames };
+        }
+
         function searchRoute() {
             if (mechDataList.length === 0 || routeData.length === 0) {
                 alert("まだデータの読み込みが完了していません。");
@@ -362,7 +430,7 @@
 
             if (!targetRow) {
                 document.getElementById("routeDisplay").innerText = "派生ルート：見つかりませんでした";
-                document.getElementById("tableBody").innerHTML = `<tr><td colspan="24" style="padding: 20px; color: #ff6b6b;">指定された条件に一致する派生ルートが見つかりませんでした。</td></tr>`;
+                document.getElementById("tableBody").innerHTML = `<tr><td colspan="26" style="padding: 20px; color: #ff6b6b;">指定された条件に一致する派生ルートが見つかりませんでした。</td></tr>`;
                 document.getElementById("totalCredit").innerText = "0";
                 document.getElementById("totalFame").innerText = "0";
                 return;
@@ -383,7 +451,7 @@
 
             if (routeNames.length === 0) {
                 document.getElementById("routeDisplay").innerText = "派生ルート：有効なルートが見つかりませんでした";
-                document.getElementById("tableBody").innerHTML = `<tr><td colspan="24" style="padding: 20px; color: #ff6b6b;">有効な派生ルートデータが見つかりませんでした。</td></tr>`;
+                document.getElementById("tableBody").innerHTML = `<tr><td colspan="26" style="padding: 20px; color: #ff6b6b;">有効な派生ルートデータが見つかりませんでした。</td></tr>`;
                 document.getElementById("totalCredit").innerText = "0";
                 document.getElementById("totalFame").innerText = "0";
                 return;
@@ -429,6 +497,9 @@
                     totalCredit += creditNum;
                     totalFame += fameNum;
 
+                    // 🌟 この機体までの累計コストを計算
+                    let costCalc = calculateCumulativeCost(mechName);
+
                     tableHtml += `
                         <tr>
                             <td>${index + 1}</td>
@@ -455,6 +526,9 @@
                             <td>${space}</td>
                             <td>${air}</td>
                             <td class="name-col">${type}</td>
+                            <!-- 🌟 追加列：総名声・総クレジット -->
+                            <td class="cost-col">${costCalc.totalFame.toLocaleString()}</td>
+                            <td class="cost-col">${costCalc.totalCredit.toLocaleString()}</td>
                         </tr>
                     `;
                 } else {
@@ -462,7 +536,7 @@
                         <tr>
                             <td>${index + 1}</td>
                             <td class="name-col">${mechName}</td>
-                            <td colspan="22" style="color: #ff6b6b;">「機体一覧」CSVに詳細データが見つかりません</td>
+                            <td colspan="25" style="color: #ff6b6b;">「機体一覧」CSVに詳細データが見つかりません</td>
                         </tr>
                     `;
                 }
