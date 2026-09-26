@@ -32,23 +32,36 @@
             margin-bottom: 20px;
             border-radius: 4px;
         }
+        .search-row {
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .search-row label {
+            width: 130px;
+            font-weight: bold;
+            color: #8ab4f8;
+            font-size: 14px;
+        }
         input[type="text"] {
             background: #070b14;
             border: 1px solid #3a506b;
             color: #fff;
             padding: 8px 12px;
-            font-size: 16px;
-            width: 300px;
-            margin-right: 10px;
+            font-size: 15px;
+            width: 280px;
         }
         button {
             background: #1e3a60;
             color: #fff;
             border: 1px solid #4a75ab;
-            padding: 9px 20px;
+            padding: 10px 25px;
             font-size: 15px;
             cursor: pointer;
             font-weight: bold;
+            margin-top: 5px;
         }
         button:hover {
             background: #284e80;
@@ -113,11 +126,17 @@
 <body>
 
     <h1>機体派生ルート検索・総コストシミュレーター</h1>
-    <p>作りたい最終機体の名前を検索すると、CSVデータから自動でルートを読み込んで計算します。</p>
+    <p>「機体名」または「機体No.」のどちらか片方に条件を入力して、検索ボタンを押してください。</p>
 
     <div class="search-box">
-        <label for="searchInput">最終機体名で検索：</label>
-        <input type="text" id="searchInput" placeholder="例: ドリテア、ボール改 など" onkeypress="handleKeyPress(event)">
+        <div class="search-row">
+            <label for="searchName">機体名で検索：</label>
+            <input type="text" id="searchName" placeholder="例: ドリテア、ボール改 など" onkeypress="handleKeyPress(event)">
+        </div>
+        <div class="search-row">
+            <label for="searchNo">機体No.で検索：</label>
+            <input type="text" id="searchNo" placeholder="例: 15、467 など" onkeypress="handleKeyPress(event)">
+        </div>
         <button onclick="searchRoute()">検索・計算</button>
     </div>
 
@@ -164,7 +183,7 @@
             </thead>
             <tbody id="tableBody">
                 <tr>
-                    <td colspan="24" style="padding: 20px; color: #8da4c4;">準備完了しました。上の検索窓に機体名を入力して検索してください。</td>
+                    <td colspan="24" style="padding: 20px; color: #8da4c4;">準備完了しました。上の検索枠に条件を入力して検索してください。</td>
                 </tr>
             </tbody>
         </table>
@@ -192,8 +211,6 @@
                 mechDataList = parseCSV(mechCsv);
                 routeData = parseCSV(routeCsv);
 
-                // 新しい仕様に基づき、ヘッダー行を除いてデータがある行を正しくカウントする
-                // インデックス2（目的派生検索の列）に文字があり、かつヘッダーの「目的派生検索」ではないもの
                 let validRouteRows = routeData.filter(row => row.length > 2 && row[2] !== "" && row[2] !== "目的派生検索");
 
                 document.getElementById("logBox").innerHTML = 
@@ -205,7 +222,7 @@
             });
         };
 
-        // ダブルクォーテーション内のカンマを保護しつつ、全行を確実に配列化するパーサー
+        // CSVパーサー（ダブルクォーテーション対応）
         function parseCSV(text) {
             let rows = [];
             let currentRow = [];
@@ -261,27 +278,43 @@
                 return;
             }
 
-            const keyword = document.getElementById("searchInput").value.trim();
-            if (!keyword) {
-                alert("検索する機体名を入力してください。");
+            const nameKeyword = document.getElementById("searchName").value.trim();
+            const noKeyword = document.getElementById("searchNo").value.trim();
+
+            if (!nameKeyword && !noKeyword) {
+                alert("「機体名」または「機体No.」のどちらかを入力してください。");
                 return;
             }
 
-            // 新仕様：インデックス2（目的派生検索の列）がキーワードと完全に一致する行を探索
             let targetRow = null;
-            for (let i = 0; i < routeData.length; i++) {
-                let row = routeData[i];
-                if (row[2] && row[2] === keyword) {
-                    targetRow = row;
-                    break;
+
+            // 1. 機体No.の枠に入力がある場合優先してNo.（列index: 1）で検索
+            if (noKeyword) {
+                for (let i = 0; i < routeData.length; i++) {
+                    let row = routeData[i];
+                    if (row[1] && row[1] === noKeyword) {
+                        targetRow = row;
+                        break;
+                    }
                 }
             }
 
-            // 見つからない場合は、ルート内のどこかにその機体名が含まれていないか柔軟に探す
-            if (!targetRow) {
+            // 2. 機体名の枠に入力がある場合、またはNo.で見つからなかった場合、機体名（目的派生検索 列index: 2）で検索
+            if (!targetRow && nameKeyword) {
                 for (let i = 0; i < routeData.length; i++) {
                     let row = routeData[i];
-                    if (row.some((col, colIndex) => colIndex >= 3 && col === keyword)) {
+                    if (row[2] && row[2] === nameKeyword) {
+                        targetRow = row;
+                        break;
+                    }
+                }
+            }
+
+            // 3. それでも見つからない場合、ルート内のどこかに機体名が含まれていないか柔軟に探す
+            if (!targetRow && nameKeyword) {
+                for (let i = 0; i < routeData.length; i++) {
+                    let row = routeData[i];
+                    if (row.some((col, colIndex) => colIndex >= 3 && col === nameKeyword)) {
                         targetRow = row;
                         break;
                     }
@@ -290,18 +323,17 @@
 
             if (!targetRow) {
                 document.getElementById("routeDisplay").innerText = "派生ルート：見つかりませんでした";
-                document.getElementById("tableBody").innerHTML = `<tr><td colspan="24" style="padding: 20px; color: #ff6b6b;">「${keyword}」に一致する派生ルートが見つかりませんでした。</td></tr>`;
+                document.getElementById("tableBody").innerHTML = `<tr><td colspan="24" style="padding: 20px; color: #ff6b6b;">指定された条件に一致する派生ルートが見つかりませんでした。</td></tr>`;
                 document.getElementById("totalCredit").innerText = "0";
                 document.getElementById("totalFame").innerText = "0";
                 return;
             }
 
-            // 新仕様：最初の3列（0:派生表通番, 1:NO, 2:目的派生検索）を無視し、3列目以降（index 3以降）のルートを抽出
+            // 3列目以降（index 3以降）のルートを抽出
             let routeNames = [];
             for (let i = 3; i < targetRow.length; i++) {
                 let val = targetRow[i];
                 if (val && val !== "0" && val !== "-" && val !== "") {
-                    // 機体一覧CSVに存在する機体名か確認して追加
                     let existsInMech = mechDataList.some(mechRow => mechRow.includes(val));
                     if (existsInMech) {
                         if (!routeNames.includes(val)) {
@@ -313,7 +345,7 @@
 
             if (routeNames.length === 0) {
                 document.getElementById("routeDisplay").innerText = "派生ルート：有効なルートが見つかりませんでした";
-                document.getElementById("tableBody").innerHTML = `<tr><td colspan="24" style="padding: 20px; color: #ff6b6b;">「${keyword}」の派生ルートデータが見つかりませんでした。</td></tr>`;
+                document.getElementById("tableBody").innerHTML = `<tr><td colspan="24" style="padding: 20px; color: #ff6b6b;">有効な派生ルートデータが見つかりませんでした。</td></tr>`;
                 document.getElementById("totalCredit").innerText = "0";
                 document.getElementById("totalFame").innerText = "0";
                 return;
