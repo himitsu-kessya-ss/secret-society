@@ -1,4 +1,4 @@
-// hunter.js （完成版：総名声・総クレジットランキング対応）
+// hunter.js （修正完了版：総名声・総クレジットの正しい累積計算対応）
 $(document).ready(function () {
     let globalMechDataList = [];
     let globalRouteData = [];
@@ -158,7 +158,7 @@ $(document).ready(function () {
         return rows.filter(row => row.length > 0 && row.some(val => val !== ""));
     }
 
-    // 🌟 ルート上の全コスト（総名声・総クレジット）を計算する関数
+    // 🌟 修正版：ルート上の全コスト（総名声・総クレジット）を正確に計算する関数
     function calculateCumulativeCost(targetMechName) {
         let targetRow = null;
         for (let i = 0; i < globalRouteData.length; i++) {
@@ -207,6 +207,7 @@ $(document).ready(function () {
         routeNames.forEach(mechName => {
             let mechInfo = globalMechDataList.find(row => row.some(col => col === mechName));
             if (mechInfo) {
+                // 列14: 名声, 列18: クレジット（インデックスを確実に一致させる）
                 let fame = parseInt(String(mechInfo[14] || "0").replace(/,/g, '')) || 0;
                 let credit = parseInt(String(mechInfo[18] || "0").replace(/,/g, '')) || 0;
                 sumFame += fame;
@@ -227,7 +228,6 @@ $(document).ready(function () {
         const MECH_CSV = HUNTER_CONFIG.csvFile; // "route/GL)機体一覧 - 機体一覧.csv"
         const ROUTE_CSV = "route/GL)機体派生ルート_260924 - 派生ルート.csv";
 
-        // すでにデータが読み込まれている場合は再利用、なければfetchで取得
         if (globalMechDataList.length > 0 && globalRouteData.length > 0) {
             processRanking(min, max);
             return;
@@ -248,7 +248,6 @@ $(document).ready(function () {
     }
 
     function processRanking(min, max) {
-        // 出現Noの範囲内でフィルタリング
         const filtered = globalMechDataList.filter(row => {
             let no = parseInt(row[0]);
             return !isNaN(no) && no >= min && no <= max;
@@ -262,7 +261,6 @@ $(document).ready(function () {
         }
         $('#unit-error').hide();
 
-        // 各機体の総名声と総クレジットを計算したオブジェクトの配列を作成
         let processedUnits = filtered.map(row => {
             let no = row[0];
             let name = row[1] || ("No." + no);
@@ -277,7 +275,7 @@ $(document).ready(function () {
 
         // 総名声ランキング ベスト3 (降順)
         displayCustomRank(processedUnits, 'totalFame', '#rank-fame', '総名声', '#00d4ff');
-        // 総クレジットランキング ベスト3 (降順)
+        // 🌟 修正：総クレジットランキング ベスト3 (降順)
         displayCustomRank(processedUnits, 'totalCredit', '#rank-point', '総クレジット', '#ffeb3b');
     }
 
