@@ -15,14 +15,32 @@
     <div class="container">
         <h1 class="page-title">Route Simulator (機体派生ルート検索・総コストシミュレーター)</h1>
 
-        <!-- ▼ タブ切り替えボタン（必要に応じて拡張可能） -->
+        <!-- ▼ タブ切り替えボタン -->
         <div class="tab-buttons">
-            <button class="tab-btn active" data-target="simulator-tab">🗺️ 派生ルート検索・計算</button>
-            <button class="tab-btn" data-target="saved-tab">💾 保存ルート一覧</button>
+            <button class="tab-btn active" data-target="simulator-tab">
+                <span class="tab-title">🗺️ 派生ルート検索・計算</span>
+                <span class="tab-subtitle">ルートの検索と総コスト算出</span>
+            </button>
+            <button class="tab-btn" data-target="saved-tab">
+                <span class="tab-title">💾 保存ルート一覧</span>
+                <span class="tab-subtitle">お気に入り・作成したルートの管理</span>
+            </button>
         </div>
 
         <!-- ▼ シミュレータータブのコンテンツ -->
         <div id="simulator-tab" class="tab-content active">
+            
+            <!-- 🌟 データ読み込み件数・ステータス表示エリア（復活！） -->
+            <div class="guide-card" style="margin-bottom: 20px; padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 8px; color: var(--accent-color); font-weight: bold; font-size: 0.95rem;">
+                    <span>📊 データベース状態：</span>
+                </div>
+                <div style="display: flex; gap: 15px; font-size: 0.85rem; color: var(--sub-text);">
+                    <span>機体データ: <strong id="unit-count" style="color: var(--text-color);">読み込み中...</strong></span>
+                    <span>派生ルートデータ: <strong id="route-data-count" style="color: var(--text-color);">読み込み中...</strong></span>
+                </div>
+            </div>
+
             <!-- 使い方説明エリア -->
             <div class="guide-card">
                 <h2 class="guide-title">ℹ️ ルートシミュレーターの使い方</h2>
@@ -53,7 +71,8 @@
 
             <!-- 検索結果表示エリア -->
             <div class="list-header-area" style="margin-top: 30px;">
-                <h2 style="margin: 0;">計算結果・派生ルート</h2>
+                <h2 style="margin: 0; font-size: 1.1rem;">計算結果・派生ルート</h2>
+                <span id="result-status" style="font-size: 0.85rem; color: var(--sub-text);">未実行</span>
             </div>
 
             <div id="loading-msg" style="display: none; padding: 20px; text-align: center; color: var(--sub-text);">ルートを計算中...</div>
@@ -71,6 +90,7 @@
             <div class="registered-units-area">
                 <div class="table-header-area">
                     <h2 class="section-title">💾 保存済み・お気に入りルート</h2>
+                    <span style="font-size: 0.85rem; color: var(--sub-text);">保存件数: <strong id="saved-count" style="color: var(--text-color);">0件</strong></span>
                 </div>
                 <div class="table-container">
                     <table>
@@ -134,7 +154,7 @@
             });
     </script>
 
-    <!-- メインのJavaScript（後ほど作成・紐付けます） -->
+    <!-- メインのJavaScript（計算処理や件数カウントの連携先） -->
     <script type="module" src="route.js"></script>
 </body>
 </html>
