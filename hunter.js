@@ -1,4 +1,4 @@
-// hunter.js （完全版：派生ルート完全対応＆ランキング計算ロジック）
+// hunter.js （完全版：派生ルート・名声・クレジット完全対応）
 $(document).ready(function () {
     let globalMechDataList = [];
     let globalRouteData = [];
@@ -162,7 +162,7 @@ $(document).ready(function () {
         return isNaN(num) ? 0 : num;
     }
 
-    // 機体一覧のヘッダーから、名声・クレジットの列番号を自動検出する
+    // 機体一覧のヘッダーから、名声・クレジットの列番号を自動検出する（デバッグログ付き）
     function getMechColumnIndices() {
         if (!globalMechDataList || globalMechDataList.length === 0) {
             return { nameIdx: 1, fameIdx: 14, creditIdx: 18 };
@@ -175,9 +175,13 @@ $(document).ready(function () {
         header.forEach((col, idx) => {
             if (col.includes('機体名') || col === '名称') nameIdx = idx;
             if (col.includes('名声')) fameIdx = idx;
-            if (col.includes('クレジット') || col.includes('ポイント')) creditIdx = idx;
+            if (col.includes('クレジット') || col.includes('ポイント') || col.includes('費用') || col.includes('G')) {
+                // クレジットらしい列を幅広くキャッチ
+                if (idx > 2) creditIdx = idx; 
+            }
         });
 
+        console.log("【列自動検出】 機体名列:", nameIdx, "名声列:", fameIdx, "クレジット列:", creditIdx);
         return { nameIdx, fameIdx, creditIdx };
     }
 
@@ -185,18 +189,15 @@ $(document).ready(function () {
     function calculateCumulativeCost(targetMechName) {
         const { nameIdx, fameIdx, creditIdx } = getMechColumnIndices();
         
-        // 1. 派生ルートCSVから該当機体（2列目、または3列目以降）を探す
         let targetRow = null;
         for (let i = 0; i < globalRouteData.length; i++) {
             let row = globalRouteData[i];
-            // 派生ルートの構造に合わせてチェック（例: row[2] が機体名など）
             if (row.some(col => col === targetMechName)) {
                 targetRow = row;
                 break;
             }
         }
 
-        // 派生ルートにデータが見つからない場合は、機体一覧の単体データを返す
         if (!targetRow) {
             let mechInfo = globalMechDataList.find(row => row[nameIdx] === targetMechName);
             if (mechInfo) {
@@ -208,7 +209,6 @@ $(document).ready(function () {
             return { totalFame: 0, totalCredit: 0 };
         }
 
-        // 2. 派生ルートの行に含まれるすべての機体名を抽出し、コストを合算する
         let sumFame = 0;
         let sumCredit = 0;
         let countedMechs = new Set();
@@ -259,13 +259,11 @@ $(document).ready(function () {
     function processRanking(min, max) {
         const { nameIdx } = getMechColumnIndices();
 
-        // Noが純粋な数字の行だけを抽出（ヘッダー除外）
         const validMechs = globalMechDataList.filter(row => {
             let no = parseNumber(row[0]);
             return no > 0;
         });
 
-        // 指定された出現Noの範囲でフィルタリング
         const filtered = validMechs.filter(row => {
             let no = parseNumber(row[0]);
             return no >= min && no <= max;
@@ -279,7 +277,6 @@ $(document).ready(function () {
         }
         $('#unit-error').hide();
 
-        // 各機体の総名声と総クレジットを計算
         let processedUnits = filtered.map(row => {
             let name = row[nameIdx] !== undefined ? row[nameIdx] : "-";
             let costs = calculateCumulativeCost(name);
@@ -290,7 +287,6 @@ $(document).ready(function () {
             };
         });
 
-        // ランキングを描画（降順で上位3件）
         displayCustomRank(processedUnits, 'totalFame', '#rank-fame', '総名声', '#00d4ff');
         displayCustomRank(processedUnits, 'totalCredit', '#rank-point', '総クレジット', '#ffeb3b');
     }
