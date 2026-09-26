@@ -1,4 +1,4 @@
-// hunter.js （完全版：正しい機体一覧CSV＆派生ルートCSV参照対応）
+// hunter.js （完全版：名声15番目・クレジット19番目対応）
 $(document).ready(function () {
     let globalMechDataList = [];
     let globalRouteData = [];
@@ -162,12 +162,12 @@ $(document).ready(function () {
         return isNaN(num) ? 0 : num;
     }
 
-    // 機体名の列(1)、名声の列(14 = 15列目)、POINT/クレジットの列(15 = 16列目)
+    // ★列位置の指定：機体名=2列目(index 1)、名声=15番目(index 14)、クレジット=19番目(index 18)
     function getMechColumnIndices() {
         return { 
             nameIdx: 1,      // 機体名
-            fameIdx: 14,     // 名声
-            creditIdx: 15    // POINT（クレジット）
+            fameIdx: 14,     // 名声（15番目）
+            creditIdx: 18    // クレジット（19番目）
         };
     }
 
@@ -215,7 +215,6 @@ $(document).ready(function () {
 
     // ③ 正しいCSVファイル（機体一覧 ＆ 派生ルート）の非同期取得 ＆ ランキング算出
     function loadAndRankUnits(min, max) {
-        // hunter.htmlの階層にある route フォルダ内の正しいCSVを指定
         const MECH_CSV = "route/GL)機体一覧 - 機体一覧.csv";
         const ROUTE_CSV = "route/GL)機体派生ルート_260924 - 派生ルート.csv";
 
