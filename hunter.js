@@ -59,14 +59,33 @@ $(document).ready(function () {
             hcCount++;
         }
 
-        // 2. スクランブルのスケジュール（総戦闘回数の158戦周期）
+        // 2. スクランブルのスケジュール（158戦周期。入力値より後に出現する最初の位置を「1回目」とする）
         const scrambleInterval = 158;
-        let sBattle = Math.ceil(startBattle / scrambleInterval) * scrambleInterval;
+        let sBattle = Math.floor(prev / scrambleInterval) * scrambleInterval + scrambleInterval;
+        let scrambleCount = 1; // 今日以降の最初の出現を「1回目」とするため1からスタート
+
+        // ※もし初回位置より前の段階ですでに過去の回数が進んでいる場合の正確な位置合わせ
+        // 上記の計算（Math.floor(prev / 158) * 158 + 158）により、
+        // 200戦の場合、sBattleは最初の316戦目になり、scrambleCountは「1回目」から始まります。
+
+        // 過去のすべてのスクランブル位置を辿って今日の最初の回数を見つけるループ
+        let tempS = scrambleInterval;
+        let actualCount = 1;
+        while (tempS <= prev) {
+            tempS += scrambleInterval;
+            actualCount++;
+        }
+        // これにより、例えば200戦なら tempS は 316戦目、actualCount は 1回目 になります
+        sBattle = tempS;
+        scrambleCount = actualCount;
+
         while (sBattle <= maxBattle) {
-            let scrambleCount = Math.round(sBattle / scrambleInterval);
-            if (!events[sBattle]) events[sBattle] = { hc: '', scramble: '' };
-            events[sBattle].scramble = `${scrambleCount}回目`;
+            if (sBattle >= startBattle) {
+                if (!events[sBattle]) events[sBattle] = { hc: '', scramble: '' };
+                events[sBattle].scramble = `${scrambleCount}回目`;
+            }
             sBattle += scrambleInterval;
+            scrambleCount++;
         }
 
         // 戦闘回数の昇順に並び替え
