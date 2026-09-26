@@ -2,159 +2,438 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Route Simulator - 秘密結社の部屋</title>
-    <!-- 外部CSSファイルの読み込み -->
-    <link rel="stylesheet" href="route.css">
+    <title>機体派生ルート検索・総コストシミュレーター</title>
+    <style>
+        body {
+            background-color: #0b0f19;
+            color: #c0d2ec;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            border-bottom: 2px solid #3a506b;
+            padding-bottom: 10px;
+            font-size: 22px;
+            letter-spacing: 1px;
+            display: inline-block;
+            background: #111a2e;
+            padding: 10px 20px;
+            border: 1px solid #2b4c7e;
+        }
+        p {
+            font-size: 14px;
+            color: #8da4c4;
+        }
+        .search-box {
+            background: #131c31;
+            border: 1px solid #2b4c7e;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .search-row {
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .search-row label {
+            width: 130px;
+            font-weight: bold;
+            color: #8ab4f8;
+            font-size: 14px;
+        }
+        input[type="text"] {
+            background: #070b14;
+            border: 1px solid #3a506b;
+            color: #fff;
+            padding: 8px 12px;
+            font-size: 15px;
+            width: 280px;
+        }
+        button {
+            background: #1e3a60;
+            color: #fff;
+            border: 1px solid #4a75ab;
+            padding: 10px 25px;
+            font-size: 15px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        button:hover {
+            background: #284e80;
+        }
+        .log-box {
+            background: #1a1215;
+            border: 1px dashed #7e3a3a;
+            padding: 10px 15px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            color: #e8a0a0;
+            line-height: 1.5;
+        }
+        .route-display {
+            background: #111a2e;
+            border: 1px solid #2b4c7e;
+            padding: 15px;
+            margin-bottom: 20px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #64b5f6;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #0d1424;
+            margin-top: 10px;
+            font-size: 13px;
+        }
+        th, td {
+            border: 1px solid #223454;
+            padding: 8px 4px;
+            text-align: center;
+        }
+        th {
+            background: #14223d;
+            color: #8ab4f8;
+            font-size: 12px;
+        }
+        td.name-col {
+            text-align: left;
+            padding-left: 8px;
+        }
+        .total-box {
+            background: #131c31;
+            border: 1px solid #2b4c7e;
+            padding: 15px 20px;
+            margin-top: 20px;
+        }
+        .total-box h3 {
+            margin-top: 0;
+            color: #64b5f6;
+            font-size: 16px;
+        }
+        .total-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #ffca28;
+        }
+    </style>
 </head>
 <body>
 
-    <!-- ▼ 共通ヘッダーが自動でここに読み込まれます -->
-    <div id="header-container"></div>
+    <h1>機体派生ルート検索・総コストシミュレーター</h1>
+    <p>「機体名」または「機体No.」のどちらか片方に条件を入力して、検索ボタンを押してください。</p>
 
-    <div class="container">
-        <h1 class="page-title">Route Simulator (機体派生ルート検索・総コストシミュレーター)</h1>
-
-        <!-- ▼ タブ切り替えボタン -->
-        <div class="tab-buttons">
-            <button class="tab-btn active" data-target="simulator-tab">
-                <span class="tab-title">🗺️ 派生ルート検索・計算</span>
-                <span class="tab-subtitle">ルートの検索と総コスト算出</span>
-            </button>
-            <button class="tab-btn" data-target="saved-tab">
-                <span class="tab-title">💾 保存ルート一覧</span>
-                <span class="tab-subtitle">お気に入り・作成したルートの管理</span>
-            </button>
+    <div class="search-box">
+        <div class="search-row">
+            <label for="searchName">機体名で検索：</label>
+            <input type="text" id="searchName" placeholder="例: ドリテア、ボール改 など" onkeypress="handleKeyPress(event)">
         </div>
-
-        <!-- ▼ シミュレータータブのコンテンツ -->
-        <div id="simulator-tab" class="tab-content active">
-            
-            <!-- 🌟 データ読み込み件数・ステータス表示エリア（復活！） -->
-            <div class="guide-card" style="margin-bottom: 20px; padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                <div style="display: flex; align-items: center; gap: 8px; color: var(--accent-color); font-weight: bold; font-size: 0.95rem;">
-                    <span>📊 データベース状態：</span>
-                </div>
-                <div style="display: flex; gap: 15px; font-size: 0.85rem; color: var(--sub-text);">
-                    <span>機体データ: <strong id="unit-count" style="color: var(--text-color);">読み込み中...</strong></span>
-                    <span>派生ルートデータ: <strong id="route-data-count" style="color: var(--text-color);">読み込み中...</strong></span>
-                </div>
-            </div>
-
-            <!-- 使い方説明エリア -->
-            <div class="guide-card">
-                <h2 class="guide-title">ℹ️ ルートシミュレーターの使い方</h2>
-                <ul class="guide-list">
-                    <li><strong>起点機体：</strong> 現在所有している、または出発点となる機体を選択・入力してください。</li>
-                    <li><strong>目標機体：</strong> 最終的に開発・到達したい目標の機体を選択してください。</li>
-                    <li><strong>ルート検索：</strong> 最短ルートや必要となる総コスト（資金・素材など）を自動で計算して表示します。</li>
-                </ul>
-            </div>
-
-            <!-- シミュレーション入力・操作エリア -->
-            <div class="upload-form-card" style="margin-top: 20px;">
-                <form id="route-form">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="start-unit">起点機体（スタート）</label>
-                            <input type="text" id="start-unit" placeholder="例：ジム または 機体No." required autocomplete="off">
-                        </div>
-                        <div class="form-group">
-                            <label for="target-unit">目標機体（ゴール）</label>
-                            <input type="text" id="target-unit" placeholder="例：ガンダム または 機体No." required autocomplete="off">
-                        </div>
-                    </div>
-
-                    <button type="submit" id="calc-btn" class="submit-btn" style="margin-top: 15px;">派生ルートを検索・計算する</button>
-                </form>
-            </div>
-
-            <!-- 検索結果表示エリア -->
-            <div class="list-header-area" style="margin-top: 30px;">
-                <h2 style="margin: 0; font-size: 1.1rem;">計算結果・派生ルート</h2>
-                <span id="result-status" style="font-size: 0.85rem; color: var(--sub-text);">未実行</span>
-            </div>
-
-            <div id="loading-msg" style="display: none; padding: 20px; text-align: center; color: var(--sub-text);">ルートを計算中...</div>
-            
-            <!-- 結果が出力されるコンテナ -->
-            <div id="route-result-container" style="margin-top: 15px;">
-                <div class="guide-card" style="text-align: center; color: var(--sub-text);">
-                    起点と目標を設定して「派生ルートを検索・計算する」を押してください。
-                </div>
-            </div>
+        <div class="search-row">
+            <label for="searchNo">機体No.で検索：</label>
+            <input type="text" id="searchNo" placeholder="例: 15、467 など" onkeypress="handleKeyPress(event)">
         </div>
-
-        <!-- ▼ 保存ルート一覧タブのコンテンツ -->
-        <div id="saved-tab" class="tab-content">
-            <div class="registered-units-area">
-                <div class="table-header-area">
-                    <h2 class="section-title">💾 保存済み・お気に入りルート</h2>
-                    <span style="font-size: 0.85rem; color: var(--sub-text);">保存件数: <strong id="saved-count" style="color: var(--text-color);">0件</strong></span>
-                </div>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th style="width: 120px;">起点</th>
-                                <th style="width: 120px;">目標</th>
-                                <th>経由ルート・メモ</th>
-                                <th style="width: 100px;">総コスト</th>
-                                <th style="width: 80px;">操作</th>
-                            </tr>
-                        </thead>
-                        <tbody id="saved-route-table-body">
-                            <tr>
-                                <td colspan="5" style="text-align: center; color: var(--sub-text);">保存されたルートはありません</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+        <button onclick="searchRoute()">検索・計算</button>
     </div>
 
-    <!-- タブ切り替え制御スクリプト -->
+    <div class="log-box" id="logBox">
+        【動作確認ログ】<br>
+        CSVファイルを読み込んでいます...
+    </div>
+
+    <div class="route-display" id="routeDisplay">
+        派生ルート：未検索
+    </div>
+
+    <h2>ルート構成・機体詳細と個別コスト</h2>
+    
+    <div style="overflow-x: auto;">
+        <table id="resultTable">
+            <thead>
+                <tr>
+                    <th>No</th>
+                    <th>機体名</th>
+                    <th>変形</th>
+                    <th>HP</th>
+                    <th>装甲</th>
+                    <th>運動</th>
+                    <th>索敵</th>
+                    <th>EN</th>
+                    <th>重量</th>
+                    <th>直感</th>
+                    <th>操縦</th>
+                    <th>近</th>
+                    <th>中</th>
+                    <th>遠</th>
+                    <th>名声</th>
+                    <th>NT</th>
+                    <th>SIZE</th>
+                    <th>コスト</th>
+                    <th>クレジット</th>
+                    <th>地上</th>
+                    <th>水中</th>
+                    <th>宇宙</th>
+                    <th>空中</th>
+                    <th>種別</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <tr>
+                    <td colspan="24" style="padding: 20px; color: #8da4c4;">準備完了しました。上の検索枠に条件を入力して検索してください。</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="total-box">
+        <h3>▼ 派生ルート総合計コスト</h3>
+        <p>累計必要クレジット： <span class="total-value" id="totalCredit">0</span> クレジット</p>
+        <p>累計必要名声： <span class="total-value" id="totalFame">0</span> 名声</p>
+    </div>
+
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const tabButtons = document.querySelectorAll('.tab-btn');
-            const tabContents = document.querySelectorAll('.tab-content');
+        const MECH_CSV = "route/GL)機体一覧 - 機体一覧.csv";
+        const ROUTE_CSV = "route/GL)機体派生ルート_260924 - 派生ルート.csv";
 
-            tabButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    const targetId = button.getAttribute('data-target');
+        let mechDataList = []; 
+        let routeData = [];    
 
-                    tabButtons.forEach(btn => btn.classList.remove('active'));
-                    tabContents.forEach(content => content.classList.remove('active'));
+        window.onload = function() {
+            Promise.all([
+                fetch(MECH_CSV).then(res => res.text()),
+                fetch(ROUTE_CSV).then(res => res.text())
+            ])
+            .then(([mechCsv, routeCsv]) => {
+                mechDataList = parseCSV(mechCsv);
+                routeData = parseCSV(routeCsv);
 
-                    button.classList.add('active');
-                    const targetContent = document.getElementById(targetId);
-                    if (targetContent) {
-                        targetContent.classList.add('active');
-                    }
-                });
+                let validRouteRows = routeData.filter(row => row.length > 2 && row[2] !== "" && row[2] !== "目的派生検索");
+
+                document.getElementById("logBox").innerHTML = 
+                    `【動作確認ログ】<br><span style="color:#69f0ae;">読み込み成功！</span> 機体一覧: ${mechDataList.length}件 / 派生ルート: ${validRouteRows.length}件`;
+            })
+            .catch(error => {
+                document.getElementById("logBox").innerHTML = 
+                    `【動作確認ログ】<br><span style="color:#ff6b6b;">読み込みエラー: ${error.message}</span>`;
             });
-        });
-    </script>
+        };
 
-    <!-- 共通ヘッダー読み込み -->
-    <script>
-        fetch('header.html')
-            .then(response => response.text())
-            .then(data => {
-                document.getElementById('header-container').innerHTML = data;
-                
-                const currentPath = window.location.pathname.split('/').pop();
-                const navLinks = document.querySelectorAll('.nav-links a');
-                navLinks.forEach(link => {
-                    if (link.getAttribute('href') === currentPath) {
-                        link.classList.add('active');
+        // CSVパーサー（ダブルクォーテーション対応）
+        function parseCSV(text) {
+            let rows = [];
+            let currentRow = [];
+            let currentVal = "";
+            let inQuotes = false;
+
+            for (let i = 0; i < text.length; i++) {
+                let char = text[i];
+                let nextChar = text[i + 1];
+
+                if (char === '"') {
+                    if (inQuotes && nextChar === '"') {
+                        currentVal += '"';
+                        i++;
+                    } else {
+                        inQuotes = !inQuotes;
                     }
-                });
-            });
-    </script>
+                } else if (char === ',' && !inQuotes) {
+                    currentRow.push(currentVal.trim());
+                    currentVal = "";
+                } else if ((char === '\r' && nextChar === '\n') && !inQuotes) {
+                    currentRow.push(currentVal.trim());
+                    rows.push(currentRow);
+                    currentRow = [];
+                    currentVal = "";
+                    i++;
+                } else if (char === '\n' && !inQuotes) {
+                    currentRow.push(currentVal.trim());
+                    rows.push(currentRow);
+                    currentRow = [];
+                    currentVal = "";
+                } else {
+                    currentVal += char;
+                }
+            }
+            if (currentVal !== "" || currentRow.length > 0) {
+                currentRow.push(currentVal.trim());
+                rows.push(currentRow);
+            }
 
-    <!-- メインのJavaScript（計算処理や件数カウントの連携先） -->
-    <script type="module" src="route.js"></script>
+            return rows.filter(row => row.length > 0 && row.some(val => val !== ""));
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                searchRoute();
+            }
+        }
+
+        function searchRoute() {
+            if (mechDataList.length === 0 || routeData.length === 0) {
+                alert("まだデータの読み込みが完了していません。");
+                return;
+            }
+
+            const nameKeyword = document.getElementById("searchName").value.trim();
+            const noKeyword = document.getElementById("searchNo").value.trim();
+
+            if (!nameKeyword && !noKeyword) {
+                alert("「機体名」または「機体No.」のどちらかを入力してください。");
+                return;
+            }
+
+            let targetRow = null;
+
+            // 1. 機体No.の枠に入力がある場合優先してNo.（列index: 1）で検索
+            if (noKeyword) {
+                for (let i = 0; i < routeData.length; i++) {
+                    let row = routeData[i];
+                    if (row[1] && row[1] === noKeyword) {
+                        targetRow = row;
+                        break;
+                    }
+                }
+            }
+
+            // 2. 機体名の枠に入力がある場合、またはNo.で見つからなかった場合、機体名（目的派生検索 列index: 2）で検索
+            if (!targetRow && nameKeyword) {
+                for (let i = 0; i < routeData.length; i++) {
+                    let row = routeData[i];
+                    if (row[2] && row[2] === nameKeyword) {
+                        targetRow = row;
+                        break;
+                    }
+                }
+            }
+
+            // 3. それでも見つからない場合、ルート内のどこかに機体名が含まれていないか柔軟に探す
+            if (!targetRow && nameKeyword) {
+                for (let i = 0; i < routeData.length; i++) {
+                    let row = routeData[i];
+                    if (row.some((col, colIndex) => colIndex >= 3 && col === nameKeyword)) {
+                        targetRow = row;
+                        break;
+                    }
+                }
+            }
+
+            if (!targetRow) {
+                document.getElementById("routeDisplay").innerText = "派生ルート：見つかりませんでした";
+                document.getElementById("tableBody").innerHTML = `<tr><td colspan="24" style="padding: 20px; color: #ff6b6b;">指定された条件に一致する派生ルートが見つかりませんでした。</td></tr>`;
+                document.getElementById("totalCredit").innerText = "0";
+                document.getElementById("totalFame").innerText = "0";
+                return;
+            }
+
+            // 3列目以降（index 3以降）のルートを抽出
+            let routeNames = [];
+            for (let i = 3; i < targetRow.length; i++) {
+                let val = targetRow[i];
+                if (val && val !== "0" && val !== "-" && val !== "") {
+                    let existsInMech = mechDataList.some(mechRow => mechRow.includes(val));
+                    if (existsInMech) {
+                        if (!routeNames.includes(val)) {
+                            routeNames.push(val);
+                        }
+                    }
+                }
+            }
+
+            if (routeNames.length === 0) {
+                document.getElementById("routeDisplay").innerText = "派生ルート：有効なルートが見つかりませんでした";
+                document.getElementById("tableBody").innerHTML = `<tr><td colspan="24" style="padding: 20px; color: #ff6b6b;">有効な派生ルートデータが見つかりませんでした。</td></tr>`;
+                document.getElementById("totalCredit").innerText = "0";
+                document.getElementById("totalFame").innerText = "0";
+                return;
+            }
+
+            document.getElementById("routeDisplay").innerText = "派生ルート：" + routeNames.join(" ⇒ ");
+
+            let tableHtml = "";
+            let totalCredit = 0;
+            let totalFame = 0;
+
+            routeNames.forEach((mechName, index) => {
+                let mechInfo = mechDataList.find(row => {
+                    return row.some(col => col === mechName);
+                });
+
+                if (mechInfo) {
+                    let transform = mechInfo[2] !== undefined ? mechInfo[2] : "-";
+                    let hp = mechInfo[3] !== undefined ? mechInfo[3] : "-";
+                    let armor = mechInfo[4] !== undefined ? mechInfo[4] : "-";
+                    let mobility = mechInfo[5] !== undefined ? mechInfo[5] : "-";
+                    let search = mechInfo[6] !== undefined ? mechInfo[6] : "-";
+                    let en = mechInfo[7] !== undefined ? mechInfo[7] : "-";
+                    let weight = mechInfo[8] !== undefined ? mechInfo[8] : "-";
+                    let intuition = mechInfo[9] !== undefined ? mechInfo[9] : "-";
+                    let control = mechInfo[10] !== undefined ? mechInfo[10] : "-";
+                    let closeAtk = mechInfo[11] !== undefined ? mechInfo[11] : "-";
+                    let midAtk = mechInfo[12] !== undefined ? mechInfo[12] : "-";
+                    let longAtk = mechInfo[13] !== undefined ? mechInfo[13] : "-";
+                    let fame = mechInfo[14] !== undefined ? mechInfo[14] : "0";
+                    let nt = mechInfo[15] !== undefined ? mechInfo[15] : "-";
+                    let size = mechInfo[16] !== undefined ? mechInfo[16] : "-";
+                    let cost = mechInfo[17] !== undefined ? mechInfo[17] : "0";
+                    let credit = mechInfo[18] !== undefined ? mechInfo[18] : "0";
+                    let land = mechInfo[19] !== undefined ? mechInfo[19] : "-";
+                    let water = mechInfo[20] !== undefined ? mechInfo[20] : "-";
+                    let space = mechInfo[21] !== undefined ? mechInfo[21] : "-";
+                    let air = mechInfo[22] !== undefined ? mechInfo[22] : "-";
+                    let type = mechInfo[23] !== undefined ? mechInfo[23] : "-";
+
+                    let creditNum = parseInt(String(credit).replace(/,/g, '')) || 0;
+                    let fameNum = parseInt(String(fame).replace(/,/g, '')) || 0;
+                    totalCredit += creditNum;
+                    totalFame += fameNum;
+
+                    tableHtml += `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td class="name-col">${mechName}</td>
+                            <td>${transform}</td>
+                            <td>${hp}</td>
+                            <td>${armor}</td>
+                            <td>${mobility}</td>
+                            <td>${search}</td>
+                            <td>${en}</td>
+                            <td>${weight}</td>
+                            <td>${intuition}</td>
+                            <td>${control}</td>
+                            <td>${closeAtk}</td>
+                            <td>${midAtk}</td>
+                            <td>${longAtk}</td>
+                            <td>${fame}</td>
+                            <td>${nt}</td>
+                            <td>${size}</td>
+                            <td>${cost}</td>
+                            <td>${credit}</td>
+                            <td>${land}</td>
+                            <td>${water}</td>
+                            <td>${space}</td>
+                            <td>${air}</td>
+                            <td class="name-col">${type}</td>
+                        </tr>
+                    `;
+                } else {
+                    tableHtml += `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td class="name-col">${mechName}</td>
+                            <td colspan="22" style="color: #ff6b6b;">「機体一覧」CSVに詳細データが見つかりません</td>
+                        </tr>
+                    `;
+                }
+            });
+
+            document.getElementById("tableBody").innerHTML = tableHtml;
+            document.getElementById("totalCredit").innerText = totalCredit.toLocaleString();
+            document.getElementById("totalFame").innerText = totalFame.toLocaleString();
+        }
+    </script>
 </body>
 </html>
