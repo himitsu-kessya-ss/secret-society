@@ -1,4 +1,4 @@
-// hunter.js （完全版：クレジット列の確実な検出＆派生ルート・名声・クレジット計算）
+// hunter.js （完全版：フリーズ防止＆確実なクレジット・名声ランキング計算）
 $(document).ready(function () {
     let globalMechDataList = [];
     let globalRouteData = [];
@@ -154,7 +154,7 @@ $(document).ready(function () {
         return rows.filter(row => row.length > 0 && row.some(val => val !== ""));
     }
 
-    // 文字列を安全に数値（整数）に変換するヘルパー関数
+    // 文字列を安全に数値に変換するヘルパー関数
     function parseNumber(val) {
         if (!val) return 0;
         let cleaned = String(val).replace(/["',]/g, '').trim();
@@ -162,26 +162,23 @@ $(document).ready(function () {
         return isNaN(num) ? 0 : num;
     }
 
-    // 機体一覧のヘッダーから、名声・クレジットの列番号を自動検出する（強化版）
+    // 機体一覧の列インデックス設定（機体名=1, 名声=15, クレジット=18 を基本としつつヘッダー検証）
     function getMechColumnIndices() {
-        if (!globalMechDataList || globalMechDataList.length === 0) {
-            return { nameIdx: 1, fameIdx: 15, creditIdx: 18 };
-        }
-        let header = globalMechDataList[0];
         let nameIdx = 1;
         let fameIdx = 15;
-        let creditIdx = 18; // デフォルトの安全値
+        let creditIdx = 18;
 
-        header.forEach((col, idx) => {
-            if (col.includes('機体名') || col === '名称') nameIdx = idx;
-            if (col.includes('名声')) fameIdx = idx;
-            // クレジット、資金、コスト、Gなど、それらしい言葉を広くキャッチ
-            if (col.includes('クレジット') || col.includes('ポイント') || col.includes('費用') || col.includes('資金') || col.includes('総クレジット')) {
-                creditIdx = idx;
-            }
-        });
-
-        console.log("【列自動検出・修正版】 機体名列:", nameIdx, "名声列:", fameIdx, "クレジット列:", creditIdx);
+        if (globalMechDataList && globalMechDataList.length > 0) {
+            let header = globalMechDataList[0];
+            header.forEach((col, idx) => {
+                if (!col) return;
+                if (col.includes('機体名') || col === '名称') nameIdx = idx;
+                if (col.includes('名声')) fameIdx = idx;
+                if (col.includes('クレジット') || col.includes('ポイント') || col.includes('費用') || col.includes('資金')) {
+                    creditIdx = idx;
+                }
+            });
+        }
         return { nameIdx, fameIdx, creditIdx };
     }
 
@@ -192,14 +189,15 @@ $(document).ready(function () {
         let targetRow = null;
         for (let i = 0; i < globalRouteData.length; i++) {
             let row = globalRouteData[i];
-            if (row.some(col => col === targetMechName)) {
+            if (row && row.some(col => col === targetMechName)) {
                 targetRow = row;
                 break;
             }
         }
 
+        // 派生ルートが見つからない場合のフォールバック（単体データ）
         if (!targetRow) {
-            let mechInfo = globalMechDataList.find(row => row[nameIdx] === targetMechName);
+            let mechInfo = globalMechDataList.find(row => row && row[nameIdx] === targetMechName);
             if (mechInfo) {
                 return {
                     totalFame: parseNumber(mechInfo[fameIdx]),
@@ -215,7 +213,7 @@ $(document).ready(function () {
 
         targetRow.forEach(val => {
             if (val && val !== "0" && val !== "-" && val !== "") {
-                let mechInfo = globalMechDataList.find(row => row[nameIdx] === val);
+                let mechInfo = globalMechDataList.find(row => row && row[nameIdx] === val);
                 if (mechInfo && !countedMechs.has(val)) {
                     countedMechs.add(val);
                     sumFame += parseNumber(mechInfo[fameIdx]);
@@ -260,6 +258,7 @@ $(document).ready(function () {
         const { nameIdx } = getMechColumnIndices();
 
         const validMechs = globalMechDataList.filter(row => {
+            if (!row || row.length === 0) return false;
             let no = parseNumber(row[0]);
             return no > 0;
         });
@@ -275,7 +274,7 @@ $(document).ready(function () {
             $('#rank-point').html("データなし");
             return;
         }
-        $('#unit-error'.).hide(); // 修正: ドット誤字防止のためそのまま記載
+        $('#unit-error').hide();
 
         let processedUnits = filtered.map(row => {
             let name = row[nameIdx] !== undefined ? row[nameIdx] : "-";
