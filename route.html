@@ -192,8 +192,11 @@
                 mechDataList = parseCSV(mechCsv);
                 routeData = parseCSV(routeCsv);
 
+                // 1行目のヘッダー（項目確認用）を除いた実際のデータ件数をカウント
+                let actualRouteCount = routeData.length > 1 ? routeData.length - 1 : 0;
+
                 document.getElementById("logBox").innerHTML = 
-                    `【動作確認ログ】<br><span style="color:#69f0ae;">読み込み成功！</span> 機体一覧: ${mechDataList.length}件 / 派生ルート: ${routeData.length}件`;
+                    `【動作確認ログ】<br><span style="color:#69f0ae;">読み込み成功！</span> 機体一覧: ${mechDataList.length}件 / 派生ルート: ${actualRouteCount}件`;
             })
             .catch(error => {
                 document.getElementById("logBox").innerHTML = 
@@ -201,7 +204,7 @@
             });
         };
 
-        // 【改良版】ダブルクォーテーションやセル内改行を完全考慮したプロ仕様のCSVパーサー
+        // CSV解析パーサー
         function parseCSV(text) {
             let rows = [];
             let currentRow = [];
@@ -215,7 +218,7 @@
                 if (char === '"') {
                     if (inQuotes && nextChar === '"') {
                         currentVal += '"';
-                        i++; // エスケープされたクォーテーションをスキップ
+                        i++;
                     } else {
                         inQuotes = !inQuotes;
                     }
@@ -227,7 +230,7 @@
                     rows.push(currentRow);
                     currentRow = [];
                     currentVal = "";
-                    i++; // \nもスキップ
+                    i++;
                 } else if (char === '\n' && !inQuotes) {
                     currentRow.push(currentVal.trim());
                     rows.push(currentRow);
@@ -237,13 +240,11 @@
                     currentVal += char;
                 }
             }
-            // 最後の行の処理
             if (currentVal !== "" || currentRow.length > 0) {
                 currentRow.push(currentVal.trim());
                 rows.push(currentRow);
             }
 
-            // 完全な空行を除外
             return rows.filter(row => row.length > 0 && row.some(val => val !== ""));
         }
 
@@ -265,10 +266,20 @@
                 return;
             }
 
-            // 派生ルートデータから、検索キーワード（機体名）が含まれている行を探す
-            const targetRow = routeData.find(row => {
-                return row.some(col => col && col === keyword);
-            });
+            // 【重要】1行目（ヘッダー）をスキップし、さらに3列目（インデックス2）に検索キーワード（機体名）が含まれている行を探す、
+            // または、4列目以降のルートの中にキーワードが含まれている行を探します
+            let targetRow = null;
+            for (let i = 1; i < routeData.length; i++) {
+                let row = routeData[i];
+                // 3列目（インデックス2）が検索キーワードと一致するか、あるいは4列目以降のどこかに含まれているか
+                let isMatchByName = (row[2] && row[2] === keyword);
+                let isMatchInRoute = row.some((col, colIndex) => colIndex >= 3 && col === keyword);
+
+                if (isMatchByName || isMatchInRoute) {
+                    targetRow = row;
+                    break;
+                }
+            }
 
             if (!targetRow) {
                 document.getElementById("routeDisplay").innerText = "派生ルート：見つかりませんでした";
@@ -278,11 +289,12 @@
                 return;
             }
 
-            // 見つかった行の中から、機体一覧に存在する名前を順番に抽出する
+            // 【重要】1〜3列目（通しNo、機体No、機体名）は無視して、4列目以降（インデックス3以降）から機体名を順番に抽出する
             let routeNames = [];
-            for (let i = 0; i < targetRow.length; i++) {
+            for (let i = 3; i < targetRow.length; i++) {
                 let val = targetRow[i];
-                if (val && val !== "0" && val !== "-") {
+                if (val && val !== "0" && val !== "-" && val !== "") {
+                    // 機体一覧に存在する名前かチェック
                     let existsInMech = mechDataList.some(mechRow => mechRow.includes(val));
                     if (existsInMech) {
                         if (!routeNames.includes(val)) {
@@ -292,7 +304,19 @@
                 }
             }
 
-            if (routeNames.length === 0 || !routeNames.includes(keyword)) {
+            // もし4列目以降からうまく拾えなかった場合、または検索ワード自体がルートに含まれている場合のフォールバック
+            if (routeNames.length === 0) {
+                if (mechDataList.some(mechRow => mechRow.includes(keyword))) {
+                    routeNames.push(keyword);
+                }
+            } else {
+                // 最後の機体が検索キーワードと違っていて、かつキーワードが機体一覧にあれば末尾に追加する
+                if (!routeNames.includes(keyword) && mechDataList.some(mechRow => mechRow.includes(keyword))) {
+                    routeNames.push(keyword);
+                }
+            }
+
+            if (routeNames.length === 0) {
                 routeNames.push(keyword);
             }
 
@@ -325,7 +349,6 @@
                     let size = mechInfo[16] !== undefined ? mechInfo[16] : "-";
                     let cost = mechInfo[17] !== undefined ? mechInfo[17] : "0";
                     let credit = mechInfo[18] !== undefined ? mechInfo[18] : "0";
-                    $land = mechInfo[19] !== undefined ? mechInfo[19] : "-";
                     let water = mechInfo[20] !== undefined ? mechInfo[20] : "-";
                     let space = mechInfo[21] !== undefined ? mechInfo[21] : "-";
                     let air = mechInfo[22] !== undefined ? mechInfo[22] : "-";
