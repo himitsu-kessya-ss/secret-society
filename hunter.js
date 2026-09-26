@@ -1,4 +1,4 @@
-// hunter.js （完全同期版：route.jsと同じCSVパース＆総クレジット計算ロジック）
+// hunter.js （完全版：派生ルートCSVの確実な読み込み＆総クレジット累積計算対応）
 $(document).ready(function () {
     let globalMechDataList = [];
     let globalRouteData = [];
@@ -110,7 +110,7 @@ $(document).ready(function () {
         loadAndRankUnitsWithRoute(min, max);
     }
 
-    // 🌟 route.js と完全同一のCSVパーサー（ダブルクォーテーション対応）
+    // CSVパーサー（ダブルクォーテーション対応）
     function parseCSV(text) {
         let rows = [];
         let currentRow = [];
@@ -154,7 +154,7 @@ $(document).ready(function () {
         return rows.filter(row => row.length > 0 && row.some(val => val !== ""));
     }
 
-    // 🌟 route.js と完全同一の累積コスト計算関数（インデックス14：名声、インデックス18：クレジット）
+    // 🌟 派生ルートを正確に辿って総名声・総クレジットを算出する関数
     function calculateCumulativeCost(targetMechName) {
         let targetRow = null;
         for (let i = 0; i < globalRouteData.length; i++) {
@@ -213,7 +213,7 @@ $(document).ready(function () {
         return { totalFame: sumFame, totalCredit: sumCredit };
     }
 
-    // ③ 機体一覧と派生ルートCSVを読み込んでランキング算出
+    // ③ 機体一覧と派生ルートCSVを確実に両方読み込んでランキング算出
     function loadAndRankUnitsWithRoute(min, max) {
         if (typeof HUNTER_CONFIG === 'undefined' || !HUNTER_CONFIG.csvFile) {
             $('#unit-error').text("設定ファイル(HUNTER_CONFIG)が見つかりません。").show();
@@ -235,15 +235,19 @@ $(document).ready(function () {
         .then(([mechCsvText, routeCsvText]) => {
             globalMechDataList = parseCSV(mechCsvText);
             globalRouteData = parseCSV(routeCsvText);
+            
+            // 読み込み成功ログ（デバッグ用）
+            console.log("Hunter.js: CSV読み込み完了 - 機体:", globalMechDataList.length, "ルート:", globalRouteData.length);
+            
             processRanking(min, max);
         })
         .catch(err => {
             $('#unit-error').text("CSVファイルの読み込みに失敗しました: " + err.message).show();
+            console.error("Hunter.js CSV Error:", err);
         });
     }
 
     function processRanking(min, max) {
-        // globalMechDataList はヘッダー行を含むため、Noが数値の行だけを正確にフィルタリング
         const filtered = globalMechDataList.filter(row => {
             let no = parseInt(row[0]);
             return !isNaN(no) && no >= min && no <= max;
