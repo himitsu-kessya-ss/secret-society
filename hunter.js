@@ -59,7 +59,7 @@ $(document).ready(function () {
             hcCount++;
         }
 
-        // 2. スクランブルのスケジュール（総戦闘回数の158戦周期：158, 316, 474...）
+        // 2. スクランブルのスケジュール（総戦闘回数の158戦周期）
         const scrambleInterval = 158;
         let sBattle = Math.ceil(startBattle / scrambleInterval) * scrambleInterval;
         while (sBattle <= maxBattle) {
