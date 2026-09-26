@@ -1,4 +1,4 @@
-// hunter.js （総クレジット計算・数値パース強化版）
+// hunter.js （総クレジット・総名声ランキング完全対応・安定版）
 $(document).ready(function () {
     let globalMechDataList = [];
     let globalRouteData = [];
@@ -25,7 +25,7 @@ $(document).ready(function () {
                 range: target.range
             };
         }
-        return { day: d, addVal: 111, range: "1 - 100" }; // フォールバック
+        return { day: d, addVal: 111, range: "1 - 100" };
     }
 
     // ① 計算機と＋1500戦スケジュールの即時反映
@@ -110,56 +110,19 @@ $(document).ready(function () {
         loadAndRankUnitsWithRoute(min, max);
     }
 
-    // CSVパーサー（ダブルクォーテーション対応）
-    function parseCSV(text) {
-        let rows = [];
-        let currentRow = [];
-        let currentVal = "";
-        let inQuotes = false;
-
-        for (let i = 0; i < text.length; i++) {
-            let char = text[i];
-            let nextChar = text[i + 1];
-
-            if (char === '"') {
-                if (inQuotes && nextChar === '"') {
-                    currentVal += '"';
-                    i++;
-                } else {
-                    inQuotes = !inQuotes;
-                }
-            } else if (char === ',' && !inQuotes) {
-                currentRow.push(currentVal.trim());
-                currentVal = "";
-            } else if ((char === '\r' && nextChar === '\n') && !inQuotes) {
-                currentRow.push(currentVal.trim());
-                rows.push(currentRow);
-                currentRow = [];
-                currentVal = "";
-                i++;
-            } else if (char === '\n' && !inQuotes) {
-                currentRow.push(currentVal.trim());
-                rows.push(currentRow);
-                currentRow = [];
-                currentVal = "";
-            } else {
-                currentVal += char;
-            }
-        }
-        if (currentVal !== "" || currentRow.length > 0) {
-            currentRow.push(currentVal.trim());
-            rows.push(currentRow);
-        }
-
-        return rows.filter(row => row.length > 0 && row.some(val => val !== ""));
+    // 数値を安全にパースするヘルパー
+    function parseNum(val) {
+        if (val === undefined || val === null || val === "" || val === "-") return 0;
+        let num = parseInt(String(val).replace(/,/g, ''), 10);
+        return isNaN(num) ? 0 : num;
     }
 
-    // 🌟 頑丈になった累積コスト算出関数（数値パースを完全強化）
+    // 🌟 派生ルートを辿って総名声・総クレジットを算出する関数
     function calculateCumulativeCost(targetMechName) {
         let targetRow = null;
         for (let i = 0; i < globalRouteData.length; i++) {
             let row = globalRouteData[i];
-            if (row[2] && row[2] === targetMechName) {
+            if (row[2] && row[2].trim() === targetMechName.trim()) {
                 targetRow = row;
                 break;
             }
@@ -167,22 +130,16 @@ $(document).ready(function () {
         if (!targetRow) {
             for (let i = 0; i < globalRouteData.length; i++) {
                 let row = globalRouteData[i];
-                if (row.some((col, colIndex) => colIndex >= 3 && col === targetMechName)) {
+                if (row.some((col, colIndex) => colIndex >= 3 && col && col.trim() === targetMechName.trim())) {
                     targetRow = row;
                     break;
                 }
             }
         }
 
-        // 補助関数：安全に数値に変換する
-        function parseNum(val) {
-            if (val === undefined || val === null || val === "" || val === "-") return 0;
-            let num = parseInt(String(val).replace(/,/g, ''), 10);
-            return isNaN(num) ? 0 : num;
-        }
-
+        // ルートが見つからない場合は単体機のコストを返す
         if (!targetRow) {
-            let mechInfo = globalMechDataList.find(row => row.some(col => col === targetMechName));
+            let mechInfo = globalMechDataList.find(row => row[1] && row[1].trim() === targetMechName.trim());
             if (mechInfo) {
                 let fame = parseNum(mechInfo[14]);
                 let credit = parseNum(mechInfo[18]);
@@ -195,10 +152,10 @@ $(document).ready(function () {
         for (let i = 3; i < targetRow.length; i++) {
             let val = targetRow[i];
             if (val && val !== "0" && val !== "-" && val !== "") {
-                let existsInMech = globalMechDataList.some(mechRow => mechRow.includes(val));
+                let existsInMech = globalMechDataList.some(mechRow => mechRow[1] && mechRow[1].trim() === val.trim());
                 if (existsInMech) {
-                    if (!routeNames.includes(val)) {
-                        routeNames.push(val);
+                    if (!routeNames.includes(val.trim())) {
+                        routeNames.push(val.trim());
                     }
                 }
             }
@@ -208,10 +165,10 @@ $(document).ready(function () {
         let sumCredit = 0;
 
         routeNames.forEach(mechName => {
-            let mechInfo = globalMechDataList.find(row => row.some(col => col === mechName));
+            let mechInfo = globalMechDataList.find(row => row[1] && row[1].trim() === mechName);
             if (mechInfo) {
                 let fame = parseNum(mechInfo[14]);
-                let credit = parseNum(mechInfo[18]); // クレジット（インデックス18）
+                let credit = parseNum(mechInfo[18]); // クレジット列（インデックス18）
                 sumFame += fame;
                 sumCredit += credit;
             }
@@ -220,7 +177,7 @@ $(document).ready(function () {
         return { totalFame: sumFame, totalCredit: sumCredit };
     }
 
-    // ③ 機体一覧と派生ルートCSVを読み込んでランキング算出
+    // ③ PapaParseを使用して機体一覧と派生ルートCSVを確実に読み込む
     function loadAndRankUnitsWithRoute(min, max) {
         if (typeof HUNTER_CONFIG === 'undefined' || !HUNTER_CONFIG.csvFile) {
             $('#unit-error').text("設定ファイル(HUNTER_CONFIG)が見つかりません。").show();
@@ -228,49 +185,41 @@ $(document).ready(function () {
         }
 
         const MECH_CSV = HUNTER_CONFIG.csvFile; 
-        const routeCsvCandidates = [
-            "route/GL)機体派生ルート_260924 - 派生ルート.csv",
-            "./route/GL)機体派生ルート_260924 - 派生ルート.csv",
-            "../route/GL)機体派生ルート_260924 - 派生ルート.csv"
-        ];
+        const ROUTE_CSV = "route/GL)機体派生ルート_260924 - 派生ルート.csv";
 
         if (globalMechDataList.length > 0 && globalRouteData.length > 0) {
             processRanking(min, max);
             return;
         }
 
-        fetch(MECH_CSV)
-            .then(res => res.text())
-            .then(mechCsvText => {
-                globalMechDataList = parseCSV(mechCsvText);
-                tryFetchRouteCSV(routeCsvCandidates, 0, () => {
-                    processRanking(min, max);
+        // PapaParseで機体一覧を読み込み
+        Papa.parse(MECH_CSV, {
+            download: true,
+            header: false,
+            skipEmptyLines: true,
+            complete: function(mechResults) {
+                globalMechDataList = mechResults.data;
+
+                // 続いてPapaParseで派生ルートを読み込み
+                Papa.parse(ROUTE_CSV, {
+                    download: true,
+                    header: false,
+                    skipEmptyLines: true,
+                    complete: function(routeResults) {
+                        globalRouteData = routeResults.data;
+                        processRanking(min, max);
+                    },
+                    error: function(err) {
+                        console.warn("派生ルートCSVの読み込みに失敗しました。単体データでフォールバックします:", err);
+                        globalRouteData = [];
+                        processRanking(min, max);
+                    }
                 });
-            })
-            .catch(err => {
-                $('#unit-error').text("機体一覧CSVの読み込みに失敗しました: " + err.message).show();
-            });
-    }
-
-    function tryFetchRouteCSV(candidates, index, callback) {
-        if (index >= candidates.length) {
-            globalRouteData = []; 
-            callback();
-            return;
-        }
-
-        fetch(candidates[index])
-            .then(res => {
-                if (!res.ok) throw new Error("HTTP error " + res.status);
-                return res.text();
-            })
-            .then(routeCsvText => {
-                globalRouteData = parseCSV(routeCsvText);
-                callback();
-            })
-            .catch(() => {
-                tryFetchRouteCSV(candidates, index + 1, callback);
-            });
+            },
+            error: function(err) {
+                $('#unit-error').text("機体一覧CSVの読み込み失敗: " + err.message).show();
+            }
+        });
     }
 
     function processRanking(min, max) {
@@ -306,7 +255,6 @@ $(document).ready(function () {
     }
 
     function displayCustomRank(dataArray, sortKey, targetId, labelName, valColor) {
-        // 降順ソート
         const sorted = [...dataArray].sort((a, b) => b[sortKey] - a[sortKey]).slice(0, 3);
 
         let html = '';
