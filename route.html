@@ -192,7 +192,6 @@
                 mechDataList = parseCSV(mechCsv);
                 routeData = parseCSV(routeCsv);
 
-                // 1行目のヘッダー（項目確認用）を除いた実際のデータ件数をカウント
                 let actualRouteCount = routeData.length > 1 ? routeData.length - 1 : 0;
 
                 document.getElementById("logBox").innerHTML = 
@@ -266,18 +265,24 @@
                 return;
             }
 
-            // 【重要】1行目（ヘッダー）をスキップし、さらに3列目（インデックス2）に検索キーワード（機体名）が含まれている行を探す、
-            // または、4列目以降のルートの中にキーワードが含まれている行を探します
+            // 3列目（インデックス2）の機体名がキーワードと完全一致する行を探す
             let targetRow = null;
             for (let i = 1; i < routeData.length; i++) {
                 let row = routeData[i];
-                // 3列目（インデックス2）が検索キーワードと一致するか、あるいは4列目以降のどこかに含まれているか
-                let isMatchByName = (row[2] && row[2] === keyword);
-                let isMatchInRoute = row.some((col, colIndex) => colIndex >= 3 && col === keyword);
-
-                if (isMatchByName || isMatchInRoute) {
+                if (row[2] && row[2] === keyword) {
                     targetRow = row;
                     break;
+                }
+            }
+
+            // もし3列目で完全一致が見つからない場合は、4列目以降に含まれている行をフォールバックとして探す
+            if (!targetRow) {
+                for (let i = 1; i < routeData.length; i++) {
+                    let row = routeData[i];
+                    if (row.some((col, colIndex) => colIndex >= 3 && col === keyword)) {
+                        targetRow = row;
+                        break;
+                    }
                 }
             }
 
@@ -289,12 +294,13 @@
                 return;
             }
 
-            // 【重要】1〜3列目（通しNo、機体No、機体名）は無視して、4列目以降（インデックス3以降）から機体名を順番に抽出する
+            // 【超重要】1〜3列目（通しNo、機体No、3列目の機体名）は絶対にルートとして読み取らず、
+            // 4列目以降（インデックス3以降）の純粋な派生データだけを抽出する！
             let routeNames = [];
             for (let i = 3; i < targetRow.length; i++) {
                 let val = targetRow[i];
+                // 空欄や「0」「-」を除外し、さらに機体一覧に存在する名前だけを採用
                 if (val && val !== "0" && val !== "-" && val !== "") {
-                    // 機体一覧に存在する名前かチェック
                     let existsInMech = mechDataList.some(mechRow => mechRow.includes(val));
                     if (existsInMech) {
                         if (!routeNames.includes(val)) {
@@ -304,20 +310,12 @@
                 }
             }
 
-            // もし4列目以降からうまく拾えなかった場合、または検索ワード自体がルートに含まれている場合のフォールバック
             if (routeNames.length === 0) {
-                if (mechDataList.some(mechRow => mechRow.includes(keyword))) {
-                    routeNames.push(keyword);
-                }
-            } else {
-                // 最後の機体が検索キーワードと違っていて、かつキーワードが機体一覧にあれば末尾に追加する
-                if (!routeNames.includes(keyword) && mechDataList.some(mechRow => mechRow.includes(keyword))) {
-                    routeNames.push(keyword);
-                }
-            }
-
-            if (routeNames.length === 0) {
-                routeNames.push(keyword);
+                document.getElementById("routeDisplay").innerText = "派生ルート：有効なルートが見つかりませんでした";
+                document.getElementById("tableBody").innerHTML = `<tr><td colspan="24" style="padding: 20px; color: #ff6b6b;">「${keyword}」の派生ルートデータ（4列目以降）が見つかりませんでした。</td></tr>`;
+                document.getElementById("totalCredit").innerText = "0";
+                document.getElementById("totalFame").innerText = "0";
+                return;
             }
 
             document.getElementById("routeDisplay").innerText = "派生ルート：" + routeNames.join(" ⇒ ");
@@ -327,6 +325,7 @@
             let totalFame = 0;
 
             routeNames.forEach((mechName, index) => {
+                // 機体一覧から該当機体の詳細データを取得
                 let mechInfo = mechDataList.find(row => {
                     return row.some(col => col === mechName);
                 });
@@ -349,6 +348,7 @@
                     let size = mechInfo[16] !== undefined ? mechInfo[16] : "-";
                     let cost = mechInfo[17] !== undefined ? mechInfo[17] : "0";
                     let credit = mechInfo[18] !== undefined ? mechInfo[18] : "0";
+                    let land = mechInfo[19] !== undefined ? mechInfo[19] : "-";
                     let water = mechInfo[20] !== undefined ? mechInfo[20] : "-";
                     let space = mechInfo[21] !== undefined ? mechInfo[21] : "-";
                     let air = mechInfo[22] !== undefined ? mechInfo[22] : "-";
@@ -380,7 +380,7 @@
                             <td>${size}</td>
                             <td>${cost}</td>
                             <td>${credit}</td>
-                            <td>${mechInfo[19] !== undefined ? mechInfo[19] : "-"}</td>
+                            <td>${land}</td>
                             <td>${water}</td>
                             <td>${space}</td>
                             <td>${air}</td>
