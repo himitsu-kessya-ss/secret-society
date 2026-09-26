@@ -1,4 +1,4 @@
-// hunter.js （完全版：列15=名声、列16=POINT対応）
+// hunter.js （完全版：列ズレ修正・総クレジット一致対応）
 $(document).ready(function () {
     let globalMechDataList = [];
     let globalRouteData = [];
@@ -162,12 +162,12 @@ $(document).ready(function () {
         return isNaN(num) ? 0 : num;
     }
 
-    // 機体名の列(1)、名声の列(15)、POINT/クレジットの列(16)を確実に指定
+    // 15列目を名声(インデックス14)、16列目をPOINT/クレジット(インデックス15)に設定
     function getMechColumnIndices() {
         return { 
-            nameIdx: 1,      // 機体名
-            fameIdx: 15,     // 名声
-            creditIdx: 16    // POINT（クレジット）
+            nameIdx: 1,       // 2列目（機体名）
+            fameIdx: 14,      // 15列目（名声）
+            creditIdx: 15     // 16列目（POINT / クレジット）
         };
     }
 
