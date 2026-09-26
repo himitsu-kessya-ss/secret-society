@@ -4,137 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>機体派生ルート検索・総コストシミュレーター</title>
-    <style>
-        body {
-            background-color: #0b0f19;
-            color: #c0d2ec;
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-
-        .main-container {
-            padding: 20px;
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        h1 {
-            border-bottom: 2px solid #3a506b;
-            padding-bottom: 10px;
-            font-size: 22px;
-            letter-spacing: 1px;
-            display: inline-block;
-            background: #111a2e;
-            padding: 10px 20px;
-            border: 1px solid #2b4c7e;
-            margin-top: 20px;
-        }
-        p {
-            font-size: 14px;
-            color: #8da4c4;
-        }
-        .search-box {
-            background: #131c31;
-            border: 1px solid #2b4c7e;
-            padding: 20px;
-            margin-bottom: 20px;
-            border-radius: 4px;
-        }
-        .search-row {
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .search-row label {
-            width: 130px;
-            font-weight: bold;
-            color: #8ab4f8;
-            font-size: 14px;
-        }
-        input[type="text"] {
-            background: #070b14;
-            border: 1px solid #3a506b;
-            color: #fff;
-            padding: 8px 12px;
-            font-size: 15px;
-            width: 280px;
-        }
-        button {
-            background: #1e3a60;
-            color: #fff;
-            border: 1px solid #4a75ab;
-            padding: 10px 25px;
-            font-size: 15px;
-            cursor: pointer;
-            font-weight: bold;
-            margin-top: 5px;
-        }
-        button:hover {
-            background: #284e80;
-        }
-        .log-box {
-            background: #1a1215;
-            border: 1px dashed #7e3a3a;
-            padding: 10px 15px;
-            margin-bottom: 20px;
-            font-size: 13px;
-            color: #e8a0a0;
-            line-height: 1.5;
-        }
-        .route-display {
-            background: #111a2e;
-            border: 1px solid #2b4c7e;
-            padding: 15px;
-            margin-bottom: 20px;
-            font-size: 16px;
-            font-weight: bold;
-            color: #64b5f6;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: #0d1424;
-            margin-top: 10px;
-            font-size: 13px;
-        }
-        th, td {
-            border: 1px solid #223454;
-            padding: 8px 4px;
-            text-align: center;
-        }
-        th {
-            background: #14223d;
-            color: #8ab4f8;
-            font-size: 12px;
-        }
-        td.name-col {
-            text-align: left;
-            padding-left: 8px;
-        }
-        .total-box {
-            background: #131c31;
-            border: 1px solid #2b4c7e;
-            padding: 15px 20px;
-            margin-top: 20px;
-        }
-        .total-box h3 {
-            margin-top: 0;
-            color: #64b5f6;
-            font-size: 16px;
-        }
-        .total-value {
-            font-size: 18px;
-            font-weight: bold;
-            color: #ffca28;
-        }
-        .cost-col {
-            color: #ffca28;
-            font-weight: bold;
-        }
-    </style>
+    <!-- 専用のCSSファイルを読み込み -->
+    <link rel="stylesheet" href="route.css">
 </head>
 <body>
 
@@ -143,409 +14,151 @@
 
     <div class="main-container">
         <h1>機体派生ルート検索・総コストシミュレーター</h1>
-        <p>「機体名」または「機体No.」のどちらか片方に条件を入力して、検索ボタンを押してください。</p>
+        <p>タブを切り替えて「派生ルート検索」または「機体一覧データ（総コスト計算付き）」をご利用ください。</p>
 
-        <div class="search-box">
-            <div class="search-row">
-                <label for="searchName">機体名で検索：</label>
-                <input type="text" id="searchName" placeholder="例: ドリテア、ボール改 など" onkeypress="handleKeyPress(event)">
-            </div>
-            <div class="search-row">
-                <label for="searchNo">機体No.で検索：</label>
-                <input type="text" id="searchNo" placeholder="例: 15、467 など" onkeypress="handleKeyPress(event)">
-            </div>
-            <button onclick="searchRoute()">検索・計算</button>
+        <!-- ▼ タブ切り替えボタン -->
+        <div class="tab-buttons">
+            <button class="tab-btn active" data-target="simulator-tab">🗺️ 派生ルート検索</button>
+            <button class="tab-btn" data-target="list-tab">📋 機体一覧データ（総コスト表示）</button>
         </div>
 
-        <!-- 読み込み件数やステータスを表示するエリア -->
+        <!-- 読み込み件数やステータスを表示する共通ログエリア -->
         <div class="log-box" id="logBox">
             【動作確認ログ】<br>
             CSVファイルを読み込んでいます...
         </div>
 
-        <div class="route-display" id="routeDisplay">
-            派生ルート：未検索
+        <!-- ================= 1. 派生ルート検索タブ ================= -->
+        <div id="simulator-tab" class="tab-content active">
+            <div class="search-box">
+                <div class="search-row">
+                    <label for="searchName">機体名で検索：</label>
+                    <input type="text" id="searchName" placeholder="例: ドリテア、ボール改 など">
+                </div>
+                <div class="search-row">
+                    <label for="searchNo">機体No.で検索：</label>
+                    <input type="text" id="searchNo" placeholder="例: 15、467 など">
+                </div>
+                <button id="calc-btn">検索・計算</button>
+            </div>
+
+            <div class="route-display" id="routeDisplay">
+                派生ルート：未検索
+            </div>
+
+            <h2>ルート構成・機体詳細と個別コスト</h2>
+            
+            <div class="table-scroll-container">
+                <table id="resultTable">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>機体名</th>
+                            <th>変形</th>
+                            <th>HP</th>
+                            <th>装甲</th>
+                            <th>運動</th>
+                            <th>索敵</th>
+                            <th>EN</th>
+                            <th>重量</th>
+                            <th>直感</th>
+                            <th>操縦</th>
+                            <th>近</th>
+                            <th>中</th>
+                            <th>遠</th>
+                            <th>名声</th>
+                            <th>NT</th>
+                            <th>SIZE</th>
+                            <th>コスト</th>
+                            <th>クレジット</th>
+                            <th>地上</th>
+                            <th>水中</th>
+                            <th>宇宙</th>
+                            <th>空中</th>
+                            <th>種別</th>
+                            <th class="cost-th">総名声</th>
+                            <th class="cost-th">総クレジット</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr>
+                            <td colspan="26" class="placeholder-td">上の検索枠に条件を入力して検索してください。</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="total-box">
+                <h3>▼ 派生ルート総合計コスト</h3>
+                <p>累計必要クレジット： <span class="total-value" id="totalCredit">0</span> クレジット</p>
+                <p>累計必要名声： <span class="total-value" id="totalFame">0</span> 名声</p>
+            </div>
         </div>
 
-        <h2>ルート構成・機体詳細と個別コスト（＋総作成コスト）</h2>
-        
-        <div style="overflow-x: auto;">
-            <table id="resultTable">
-                <thead>
-                    <tr>
-                        <th>No</th>
-                        <th>機体名</th>
-                        <th>変形</th>
-                        <th>HP</th>
-                        <th>装甲</th>
-                        <th>運動</th>
-                        <th>索敵</th>
-                        <th>EN</th>
-                        <th>重量</th>
-                        <th>直感</th>
-                        <th>操縦</th>
-                        <th>近</th>
-                        <th>中</th>
-                        <th>遠</th>
-                        <th>名声</th>
-                        <th>NT</th>
-                        <th>SIZE</th>
-                        <th>コスト</th>
-                        <th>クレジット</th>
-                        <th>地上</th>
-                        <th>水中</th>
-                        <th>宇宙</th>
-                        <th>空中</th>
-                        <th>種別</th>
-                        <!-- 🌟 新規追加の列 -->
-                        <th style="background: #1a2c4e; color: #ffca28;">総名声</th>
-                        <th style="background: #1a2c4e; color: #ffca28;">総クレジット</th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody">
-                    <tr>
-                        <td colspan="26" style="padding: 20px; color: #8da4c4;">準備完了しました。上の検索枠に条件を入力して検索してください。</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+        <!-- ================= 2. 機体一覧データタブ ================= -->
+        <div id="list-tab" class="tab-content">
+            <div class="search-box">
+                <div class="search-row">
+                    <label for="tableSearchInput">機体名・No.フィルタ：</label>
+                    <input type="text" id="tableSearchInput" placeholder="例: ガンダム、ザク、0001 など...">
+                </div>
+            </div>
 
-        <div class="total-box">
-            <h3>▼ 派生ルート総合計コスト</h3>
-            <p>累計必要クレジット： <span class="total-value" id="totalCredit">0</span> クレジット</p>
-            <p>累計必要名声： <span class="total-value" id="totalFame">0</span> 名声</p>
+            <div class="list-header-flex">
+                <h2 class="sub-title">📋 全機体ステータス・総作成コスト一覧</h2>
+                <span id="mechCountDisplay" class="count-display">表示中: 0件</span>
+            </div>
+
+            <div class="table-scroll-container" style="max-height: 650px;">
+                <table id="fullMechTable">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>機体名</th>
+                            <th>変形</th>
+                            <th>HP</th>
+                            <th>装甲</th>
+                            <th>運動</th>
+                            <th>索敵</th>
+                            <th>EN</th>
+                            <th>重量</th>
+                            <th>直感</th>
+                            <th>操縦</th>
+                            <th>近</th>
+                            <th>中</th>
+                            <th>遠</th>
+                            <th>名声</th>
+                            <th>NT</th>
+                            <th>SIZE</th>
+                            <th>コスト</th>
+                            <th>クレジット</th>
+                            <th>地上</th>
+                            <th>水中</th>
+                            <th>宇宙</th>
+                            <th>空中</th>
+                            <th>種別</th>
+                            <th class="cost-th">総名声</th>
+                            <th class="cost-th">総クレジット</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fullTableBody">
+                        <tr>
+                            <td colspan="26" class="placeholder-td">データを読み込み中...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- ページネーション操作ボタン -->
+            <div class="pagination-box" id="paginationBox" style="display: none;">
+                <button id="prevBtn">◀ 前へ</button>
+                <span id="pageInfo">1 / 1 ページ</span>
+                <button id="nextBtn">次へ ▶</button>
+            </div>
         </div>
     </div>
 
-    <!-- 共通ヘッダー非同期読み込み ＆ アクティブ判定スクリプト -->
-    <script>
-        fetch('header.html')
-            .then(response => response.text())
-            .then(data => {
-                document.getElementById('header-container').innerHTML = data;
-                
-                const currentPath = window.location.pathname.split('/').pop() || 'route.html';
-                const navLinks = document.querySelectorAll('.nav-links a');
-                navLinks.forEach(link => {
-                    const href = link.getAttribute('href');
-                    if (href === currentPath) {
-                        link.classList.add('active');
-                    }
-                });
-            })
-            .catch(error => {
-                console.error('ヘッダーの読み込みに失敗しました:', error);
-            });
-    </script>
-
-    <!-- メインの検索・CSV処理スクリプト -->
-    <script>
-        const MECH_CSV = "route/GL)機体一覧 - 機体一覧.csv";
-        const ROUTE_CSV = "route/GL)機体派生ルート_260924 - 派生ルート.csv";
-
-        let mechDataList = []; 
-        let routeData = [];    
-
-        window.onload = function() {
-            Promise.all([
-                fetch(MECH_CSV).then(res => res.text()),
-                fetch(ROUTE_CSV).then(res => res.text())
-            ])
-            .then(([mechCsv, routeCsv]) => {
-                mechDataList = parseCSV(mechCsv);
-                routeData = parseCSV(routeCsv);
-
-                let validRouteRows = routeData.filter(row => row.length > 2 && row[2] !== "" && row[2] !== "目的派生検索");
-
-                document.getElementById("logBox").innerHTML = 
-                    `【動作確認ログ】<br>` +
-                    `<span style="color:#69f0ae;">✔ 読み込み成功！</span><br>` +
-                    `・機体一覧データ: <strong>${mechDataList.length}</strong> 件<br>` +
-                    `・有効な派生ルート: <strong>${validRouteRows.length}</strong> 件`;
-            })
-            .catch(error => {
-                document.getElementById("logBox").innerHTML = 
-                    `【動作確認ログ】<br><span style="color:#ff6b6b;">読み込みエラー: ${error.message}</span>`;
-            });
-        };
-
-        // CSVパーサー（ダブルクォーテーション対応）
-        function parseCSV(text) {
-            let rows = [];
-            let currentRow = [];
-            let currentVal = "";
-            let inQuotes = false;
-
-            for (let i = 0; i < text.length; i++) {
-                let char = text[i];
-                let nextChar = text[i + 1];
-
-                if (char === '"') {
-                    if (inQuotes && nextChar === '"') {
-                        currentVal += '"';
-                        i++;
-                    } else {
-                        inQuotes = !inQuotes;
-                    }
-                } else if (char === ',' && !inQuotes) {
-                    currentRow.push(currentVal.trim());
-                    currentVal = "";
-                } else if ((char === '\r' && nextChar === '\n') && !inQuotes) {
-                    currentRow.push(currentVal.trim());
-                    rows.push(currentRow);
-                    currentRow = [];
-                    currentVal = "";
-                    i++;
-                } else if (char === '\n' && !inQuotes) {
-                    currentRow.push(currentVal.trim());
-                    rows.push(currentRow);
-                    currentRow = [];
-                    currentVal = "";
-                } else {
-                    currentVal += char;
-                }
-            }
-            if (currentVal !== "" || currentRow.length > 0) {
-                currentRow.push(currentVal.trim());
-                rows.push(currentRow);
-            }
-
-            return rows.filter(row => row.length > 0 && row.some(val => val !== ""));
-        }
-
-        function handleKeyPress(event) {
-            if (event.key === 'Enter') {
-                searchRoute();
-            }
-        }
-
-        // 🌟 指定された機体名までのルート上の全コスト（総名声・総クレジット）を逆引き・合算するヘルパー関数
-        function calculateCumulativeCost(targetMechName) {
-            // 派生ルートデータから該当機体がゴールになっている行を探す
-            let targetRow = null;
-            for (let i = 0; i < routeData.length; i++) {
-                let row = routeData[i];
-                if (row[2] && row[2] === targetMechName) {
-                    targetRow = row;
-                    break;
-                }
-            }
-            // 見つからない場合はルート全体のどこかに含まれていないか探す
-            if (!targetRow) {
-                for (let i = 0; i < routeData.length; i++) {
-                    let row = routeData[i];
-                    if (row.some((col, colIndex) => colIndex >= 3 && col === targetMechName)) {
-                        targetRow = row;
-                        break;
-                    }
-                }
-            }
-
-            if (!targetRow) {
-                // ルートデータにない場合は単体機のコストを返す
-                let mechInfo = mechDataList.find(row => row.some(col => col === targetMechName));
-                if (mechInfo) {
-                    let fame = parseInt(String(mechInfo[14]).replace(/,/g, '')) || 0;
-                    let credit = parseInt(String(mechInfo[18]).replace(/,/g, '')) || 0;
-                    return { totalFame: fame, totalCredit: credit, routeNames: [targetMechName] };
-                }
-                return { totalFame: 0, totalCredit: 0, routeNames: [] };
-            }
-
-            // ルート上の機体名を抽出
-            let routeNames = [];
-            for (let i = 3; i < targetRow.length; i++) {
-                let val = targetRow[i];
-                if (val && val !== "0" && val !== "-" && val !== "") {
-                    let existsInMech = mechDataList.some(mechRow => mechRow.includes(val));
-                    if (existsInMech) {
-                        if (!routeNames.includes(val)) {
-                            routeNames.push(val);
-                        }
-                    }
-                }
-            }
-
-            let sumFame = 0;
-            let sumCredit = 0;
-
-            routeNames.forEach(mechName => {
-                let mechInfo = mechDataList.find(row => row.some(col => col === mechName));
-                if (mechInfo) {
-                    let fame = parseInt(String(mechInfo[14]).replace(/,/g, '')) || 0;
-                    let credit = parseInt(String(mechInfo[18]).replace(/,/g, '')) || 0;
-                    sumFame += fame;
-                    sumCredit += credit;
-                }
-            });
-
-            return { totalFame: sumFame, totalCredit: sumCredit, routeNames: routeNames };
-        }
-
-        function searchRoute() {
-            if (mechDataList.length === 0 || routeData.length === 0) {
-                alert("まだデータの読み込みが完了していません。");
-                return;
-            }
-
-            const nameKeyword = document.getElementById("searchName").value.trim();
-            const noKeyword = document.getElementById("searchNo").value.trim();
-
-            if (!nameKeyword && !noKeyword) {
-                alert("「機体名」または「機体No.」のどちらかを入力してください。");
-                return;
-            }
-
-            let targetRow = null;
-
-            if (noKeyword) {
-                for (let i = 0; i < routeData.length; i++) {
-                    let row = routeData[i];
-                    if (row[1] && row[1] === noKeyword) {
-                        targetRow = row;
-                        break;
-                    }
-                }
-            }
-
-            if (!targetRow && nameKeyword) {
-                for (let i = 0; i < routeData.length; i++) {
-                    let row = routeData[i];
-                    if (row[2] && row[2] === nameKeyword) {
-                        targetRow = row;
-                        break;
-                    }
-                }
-            }
-
-            if (!targetRow && nameKeyword) {
-                for (let i = 0; i < routeData.length; i++) {
-                    let row = routeData[i];
-                    if (row.some((col, colIndex) => colIndex >= 3 && col === nameKeyword)) {
-                        targetRow = row;
-                        break;
-                    }
-                }
-            }
-
-            if (!targetRow) {
-                document.getElementById("routeDisplay").innerText = "派生ルート：見つかりませんでした";
-                document.getElementById("tableBody").innerHTML = `<tr><td colspan="26" style="padding: 20px; color: #ff6b6b;">指定された条件に一致する派生ルートが見つかりませんでした。</td></tr>`;
-                document.getElementById("totalCredit").innerText = "0";
-                document.getElementById("totalFame").innerText = "0";
-                return;
-            }
-
-            let routeNames = [];
-            for (let i = 3; i < targetRow.length; i++) {
-                let val = targetRow[i];
-                if (val && val !== "0" && val !== "-" && val !== "") {
-                    let existsInMech = mechDataList.some(mechRow => mechRow.includes(val));
-                    if (existsInMech) {
-                        if (!routeNames.includes(val)) {
-                            routeNames.push(val);
-                        }
-                    }
-                }
-            }
-
-            if (routeNames.length === 0) {
-                document.getElementById("routeDisplay").innerText = "派生ルート：有効なルートが見つかりませんでした";
-                document.getElementById("tableBody").innerHTML = `<tr><td colspan="26" style="padding: 20px; color: #ff6b6b;">有効な派生ルートデータが見つかりませんでした。</td></tr>`;
-                document.getElementById("totalCredit").innerText = "0";
-                document.getElementById("totalFame").innerText = "0";
-                return;
-            }
-
-            document.getElementById("routeDisplay").innerText = "派生ルート：" + routeNames.join(" ⇒ ");
-
-            let tableHtml = "";
-            let totalCredit = 0;
-            let totalFame = 0;
-
-            routeNames.forEach((mechName, index) => {
-                let mechInfo = mechDataList.find(row => {
-                    return row.some(col => col === mechName);
-                });
-
-                if (mechInfo) {
-                    let transform = mechInfo[2] !== undefined ? mechInfo[2] : "-";
-                    let hp = mechInfo[3] !== undefined ? mechInfo[3] : "-";
-                    let armor = mechInfo[4] !== undefined ? mechInfo[4] : "-";
-                    let mobility = mechInfo[5] !== undefined ? mechInfo[5] : "-";
-                    let search = mechInfo[6] !== undefined ? mechInfo[6] : "-";
-                    let en = mechInfo[7] !== undefined ? mechInfo[7] : "-";
-                    let weight = mechInfo[8] !== undefined ? mechInfo[8] : "-";
-                    let intuition = mechInfo[9] !== undefined ? mechInfo[9] : "-";
-                    let control = mechInfo[10] !== undefined ? mechInfo[10] : "-";
-                    let closeAtk = mechInfo[11] !== undefined ? mechInfo[11] : "-";
-                    let midAtk = mechInfo[12] !== undefined ? mechInfo[12] : "-";
-                    let longAtk = mechInfo[13] !== undefined ? mechInfo[13] : "-";
-                    let fame = mechInfo[14] !== undefined ? mechInfo[14] : "0";
-                    let nt = mechInfo[15] !== undefined ? mechInfo[15] : "-";
-                    let size = mechInfo[16] !== undefined ? mechInfo[16] : "-";
-                    let cost = mechInfo[17] !== undefined ? mechInfo[17] : "0";
-                    let credit = mechInfo[18] !== undefined ? mechInfo[18] : "0";
-                    let land = mechInfo[19] !== undefined ? mechInfo[19] : "-";
-                    let water = mechInfo[20] !== undefined ? mechInfo[20] : "-";
-                    let space = mechInfo[21] !== undefined ? mechInfo[21] : "-";
-                    let air = mechInfo[22] !== undefined ? mechInfo[22] : "-";
-                    let type = mechInfo[23] !== undefined ? mechInfo[23] : "-";
-
-                    let creditNum = parseInt(String(credit).replace(/,/g, '')) || 0;
-                    let fameNum = parseInt(String(fame).replace(/,/g, '')) || 0;
-                    totalCredit += creditNum;
-                    totalFame += fameNum;
-
-                    // 🌟 この機体までの累計コストを計算
-                    let costCalc = calculateCumulativeCost(mechName);
-
-                    tableHtml += `
-                        <tr>
-                            <td>${index + 1}</td>
-                            <td class="name-col">${mechName}</td>
-                            <td>${transform}</td>
-                            <td>${hp}</td>
-                            <td>${armor}</td>
-                            <td>${mobility}</td>
-                            <td>${search}</td>
-                            <td>${en}</td>
-                            <td>${weight}</td>
-                            <td>${intuition}</td>
-                            <td>${control}</td>
-                            <td>${closeAtk}</td>
-                            <td>${midAtk}</td>
-                            <td>${longAtk}</td>
-                            <td>${fame}</td>
-                            <td>${nt}</td>
-                            <td>${size}</td>
-                            <td>${cost}</td>
-                            <td>${credit}</td>
-                            <td>${land}</td>
-                            <td>${water}</td>
-                            <td>${space}</td>
-                            <td>${air}</td>
-                            <td class="name-col">${type}</td>
-                            <!-- 🌟 追加列：総名声・総クレジット -->
-                            <td class="cost-col">${costCalc.totalFame.toLocaleString()}</td>
-                            <td class="cost-col">${costCalc.totalCredit.toLocaleString()}</td>
-                        </tr>
-                    `;
-                } else {
-                    tableHtml += `
-                        <tr>
-                            <td>${index + 1}</td>
-                            <td class="name-col">${mechName}</td>
-                            <td colspan="25" style="color: #ff6b6b;">「機体一覧」CSVに詳細データが見つかりません</td>
-                        </tr>
-                    `;
-                }
-            });
-
-            document.getElementById("tableBody").innerHTML = tableHtml;
-            document.getElementById("totalCredit").innerText = totalCredit.toLocaleString();
-            document.getElementById("totalFame").innerText = totalFame.toLocaleString();
-        }
-    </script>
+    <!-- メインのJavaScript（moduleとして読み込み） -->
+    <script type="module" src="route.js"></script>
 </body>
 </html>
