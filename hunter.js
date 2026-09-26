@@ -1,4 +1,4 @@
-// hunter.js （頑丈なルート読み込み・フォールバック対応版）
+// hunter.js （総クレジット計算・数値パース強化版）
 $(document).ready(function () {
     let globalMechDataList = [];
     let globalRouteData = [];
@@ -154,7 +154,7 @@ $(document).ready(function () {
         return rows.filter(row => row.length > 0 && row.some(val => val !== ""));
     }
 
-    // 🌟 派生ルートを辿って総名声・総クレジットを算出する関数（ルート読込失敗時は機体一覧側のクレジット列の数値を直接フォールバックとして合算）
+    // 🌟 頑丈になった累積コスト算出関数（数値パースを完全強化）
     function calculateCumulativeCost(targetMechName) {
         let targetRow = null;
         for (let i = 0; i < globalRouteData.length; i++) {
@@ -174,12 +174,18 @@ $(document).ready(function () {
             }
         }
 
-        // ルートデータが見つからない場合の安全策：該当機体の機体一覧データから直接取得
+        // 補助関数：安全に数値に変換する
+        function parseNum(val) {
+            if (val === undefined || val === null || val === "" || val === "-") return 0;
+            let num = parseInt(String(val).replace(/,/g, ''), 10);
+            return isNaN(num) ? 0 : num;
+        }
+
         if (!targetRow) {
             let mechInfo = globalMechDataList.find(row => row.some(col => col === targetMechName));
             if (mechInfo) {
-                let fame = parseInt(String(mechInfo[14] || "0").replace(/,/g, '')) || 0;
-                let credit = parseInt(String(mechInfo[18] || "0").replace(/,/g, '')) || 0;
+                let fame = parseNum(mechInfo[14]);
+                let credit = parseNum(mechInfo[18]);
                 return { totalFame: fame, totalCredit: credit };
             }
             return { totalFame: 0, totalCredit: 0 };
@@ -204,9 +210,8 @@ $(document).ready(function () {
         routeNames.forEach(mechName => {
             let mechInfo = globalMechDataList.find(row => row.some(col => col === mechName));
             if (mechInfo) {
-                let fame = parseInt(String(mechInfo[14] || "0").replace(/,/g, '')) || 0;
-                // インデックス18番がクレジット列
-                let credit = parseInt(String(mechInfo[18] || "0").replace(/,/g, '')) || 0;
+                let fame = parseNum(mechInfo[14]);
+                let credit = parseNum(mechInfo[18]); // クレジット（インデックス18）
                 sumFame += fame;
                 sumCredit += credit;
             }
@@ -215,16 +220,14 @@ $(document).ready(function () {
         return { totalFame: sumFame, totalCredit: sumCredit };
     }
 
-    // ③ 機体一覧と派生ルートCSVを読み込んでランキング算出（パスエラー対策として複数のパス候補を試行）
+    // ③ 機体一覧と派生ルートCSVを読み込んでランキング算出
     function loadAndRankUnitsWithRoute(min, max) {
         if (typeof HUNTER_CONFIG === 'undefined' || !HUNTER_CONFIG.csvFile) {
             $('#unit-error').text("設定ファイル(HUNTER_CONFIG)が見つかりません。").show();
             return;
         }
 
-        const MECH_CSV = HUNTER_CONFIG.csvFile; // "route/GL)機体一覧 - 機体一覧.csv"
-        
-        // 異なる階層からでも読みに行けるように候補を用意
+        const MECH_CSV = HUNTER_CONFIG.csvFile; 
         const routeCsvCandidates = [
             "route/GL)機体派生ルート_260924 - 派生ルート.csv",
             "./route/GL)機体派生ルート_260924 - 派生ルート.csv",
@@ -236,13 +239,10 @@ $(document).ready(function () {
             return;
         }
 
-        // まず機体一覧を読み込む
         fetch(MECH_CSV)
             .then(res => res.text())
             .then(mechCsvText => {
                 globalMechDataList = parseCSV(mechCsvText);
-
-                // 次に派生ルートCSVを候補順にフェッチ試行
                 tryFetchRouteCSV(routeCsvCandidates, 0, () => {
                     processRanking(min, max);
                 });
@@ -252,11 +252,9 @@ $(document).ready(function () {
             });
     }
 
-    // 派生ルートCSVを順番に試して読み込む再帰関数
     function tryFetchRouteCSV(candidates, index, callback) {
         if (index >= candidates.length) {
-            console.warn("Hunter.js: 派生ルートCSVの読み込みに失敗しましたが、単体データでフォールバック継続します。");
-            globalRouteData = []; // 空でもエラーにしない
+            globalRouteData = []; 
             callback();
             return;
         }
@@ -268,11 +266,9 @@ $(document).ready(function () {
             })
             .then(routeCsvText => {
                 globalRouteData = parseCSV(routeCsvText);
-                console.log("Hunter.js: 派生ルートCSV読み込み成功:", candidates[index]);
                 callback();
             })
             .catch(() => {
-                // 次の候補を試す
                 tryFetchRouteCSV(candidates, index + 1, callback);
             });
     }
@@ -310,6 +306,7 @@ $(document).ready(function () {
     }
 
     function displayCustomRank(dataArray, sortKey, targetId, labelName, valColor) {
+        // 降順ソート
         const sorted = [...dataArray].sort((a, b) => b[sortKey] - a[sortKey]).slice(0, 3);
 
         let html = '';
