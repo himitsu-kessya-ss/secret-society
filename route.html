@@ -2,6 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>機体派生ルート検索・総コストシミュレーター</title>
     <style>
         body {
@@ -20,6 +21,7 @@
             background: #111a2e;
             padding: 10px 20px;
             border: 1px solid #2b4c7e;
+            margin-top: 20px;
         }
         p {
             font-size: 14px;
@@ -125,6 +127,9 @@
 </head>
 <body>
 
+    <!-- ▼ 共通ヘッダーが自動でここに読み込まれます -->
+    <div id="header-container"></div>
+
     <h1>機体派生ルート検索・総コストシミュレーター</h1>
     <p>「機体名」または「機体No.」のどちらか片方に条件を入力して、検索ボタンを押してください。</p>
 
@@ -140,6 +145,7 @@
         <button onclick="searchRoute()">検索・計算</button>
     </div>
 
+    <!-- 読み込み件数やステータスを表示するエリア -->
     <div class="log-box" id="logBox">
         【動作確認ログ】<br>
         CSVファイルを読み込んでいます...
@@ -195,6 +201,24 @@
         <p>累計必要名声： <span class="total-value" id="totalFame">0</span> 名声</p>
     </div>
 
+    <!-- 共通ヘッダー読み込みスクリプト -->
+    <script>
+        fetch('header.html')
+            .then(response => response.text())
+            .then(data => {
+                document.getElementById('header-container').innerHTML = data;
+                
+                const currentPath = window.location.pathname.split('/').pop();
+                const navLinks = document.querySelectorAll('.nav-links a');
+                navLinks.forEach(link => {
+                    if (link.getAttribute('href') === currentPath) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+    </script>
+
+    <!-- メインの検索・CSV処理スクリプト -->
     <script>
         const MECH_CSV = "route/GL)機体一覧 - 機体一覧.csv";
         const ROUTE_CSV = "route/GL)機体派生ルート_260924 - 派生ルート.csv";
@@ -214,7 +238,10 @@
                 let validRouteRows = routeData.filter(row => row.length > 2 && row[2] !== "" && row[2] !== "目的派生検索");
 
                 document.getElementById("logBox").innerHTML = 
-                    `【動作確認ログ】<br><span style="color:#69f0ae;">読み込み成功！</span> 機体一覧: ${mechDataList.length}件 / 派生ルート: ${validRouteRows.length}件`;
+                    `【動作確認ログ】<br>` +
+                    `<span style="color:#69f0ae;">✔ 読み込み成功！</span><br>` +
+                    `・機体一覧データ: <strong>${mechDataList.length}</strong> 件<br>` +
+                    `・有効な派生ルート: <strong>${validRouteRows.length}</strong> 件`;
             })
             .catch(error => {
                 document.getElementById("logBox").innerHTML = 
@@ -288,7 +315,6 @@
 
             let targetRow = null;
 
-            // 1. 機体No.の枠に入力がある場合優先してNo.（列index: 1）で検索
             if (noKeyword) {
                 for (let i = 0; i < routeData.length; i++) {
                     let row = routeData[i];
@@ -299,7 +325,6 @@
                 }
             }
 
-            // 2. 機体名の枠に入力がある場合、またはNo.で見つからなかった場合、機体名（目的派生検索 列index: 2）で検索
             if (!targetRow && nameKeyword) {
                 for (let i = 0; i < routeData.length; i++) {
                     let row = routeData[i];
@@ -310,7 +335,6 @@
                 }
             }
 
-            // 3. それでも見つからない場合、ルート内のどこかに機体名が含まれていないか柔軟に探す
             if (!targetRow && nameKeyword) {
                 for (let i = 0; i < routeData.length; i++) {
                     let row = routeData[i];
@@ -329,7 +353,6 @@
                 return;
             }
 
-            // 3列目以降（index 3以降）のルートを抽出
             let routeNames = [];
             for (let i = 3; i < targetRow.length; i++) {
                 let val = targetRow[i];
