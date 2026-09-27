@@ -1,3 +1,5 @@
+<!-- route.js -->
+
 const MECH_CSV = "route/GL)機体一覧 - 機体一覧.csv";
 const ROUTE_CSV = "route/GL)機体派生ルート_260924 - 派生ルート.csv";
 
@@ -218,6 +220,18 @@ function calculateCumulativeCost(targetMechName) {
     return { totalFame: sumFame, totalCredit: sumCredit };
 }
 
+// ▼ NT列の値に応じて背景色用クラスを判定するヘルパー関数
+function getNtCellClass(ntValue) {
+    if (!ntValue) return "";
+    let valStr = String(ntValue).trim();
+    if (valStr.startsWith("NT")) {
+        return "nt-cell-blue"; // 薄水色
+    } else if (valStr.startsWith("強")) {
+        return "nt-cell-red";  // 薄赤色
+    }
+    return "";
+}
+
 // 5. 機体一覧テーブルのレンダリング（ページネーション対応）
 function renderMechTable() {
     const tbody = document.getElementById("fullTableBody");
@@ -270,6 +284,7 @@ function renderMechTable() {
         let type = mechRow[23] !== undefined ? mechRow[23] : "-";
 
         let costCalc = calculateCumulativeCost(mechName);
+        let ntClass = getNtCellClass(nt); // 背景色クラスの判定
 
         tableHtml += `
             <tr>
@@ -288,7 +303,7 @@ function renderMechTable() {
                 <td>${midAtk}</td>
                 <td>${longAtk}</td>
                 <td>${fame}</td>
-                <td>${nt}</td>
+                <td class="${ntClass}">${nt}</td>
                 <td>${size}</td>
                 <td>${cost}</td>
                 <td>${credit}</td>
@@ -467,6 +482,7 @@ function searchRoute() {
             totalFame += fameNum;
 
             let costCalc = calculateCumulativeCost(mechName);
+            let ntClass = getNtCellClass(nt); // 背景色クラスの判定
 
             tableHtml += `
                 <tr>
@@ -485,7 +501,7 @@ function searchRoute() {
                     <td>${midAtk}</td>
                     <td>${longAtk}</td>
                     <td>${fame}</td>
-                    <td>${nt}</td>
+                    <td class="${ntClass}">${nt}</td>
                     <td>${size}</td>
                     <td>${cost}</td>
                     <td>${credit}</td>
