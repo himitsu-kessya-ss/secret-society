@@ -137,19 +137,19 @@
 $(document).ready(function () {
     // ファイルの参照先を「trivia/」フォルダ内に変更
     const triviaFiles = [
-        { name: "遊び方", file: "trivia/「MSタクティクスSR」_の遊び方.txt" },
-        { name: "Q&A", file: "trivia/Q&A（公式転載）.txt" },
-        { name: "キャラステータス", file: "trivia/キャラステータス.txt" },
-        { name: "機体ステータス", file: "trivia/機体ステータス.txt" },
-        { name: "改造・熟練度", file: "trivia/機体カスタマイズ・熟練度.txt" },
-        { name: "スキル", file: "trivia/スキル.txt" },
-        { name: "特性", file: "trivia/特性一覧.txt" },
-        { name: "地形", file: "trivia/地形.txt" },
-        { name: "戦闘ダメージ", file: "trivia/戦闘ダメージ.txt" },
-        { name: "索敵", file: "trivia/索敵.txt" },
-        { name: "気力", file: "trivia/気力.txt" },
-        { name: "掃討盤", file: "trivia/掃討盤.txt" },
-        { name: "豆知識", file: "trivia/豆知識.txt" }
+        { name: "遊び方", file: "trivia/trivia_HowToPlay.txt" },
+        { name: "Q&A", file: "trivia/trivia_qa_official.txt" },
+        { name: "キャラステータス", file: "trivia/trivia_CharStatus.txt" },
+        { name: "機体ステータス", file: "trivia/trivia_mechaStatus.txt" },
+        { name: "改造・熟練度", file: "trivia/trivia_customLV.txt" },
+        { name: "スキル", file: "trivia/trivia_skill.txt" },
+        { name: "特性", file: "trivia/trivia_tokusei.txt" },
+        { name: "地形", file: "trivia/trivia_battlefield.txt" },
+        { name: "戦闘ダメージ", file: "trivia/trivia_battleDmg.txt" },
+        { name: "索敵", file: "trivia/trivia_sakuteki.txt" },
+        { name: "気力", file: "trivia/trivia_kiryoku.txt" },
+        { name: "掃討盤", file: "trivia/trivia_soutouban.txt" },
+        { name: "豆知識", file: "trivia/trivia_tips.txt" }
     ];
 
     const $content =$('#content-display');
@@ -187,8 +187,8 @@ $(document).ready(function () {
     }
 
     function displayContent(filePath, text) {
-        // 「trivia/豆知識.txt」のときだけ行ごとに分割してカード風レイアウトにする
-        if (filePath.endsWith("豆知識.txt")) {
+        // 「trivia/trivia_tips.txt」のときだけ行ごとに分割してカード風レイアウトにする
+        if (filePath.endsWith("trivia_tips.txt")) {
             const lines = text.split('\n').filter(line => line.trim() !== '');
             const htmlLines = lines.map((line) => {
                 const escaped = $('<div>').text(line).html();
