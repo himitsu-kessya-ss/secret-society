@@ -14,7 +14,7 @@
             --text-color: #e0e0e0;
             --card-bg: #25282c;
             --border-color: #444;
-            --header-total-height: 200px; /* タブが2行になるため高さを拡張 */
+            --header-total-height: 200px;
         }
 
         html, body {
@@ -51,7 +51,7 @@
         /* タブデザイン（2行折り返し対応） */
         .tabs-container {
             display: flex;
-            flex-wrap: wrap; /* 折り返しを有効化 */
+            flex-wrap: wrap;
             gap: 5px;
             padding-bottom: 5px;
         }
@@ -77,6 +77,23 @@
             font-family: "MS Gothic", "Osaka-mono", monospace;
             font-size: 0.95rem; min-height: 100%;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        /* 豆知識用の行ごとのカード風レイアウト・色分け */
+        .trivia-item {
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            background: #2a2e33;
+            border-radius: 6px;
+            border-left: 3px solid var(--accent-color);
+            transition: background 0.2s;
+        }
+        /* 交互に背景色を微調整して見やすくする */
+        .trivia-item:nth-child(even) {
+            background: #22262b;
+        }
+        .trivia-item:hover {
+            background: rgba(0, 212, 255, 0.08);
         }
 
         mark { background: #ffeb3b; color: #000; padding: 0 2px; border-radius: 2px; }
@@ -108,7 +125,7 @@
             // 現在開いているページを自動判定してナビに active クラスをつける
             const currentPath = window.location.pathname.split('/').pop();
             const navLinks = document.querySelectorAll('.nav-links a');
-            navLinks.forEach(link => {
+            navLinks.exports = navLinks.forEach(link => {
                 if (link.getAttribute('href') === currentPath) {
                     link.classList.add('active');
                 }
@@ -134,16 +151,15 @@ $(document).ready(function () {
         { name: "豆知識", file: "豆知識.txt" }
     ];
 
-    const $content = $('#content-display');
-    const $search = $('#search-box');
+    const $content =$('#content-display');
+    const $search =$('#search-box');
 
     // タブ生成
     triviaFiles.forEach((item) => {
-        const $btn = $('<button class="tab-btn"></button>')
+        const $btn =$('<button class="tab-btn"></button>')
             .text(item.name)
             .on('click', function() {
-                $('.tab-btn').removeClass('active');
-                $(this).addClass('active');
+                $('.tab-btn').removeClass('active');$(this).addClass('active');
                 loadContent(item.file);
             });
         $('#tabs-container').append($btn);
@@ -157,23 +173,31 @@ $(document).ready(function () {
         fetch(fileName)
             .then(response => response.arrayBuffer())
             .then(buffer => {
-                // 1. まずはUTF-8で試してみる
                 let text = new TextDecoder('utf-8').decode(buffer);
-                
-                // 2. 文字化け特有の記号が含まれている場合にShift-JISで再試行
                 if (text.includes('\uFFFD')) {
                     text = new TextDecoder('shift-jis').decode(buffer);
                 }
                 
-                displayContent(text);
+                displayContent(fileName, text);
             })
             .catch(err => {
                 $content.text("エラー: ファイルが読み込めませんでした。");
             });
     }
 
-    function displayContent(text) {
-        $content.text(text);
+    function displayContent(fileName, text) {
+        // 「豆知識.txt」のときだけ行ごとに分割してカード風レイアウトにする
+        if (fileName === "豆知識.txt") {
+            const lines = text.split('\n').filter(line => line.trim() !== '');
+            const htmlLines = lines.map((line) => {
+                const escaped = $('<div>').text(line).html();
+                return `<div class="trivia-item">${escaped}</div>`;
+            });
+            $content.html(htmlLines.join(''));
+        } else {
+            $content.text(text);
+        }
+
         applyHighlight();
         $('#scroll-container').scrollTop(0);
     }
@@ -181,8 +205,7 @@ $(document).ready(function () {
     $search.on('input', applyHighlight);
 
     function applyHighlight() {
-        const keyword = $search.val();
-        $content.unmark().mark(keyword, { "accuracy": "partially" });
+        const keyword = $search.val();$content.unmark().mark(keyword, { "accuracy": "partially" });
     }
 });
 </script>
