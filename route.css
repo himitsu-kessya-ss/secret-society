@@ -1,3 +1,5 @@
+<!-- route.css -->
+
 body {
     background-color: #0b0f19;
     color: #c0d2ec;
@@ -242,4 +244,19 @@ td.name-col {
 .pagination-box button {
     padding: 6px 15px;
     font-size: 14px;
+}
+
+/* ==========================================
+   ▼ NT列の条件付き背景色用クラス（ダークテーマ対応）
+========================================== */
+.nt-cell-blue {
+    background-color: rgba(33, 150, 243, 0.25) !important; /* ダークに馴染む薄水色 */
+    color: #90caf9 !important;
+    font-weight: bold;
+}
+
+.nt-cell-red {
+    background-color: rgba(244, 67, 54, 0.25) !important;  /* ダークに馴染む薄赤色 */
+    color: #ef9a9a !important;
+    font-weight: bold;
 }
