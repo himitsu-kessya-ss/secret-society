@@ -90,8 +90,19 @@ function loadCSVData() {
         fetch(ROUTE_CSV).then(res => res.text())
     ])
     .then(([mechCsv, routeCsv]) => {
-        mechDataList = parseCSV(mechCsv);
+        let rawMechData = parseCSV(mechCsv);
         routeData = parseCSV(routeCsv);
+
+        // ▼ 【修正】機体一覧CSVの1行目がヘッダー（「No」や「機体名」など）の場合に自動で除外する
+        mechDataList = rawMechData.filter(row => {
+            let firstCol = String(row[0] || "").trim().toLowerCase();
+            let secondCol = String(row[1] || "").trim().toLowerCase();
+            // 先頭の列が「no」や「機体番号」などのヘッダー文字である場合はデータから除外する
+            if (firstCol === "no" || firstCol === "機体番号" || secondCol === "機体名") {
+                return false;
+            }
+            return true;
+        });
 
         let validRouteRows = routeData.filter(row => row.length > 2 && row[2] !== "" && row[2] !== "目的派生検索");
 
