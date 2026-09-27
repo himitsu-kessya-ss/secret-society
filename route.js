@@ -93,11 +93,9 @@ function loadCSVData() {
         let rawMechData = parseCSV(mechCsv);
         routeData = parseCSV(routeCsv);
 
-        // ▼ 【修正】機体一覧CSVの1行目がヘッダー（「No」や「機体名」など）の場合に自動で除外する
         mechDataList = rawMechData.filter(row => {
             let firstCol = String(row[0] || "").trim().toLowerCase();
             let secondCol = String(row[1] || "").trim().toLowerCase();
-            // 先頭の列が「no」や「機体番号」などのヘッダー文字である場合はデータから除外する
             if (firstCol === "no" || firstCol === "機体番号" || secondCol === "機体名") {
                 return false;
             }
@@ -252,7 +250,7 @@ function renderMechTable() {
     countDisplay.innerText = `全 ${filteredMechList.length} 件`;
 
     if (filteredMechList.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="26" style="padding: 20px; color: #ff6b6b;">一致する機体が見つかりませんでした。</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="27" style="padding: 20px; color: #ff6b6b;">一致する機体が見つかりませんでした。</td></tr>`;
         if (paginationBox) paginationBox.style.display = "none";
         return;
     }
@@ -267,7 +265,8 @@ function renderMechTable() {
 
     let tableHtml = "";
     pageData.forEach((mechRow, idx) => {
-        let no = mechRow[0] !== undefined ? mechRow[0] : (startIdx + idx + 1);
+        let rowNo = startIdx + idx + 1;
+        let mechNo = mechRow[0] !== undefined ? mechRow[0] : "-"; // 1列目：機体No.
         let mechName = mechRow[1] !== undefined ? mechRow[1] : "-";
         let transform = mechRow[2] !== undefined ? mechRow[2] : "-";
         let hp = mechRow[3] !== undefined ? mechRow[3] : "-";
@@ -297,7 +296,8 @@ function renderMechTable() {
 
         tableHtml += `
             <tr>
-                <td>${no}</td>
+                <td>${rowNo}</td>
+                <td>${mechNo}</td>
                 <td class="name-col">${mechName}</td>
                 <td>${transform}</td>
                 <td>${hp}</td>
@@ -423,7 +423,7 @@ function searchRoute() {
 
     if (!targetRow) {
         document.getElementById("routeDisplay").innerText = "派生ルート：見つかりませんでした";
-        document.getElementById("tableBody").innerHTML = `<tr><td colspan="26" style="padding: 20px; color: #ff6b6b;">指定された条件に一致する派生ルートが見つかりませんでした。</td></tr>`;
+        document.getElementById("tableBody").innerHTML = `<tr><td colspan="27" style="padding: 20px; color: #ff6b6b;">指定された条件に一致する派生ルートが見つかりませんでした。</td></tr>`;
         document.getElementById("totalCredit").innerText = "0";
         document.getElementById("totalFame").innerText = "0";
         return;
@@ -444,7 +444,7 @@ function searchRoute() {
 
     if (routeNames.length === 0) {
         document.getElementById("routeDisplay").innerText = "派生ルート：有効なルートが見つかりませんでした";
-        document.getElementById("tableBody").innerHTML = `<tr><td colspan="26" style="padding: 20px; color: #ff6b6b;">有効な派生ルートデータが見つかりませんでした。</td></tr>`;
+        document.getElementById("tableBody").innerHTML = `<tr><td colspan="27" style="padding: 20px; color: #ff6b6b;">有効な派生ルートデータが見つかりませんでした。</td></tr>`;
         document.getElementById("totalCredit").innerText = "0";
         document.getElementById("totalFame").innerText = "0";
         return;
@@ -462,6 +462,7 @@ function searchRoute() {
         });
 
         if (mechInfo) {
+            let mechNo = mechInfo[0] !== undefined ? mechInfo[0] : "-"; // 1列目：機体No.
             let transform = mechInfo[2] !== undefined ? mechInfo[2] : "-";
             let hp = mechInfo[3] !== undefined ? mechInfo[3] : "-";
             let armor = mechInfo[4] !== undefined ? mechInfo[4] : "-";
@@ -496,6 +497,7 @@ function searchRoute() {
             tableHtml += `
                 <tr>
                     <td>${index + 1}</td>
+                    <td>${mechNo}</td>
                     <td class="name-col">${mechName}</td>
                     <td>${transform}</td>
                     <td>${hp}</td>
@@ -527,8 +529,9 @@ function searchRoute() {
             tableHtml += `
                 <tr>
                     <td>${index + 1}</td>
+                    <td>-</td>
                     <td class="name-col">${mechName}</td>
-                    <td colspan="25" style="color: #ff6b6b;">「機体一覧」CSVに詳細データが見つかりません</td>
+                    <td colspan="24" style="color: #ff6b6b;">「機体一覧」CSVに詳細データが見つかりません</td>
                 </tr>
             `;
         }
