@@ -125,7 +125,7 @@
             // 現在開いているページを自動判定してナビに active クラスをつける
             const currentPath = window.location.pathname.split('/').pop();
             const navLinks = document.querySelectorAll('.nav-links a');
-            navLinks.exports = navLinks.forEach(link => {
+            navLinks.forEach(link => {
                 if (link.getAttribute('href') === currentPath) {
                     link.classList.add('active');
                 }
@@ -135,20 +135,21 @@
 
 <script>
 $(document).ready(function () {
+    // ファイルの参照先を「trivia/」フォルダ内に変更
     const triviaFiles = [
-        { name: "遊び方", file: "「MSタクティクスSR」_の遊び方.txt" },
-        { name: "Q&A", file: "Q&A（公式転載）.txt" },
-        { name: "キャラステータス", file: "キャラステータス.txt" },
-        { name: "機体ステータス", file: "機体ステータス.txt" },
-        { name: "改造・熟練度", file: "機体カスタマイズ・熟練度.txt" },
-        { name: "スキル", file: "スキル.txt" },
-        { name: "特性", file: "特性一覧.txt" },
-        { name: "地形", file: "地形.txt" },
-        { name: "戦闘ダメージ", file: "戦闘ダメージ.txt" },
-        { name: "索敵", file: "索敵.txt" },
-        { name: "気力", file: "気力.txt" },
-        { name: "掃討盤", file: "掃討盤.txt" },
-        { name: "豆知識", file: "豆知識.txt" }
+        { name: "遊び方", file: "trivia/「MSタクティクスSR」_の遊び方.txt" },
+        { name: "Q&A", file: "trivia/Q&A（公式転載）.txt" },
+        { name: "キャラステータス", file: "trivia/キャラステータス.txt" },
+        { name: "機体ステータス", file: "trivia/機体ステータス.txt" },
+        { name: "改造・熟練度", file: "trivia/機体カスタマイズ・熟練度.txt" },
+        { name: "スキル", file: "trivia/スキル.txt" },
+        { name: "特性", file: "trivia/特性一覧.txt" },
+        { name: "地形", file: "trivia/地形.txt" },
+        { name: "戦闘ダメージ", file: "trivia/戦闘ダメージ.txt" },
+        { name: "索敵", file: "trivia/索敵.txt" },
+        { name: "気力", file: "trivia/気力.txt" },
+        { name: "掃討盤", file: "trivia/掃討盤.txt" },
+        { name: "豆知識", file: "trivia/豆知識.txt" }
     ];
 
     const $content =$('#content-display');
@@ -167,10 +168,10 @@ $(document).ready(function () {
 
     $('.tab-btn').first().click();
 
-    function loadContent(fileName) {
+    function loadContent(filePath) {
         $content.text("読み込み中...");
         
-        fetch(fileName)
+        fetch(filePath)
             .then(response => response.arrayBuffer())
             .then(buffer => {
                 let text = new TextDecoder('utf-8').decode(buffer);
@@ -178,16 +179,16 @@ $(document).ready(function () {
                     text = new TextDecoder('shift-jis').decode(buffer);
                 }
                 
-                displayContent(fileName, text);
+                displayContent(filePath, text);
             })
             .catch(err => {
                 $content.text("エラー: ファイルが読み込めませんでした。");
             });
     }
 
-    function displayContent(fileName, text) {
-        // 「豆知識.txt」のときだけ行ごとに分割してカード風レイアウトにする
-        if (fileName === "豆知識.txt") {
+    function displayContent(filePath, text) {
+        // 「trivia/豆知識.txt」のときだけ行ごとに分割してカード風レイアウトにする
+        if (filePath.endsWith("豆知識.txt")) {
             const lines = text.split('\n').filter(line => line.trim() !== '');
             const htmlLines = lines.map((line) => {
                 const escaped = $('<div>').text(line).html();
