@@ -1,7 +1,7 @@
 // CSV/TXT 読み込み処理
 async function loadData() {
     try {
-        const resW = await fetch('武器一覧.csv');
+        const resW = await fetch('arms_weponlist.csv');
         const txtW = await resW.text();
         renderTable('weapon', txtW);
 
