@@ -1,4 +1,4 @@
-// hunter.js （完全版：HCとスクランブルの2列独立表示 ＆ 明日列別カラー対応）
+// hunter.js （完全版：スクランブルのテキスト抽出を強化）
 $(document).ready(function () {
     let globalMechDataList = [];
     let globalRouteData = [];
@@ -18,10 +18,11 @@ $(document).ready(function () {
             scrambleBattles.clear();
             const lines = txt.split('\n');
             lines.forEach(line => {
+                // 「○戦」や「○戦目」などのパターンを柔軟に数値として抽出
                 const matches = line.match(/([\d,]+)\s*戦/g);
                 if (matches) {
                     matches.forEach(m => {
-                        let num = parseInt(m.replace(/[,戦\s]/g, ''), 10);
+                        let num = parseInt(m.replace(/[,戦\s目]/g, ''), 10);
                         if (!isNaN(num) && num > 0) {
                             scrambleBattles.add(num);
                         }
@@ -414,5 +415,9 @@ $(document).ready(function () {
     loadScrambleData().always(() => {
         initHayamiTable();
         refreshTodayTab();
+        // 初期入力値がある場合はスケジュールを即座に計算・反映させる
+        if ($('#input-battle').val()) {
+            updateSchedules();
+        }
     });
 });
