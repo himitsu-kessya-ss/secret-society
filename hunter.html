@@ -29,12 +29,13 @@
     <div id="today-tool" class="tool-container">
         <div class="tool-section">
             <span class="tool-title">① 今日の最初のHCを計算</span>
-            <input type="number" id="input-battle" class="calc-input" placeholder="前日の最終戦闘数を入力...">
-            <div id="calc-res" class="result-box">前日の数値を入力してください</div>
+            <!-- 変更点：現在の総戦闘回数を促す文言に修正 -->
+            <input type="number" id="input-battle" class="calc-input" placeholder="現在の総戦闘回数を入力して下さい...">
+            <div id="calc-res" class="result-box">現在の総戦闘回数を入力してください</div>
 
-            <!-- ＋1500戦までのスケジュール表を表示するエリア -->
+            <!-- ＋1500戦までのスケジュール表を表示するエリア（当日） -->
             <div id="schedule-area" style="margin-top: 20px; display: none;">
-                <div style="font-weight: bold; color: #00d4ff; margin-bottom: 5px;">📊 入力した戦闘回数 ＋1500戦までのスケジュール</div>
+                <div style="font-weight: bold; color: var(--accent-color); margin-bottom: 5px;">📊 入力した戦闘回数 ＋1500戦までのスケジュール（当日）</div>
                 <div class="schedule-subtext">※HCは本日の加算値（周期）をベースに計算し、スクランブルは総戦闘回数の158戦周期で表示します。</div>
                 <table class="hc-schedule-table" id="schedule-table">
                     <thead>
@@ -49,6 +50,30 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- 追加点：明日のHC出現タイミング表（デフォルトで折りたたみ） -->
+            <div id="tomorrow-schedule-area" style="margin-top: 30px; display: none;">
+                <details style="background: rgba(0, 212, 255, 0.05); border: 1px solid var(--accent-color); border-radius: 8px; padding: 12px 15px;">
+                    <summary style="font-weight: bold; color: var(--accent-color); cursor: pointer; outline: none; font-size: 0.95rem;">
+                        📅 明日のHC出現タイミング表を開く（クリックで展開）
+                    </summary>
+                    <div style="margin-top: 15px;">
+                        <div class="schedule-subtext">※翌日の加算値（周期）をベースに計算したスケジュールです。</div>
+                        <table class="hc-schedule-table" id="tomorrow-schedule-table" style="margin-top: 10px;">
+                            <thead>
+                                <tr>
+                                    <th>戦闘回数</th>
+                                    <th>HC</th>
+                                    <th>スクランブル</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- JavaScriptで動的に挿入されます -->
+                            </tbody>
+                        </table>
+                    </div>
+                </details>
+            </div>
         </div>
 
         <div class="tool-section">
@@ -61,7 +86,7 @@
             <div id="unit-error" style="color: #ff5555; margin-bottom: 10px; display: none;"></div>
             <div class="unit-rank-grid">
                 <div>
-                    <div style="color: #00d4ff; font-size: 0.9rem; border-bottom: 1px solid #00d4ff; margin-bottom: 10px; padding-bottom: 5px;">総名声ランキング ベスト3</div>
+                    <div style="color: var(--accent-color); font-size: 0.9rem; border-bottom: 1px solid var(--accent-color); margin-bottom: 10px; padding-bottom: 5px;">総名声ランキング ベスト3</div>
                     <div id="rank-fame">解析中...</div>
                 </div>
                 <div>
