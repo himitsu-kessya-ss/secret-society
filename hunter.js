@@ -1,4 +1,4 @@
-// hunter.js （完全版：スクランブル自動抽出 ＆ 当日スケジュール統合 ＆ 明日列別カラー対応）
+// hunter.js （完全版：HCとスクランブルの2列独立表示 ＆ 明日列別カラー対応）
 $(document).ready(function () {
     let globalMechDataList = [];
     let globalRouteData = [];
@@ -16,10 +16,8 @@ $(document).ready(function () {
             }
             
             scrambleBattles.clear();
-            // テキスト内から「数字＋戦」または「数字」のパターンを走査してスクランブル回数を抽出
             const lines = txt.split('\n');
             lines.forEach(line => {
-                // 例: 「45588戦」や「45,588戦」のような記述をマッチさせる
                 const matches = line.match(/([\d,]+)\s*戦/g);
                 if (matches) {
                     matches.forEach(m => {
@@ -77,7 +75,7 @@ $(document).ready(function () {
         return { day: d, addVal: 111, range: "1 - 100" };
     }
 
-    // ① 計算機と＋1500戦スケジュール（当日スケジュールにスクランブルを統合）の即時反映
+    // ① 計算機と＋1500戦スケジュール（HCとスクランブルを別列で統合）の即時反映
     function updateSchedules() {
         const prev = parseInt($('#input-battle').val());
         const data = getTodayData();
@@ -103,30 +101,34 @@ $(document).ready(function () {
         $('#today-subtext').text(`※本日の加算値（周期: ${data.addVal}）をベースにHCおよびスクランブル出現タイミングを表示します。`);
         $('#tomorrow-subtext').text(`※同じ戦闘回数における「今日のHC（周期: ${data.addVal}）」と「明日のHC（周期: ${tomorrowData.addVal}）」のタイミングを比較できます。`);
         
+        // ヘッダー名に実際の周期数値を反映
+        $('#th-today-hc-col').text(`HC（${data.addVal}）`);
         $('#th-today-label').text(`今日のHC（${data.addVal}）`);
         $('#th-tomorrow-label').text(`明日のHC（${tomorrowData.addVal}）`);
 
-        // --- 当日のHCスケジュール ＆ スクランブル計算 ---
+        // --- 当日のHCスケジュール ＆ スクランブルの2列マップ作成 ---
         const firstHc = Math.floor((prev / data.addVal) + 1) * data.addVal;
         $('#calc-res').html(`今日の最初のHCは <strong style="color:var(--accent-color);">${firstHc.toLocaleString()}</strong> 戦目です`);
 
         let events = {};
+
+        // 1. HCの発生タイミングをマッピング
         let currentHc = firstHc;
         let hcCount = 1;
         while (currentHc <= maxBattle) {
             if (currentHc >= startBattle) {
-                if (!events[currentHc]) events[currentHc] = [];
-                events[currentHc].push(`${hcCount}回目`);
+                if (!events[currentHc]) events[currentHc] = { hc: '', scramble: '' };
+                events[currentHc].hc = `${hcCount}回目`;
             }
             currentHc += data.addVal;
             hcCount++;
         }
 
-        // スクランブル発生タイミングも当日の表に統合
+        // 2. スクランブルの発生タイミングをマッピング
         scrambleBattles.forEach(battleNum => {
             if (battleNum >= startBattle && battleNum <= maxBattle) {
-                if (!events[battleNum]) events[battleNum] = [];
-                events[battleNum].push("スクランブル");
+                if (!events[battleNum]) events[battleNum] = { hc: '', scramble: '' };
+                events[battleNum].scramble = "スクランブル";
             }
         });
 
@@ -136,16 +138,14 @@ $(document).ready(function () {
         if (sortedBattles.length > 0) {
             scheduleArea.show();
             sortedBattles.forEach(battle => {
-                const infoList = events[battle];
+                const item = events[battle];
                 const tr = document.createElement('tr');
-                
-                // スクランブルが含まれている場合は専用の強調クラスを付与
-                let isScrambleRow = infoList.some(item => item.includes("スクランブル"));
-                tr.className = isScrambleRow ? 'col-scramble' : 'row-hc';
+                tr.className = 'row-hc';
 
                 tr.innerHTML = `
                     <td><strong>${battle.toLocaleString()}戦</strong></td>
-                    <td>${infoList.join(' ＆ ')}</td>
+                    <td>${item.hc || 'ー'}</td>
+                    <td class="${item.scramble ? 'col-scramble' : ''}">${item.scramble || 'ー'}</td>
                 `;
                 tbody.appendChild(tr);
             });
