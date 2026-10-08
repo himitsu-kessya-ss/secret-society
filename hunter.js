@@ -1,4 +1,4 @@
-// hunter.js （完全版：名声15番目・クレジット19番目対応）
+// hunter.js （完全版：名声15番目・クレジット19番目対応 ＆ 明日スケジュール対応）
 $(document).ready(function () {
     let globalMechDataList = [];
     let globalRouteData = [];
@@ -28,19 +28,43 @@ $(document).ready(function () {
         return { day: d, addVal: 111, range: "1 - 100" };
     }
 
-    // ① 計算機と＋1500戦スケジュールの即時反映
+    // 明日の情報をデータから取得（月末の場合は1日にループ）
+    function getTomorrowData() {
+        const now = new Date();
+        const tomorrowDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+        const d = tomorrowDate.getDate();
+
+        if (typeof HUNTER_CONFIG !== 'undefined' && HUNTER_CONFIG.hayamiData) {
+            const target = HUNTER_CONFIG.hayamiData[d - 1] || HUNTER_CONFIG.hayamiData[0];
+            return {
+                day: target.day,
+                addVal: target.addVal,
+                range: target.range
+            };
+        }
+        return { day: d, addVal: 111, range: "1 - 100" };
+    }
+
+    // ① 計算機と＋1500戦スケジュール（当日 ＆ 明日）の即時反映
     $('#input-battle').on('input', function() {
         const prev = parseInt($(this).val());
         const data = getTodayData();
+        const tomorrowData = getTomorrowData();
+
         const scheduleArea = $('#schedule-area');
         const tbody = document.querySelector('#schedule-table tbody');
+        
+        const tomorrowScheduleArea = $('#tomorrow-schedule-area');
+        const tomorrowTbody = document.querySelector('#tomorrow-schedule-table tbody');
 
         if (isNaN(prev)) { 
             $('#calc-res').text("数値を入力してください"); 
             scheduleArea.hide();
+            tomorrowScheduleArea.hide();
             return; 
         }
         
+        // --- 当日の計算 ---
         const firstHc = Math.floor((prev / data.addVal) + 1) * data.addVal;
         $('#calc-res').html(`今日の最初のHCは <strong style="color:var(--accent-color);">${firstHc.toLocaleString()}</strong> 戦目です`);
 
@@ -98,6 +122,61 @@ $(document).ready(function () {
             });
         } else {
             scheduleArea.hide();
+        }
+
+        // --- 明日のスケジュール計算 ---
+        const tomorrowFirstHc = Math.floor((prev / tomorrowData.addVal) + 1) * tomorrowData.addVal;
+        let tomorrowEvents = {};
+
+        let tCurrentHc = tomorrowFirstHc;
+        let tHcCount = 1;
+        while (tCurrentHc <= maxBattle) {
+            if (tCurrentHc >= startBattle) {
+                if (!tomorrowEvents[tCurrentHc]) tomorrowEvents[tCurrentHc] = { hc: '', scramble: '' };
+                tomorrowEvents[tCurrentHc].hc = `${tHcCount}回目`;
+            }
+            tCurrentHc += tomorrowData.addVal;
+            tHcCount++;
+        }
+
+        let tSBattle = Math.floor(prev / scrambleInterval) * scrambleInterval + scrambleInterval;
+        let tScrambleCount = 1;
+
+        while (tSBattle <= maxBattle) {
+            if (tSBattle >= startBattle) {
+                if (!tomorrowEvents[tSBattle]) tomorrowEvents[tSBattle] = { hc: '', scramble: '' };
+                tomorrowEvents[tSBattle].scramble = `${tScrambleCount}回目`;
+            }
+            tSBattle += scrambleInterval;
+            tScrambleCount++;
+        }
+
+        const tomorrowSortedBattles = Object.keys(tomorrowEvents).map(Number).sort((a, b) => a - b);
+
+        tomorrowTbody.innerHTML = '';
+        if (tomorrowSortedBattles.length > 0) {
+            tomorrowScheduleArea.show();
+            tomorrowSortedBattles.forEach(battle => {
+                const item = tomorrowEvents[battle];
+                const tr = document.createElement('tr');
+                
+                if (item.hc && item.scramble) {
+                    tr.className = 'row-both';
+                } else if (item.scramble) {
+                    tr.className = 'row-scramble';
+                } else {
+                    tr.className = 'row-hc';
+                }
+
+                tr.innerHTML = `
+                    <td><strong>${battle.toLocaleString()}戦</strong></td>
+                    <td>${item.hc || 'ー'}</td>
+                    <td>${item.scramble || 'ー'}</td>
+                `;
+                tomorrowTbody.appendChild(tr);
+            });
+        } else {
+            tomorrowScheduleArea.hide();
         }
     });
 
