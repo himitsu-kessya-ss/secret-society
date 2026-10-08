@@ -1,4 +1,4 @@
-// hunter.js （完全版：名声15番目・クレジット19番目対応 ＆ HCスケジュールのみ）
+// hunter.js （完全版：名声15番目・クレジット19番目対応 ＆ 明日表に当日/翌日の2列比較対応）
 $(document).ready(function () {
     let globalMechDataList = [];
     let globalRouteData = [];
@@ -45,7 +45,7 @@ $(document).ready(function () {
         return { day: d, addVal: 111, range: "1 - 100" };
     }
 
-    // ① 計算機と＋1500戦スケジュール（当日HC ＆ 明日HC）の即時反映
+    // ① 計算機と＋1500戦スケジュール（当日 ＆ 明日比較）の即時反映
     $('#input-battle').on('input', function() {
         const prev = parseInt($(this).val());
         const data = getTodayData();
@@ -66,6 +66,10 @@ $(document).ready(function () {
         
         const startBattle = prev + 1;
         const maxBattle = prev + 1500;
+
+        // サブテキストに周期（加算値）を反映
+        $('#today-subtext').text(`※本日の加算値（周期: ${data.addVal}）をベースにHC出現タイミングを表示します。`);
+        $('#tomorrow-subtext').text(`※同じ戦闘回数における「今日のHC（周期: ${data.addVal}）」と「明日のHC（周期: ${tomorrowData.addVal}）」のタイミングを比較できます。`);
 
         // --- 当日のHCスケジュール計算 ---
         const firstHc = Math.floor((prev / data.addVal) + 1) * data.addVal;
@@ -103,33 +107,47 @@ $(document).ready(function () {
             scheduleArea.hide();
         }
 
-        // --- 明日のHCスケジュール計算 ---
-        const tomorrowFirstHc = Math.floor((prev / tomorrowData.addVal) + 1) * tomorrowData.addVal;
-        let tomorrowEvents = {};
-        let tCurrentHc = tomorrowFirstHc;
+        // --- 明日のスケジュール表（当日HC ＆ 明日HC の2列比較用マップ作成） ---
+        let combinedEvents = {};
+
+        // 1. 当日周期のHCをマッピング
+        let tCurrentHc = Math.floor((prev / data.addVal) + 1) * data.addVal;
         let tHcCount = 1;
         while (tCurrentHc <= maxBattle) {
             if (tCurrentHc >= startBattle) {
-                if (!tomorrowEvents[tCurrentHc]) tomorrowEvents[tCurrentHc] = { hc: '' };
-                tomorrowEvents[tCurrentHc].hc = `${tHcCount}回目`;
+                if (!combinedEvents[tCurrentHc]) combinedEvents[tCurrentHc] = { todayHc: '', tomorrowHc: '' };
+                combinedEvents[tCurrentHc].todayHc = `${tHcCount}回目`;
             }
-            tCurrentHc += tomorrowData.addVal;
+            tCurrentHc += data.addVal;
             tHcCount++;
         }
 
-        const tomorrowSortedBattles = Object.keys(tomorrowEvents).map(Number).sort((a, b) => a - b);
+        // 2. 翌日周期のHCをマッピング
+        let tmCurrentHc = Math.floor((prev / tomorrowData.addVal) + 1) * tomorrowData.addVal;
+        let tmHcCount = 1;
+        while (tmCurrentHc <= maxBattle) {
+            if (tmCurrentHc >= startBattle) {
+                if (!combinedEvents[tmCurrentHc]) combinedEvents[tmCurrentHc] = { todayHc: '', tomorrowHc: '' };
+                combinedEvents[tmCurrentHc].tomorrowHc = `${tmHcCount}回目`;
+            }
+            tmCurrentHc += tomorrowData.addVal;
+            tmHcCount++;
+        }
+
+        const combinedSortedBattles = Object.keys(combinedEvents).map(Number).sort((a, b) => a - b);
 
         tomorrowTbody.innerHTML = '';
-        if (tomorrowSortedBattles.length > 0) {
+        if (combinedSortedBattles.length > 0) {
             tomorrowScheduleArea.show();
-            tomorrowSortedBattles.forEach(battle => {
-                const item = tomorrowEvents[battle];
+            combinedSortedBattles.forEach(battle => {
+                const item = combinedEvents[battle];
                 const tr = document.createElement('tr');
                 tr.className = 'row-hc';
 
                 tr.innerHTML = `
                     <td><strong>${battle.toLocaleString()}戦</strong></td>
-                    <td>${item.hc}</td>
+                    <td>${item.todayHc || 'ー'}</td>
+                    <td>${item.tomorrowHc || 'ー'}</td>
                 `;
                 tomorrowTbody.appendChild(tr);
             });
