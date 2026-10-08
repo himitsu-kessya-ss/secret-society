@@ -29,20 +29,18 @@
     <div id="today-tool" class="tool-container">
         <div class="tool-section">
             <span class="tool-title">① 今日の最初のHCを計算</span>
-            <!-- 変更点：現在の総戦闘回数を促す文言に修正 -->
             <input type="number" id="input-battle" class="calc-input" placeholder="現在の総戦闘回数を入力して下さい...">
             <div id="calc-res" class="result-box">現在の総戦闘回数を入力してください</div>
 
-            <!-- ＋1500戦までのスケジュール表を表示するエリア（当日） -->
+            <!-- ＋1500戦までのスケジュール表を表示するエリア（当日：HCのみ） -->
             <div id="schedule-area" style="margin-top: 20px; display: none;">
-                <div style="font-weight: bold; color: var(--accent-color); margin-bottom: 5px;">📊 入力した戦闘回数 ＋1500戦までのスケジュール（当日）</div>
-                <div class="schedule-subtext">※HCは本日の加算値（周期）をベースに計算し、スクランブルは総戦闘回数の158戦周期で表示します。</div>
+                <div style="font-weight: bold; color: var(--accent-color); margin-bottom: 5px;">📊 入力した戦闘回数 ＋1500戦までのスケジュール（今日のHC）</div>
+                <div class="schedule-subtext">※本日の加算値（周期）をベースにHC出現タイミングを表示します。</div>
                 <table class="hc-schedule-table" id="schedule-table">
                     <thead>
                         <tr>
                             <th>戦闘回数</th>
                             <th>HC</th>
-                            <th>スクランブル</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -51,20 +49,19 @@
                 </table>
             </div>
 
-            <!-- 追加点：明日のHC出現タイミング表（デフォルトで折りたたみ） -->
+            <!-- 明日のHC出現タイミング表（折りたたみ：HCのみ） -->
             <div id="tomorrow-schedule-area" style="margin-top: 30px; display: none;">
                 <details style="background: rgba(0, 212, 255, 0.05); border: 1px solid var(--accent-color); border-radius: 8px; padding: 12px 15px;">
                     <summary style="font-weight: bold; color: var(--accent-color); cursor: pointer; outline: none; font-size: 0.95rem;">
                         📅 明日のHC出現タイミング表を開く（クリックで展開）
                     </summary>
                     <div style="margin-top: 15px;">
-                        <div class="schedule-subtext">※翌日の加算値（周期）をベースに計算したスケジュールです。</div>
+                        <div class="schedule-subtext">※翌日の加算値（周期）をベースにHC出現タイミングを表示します。</div>
                         <table class="hc-schedule-table" id="tomorrow-schedule-table" style="margin-top: 10px;">
                             <thead>
                                 <tr>
                                     <th>戦闘回数</th>
                                     <th>HC</th>
-                                    <th>スクランブル</th>
                                 </tr>
                             </thead>
                             <tbody>
