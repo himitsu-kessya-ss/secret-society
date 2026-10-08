@@ -1,4 +1,4 @@
-// hunter.js （完全版：名声15番目・クレジット19番目対応 ＆ 明日スケジュール対応）
+// hunter.js （完全版：名声15番目・クレジット19番目対応 ＆ HCスケジュールのみ）
 $(document).ready(function () {
     let globalMechDataList = [];
     let globalRouteData = [];
@@ -45,7 +45,7 @@ $(document).ready(function () {
         return { day: d, addVal: 111, range: "1 - 100" };
     }
 
-    // ① 計算機と＋1500戦スケジュール（当日 ＆ 明日）の即時反映
+    // ① 計算機と＋1500戦スケジュール（当日HC ＆ 明日HC）の即時反映
     $('#input-battle').on('input', function() {
         const prev = parseInt($(this).val());
         const data = getTodayData();
@@ -64,36 +64,23 @@ $(document).ready(function () {
             return; 
         }
         
-        // --- 当日の計算 ---
+        const startBattle = prev + 1;
+        const maxBattle = prev + 1500;
+
+        // --- 当日のHCスケジュール計算 ---
         const firstHc = Math.floor((prev / data.addVal) + 1) * data.addVal;
         $('#calc-res').html(`今日の最初のHCは <strong style="color:var(--accent-color);">${firstHc.toLocaleString()}</strong> 戦目です`);
 
-        const startBattle = prev + 1;
-        const maxBattle = prev + 1500;
         let events = {};
-
         let currentHc = firstHc;
         let hcCount = 1;
         while (currentHc <= maxBattle) {
             if (currentHc >= startBattle) {
-                if (!events[currentHc]) events[currentHc] = { hc: '', scramble: '' };
+                if (!events[currentHc]) events[currentHc] = { hc: '' };
                 events[currentHc].hc = `${hcCount}回目`;
             }
             currentHc += data.addVal;
             hcCount++;
-        }
-
-        const scrambleInterval = 158;
-        let sBattle = Math.floor(prev / scrambleInterval) * scrambleInterval + scrambleInterval;
-        let scrambleCount = 1;
-
-        while (sBattle <= maxBattle) {
-            if (sBattle >= startBattle) {
-                if (!events[sBattle]) events[sBattle] = { hc: '', scramble: '' };
-                events[sBattle].scramble = `${scrambleCount}回目`;
-            }
-            sBattle += scrambleInterval;
-            scrambleCount++;
         }
 
         const sortedBattles = Object.keys(events).map(Number).sort((a, b) => a - b);
@@ -104,19 +91,11 @@ $(document).ready(function () {
             sortedBattles.forEach(battle => {
                 const item = events[battle];
                 const tr = document.createElement('tr');
-                
-                if (item.hc && item.scramble) {
-                    tr.className = 'row-both';
-                } else if (item.scramble) {
-                    tr.className = 'row-scramble';
-                } else {
-                    tr.className = 'row-hc';
-                }
+                tr.className = 'row-hc';
 
                 tr.innerHTML = `
                     <td><strong>${battle.toLocaleString()}戦</strong></td>
-                    <td>${item.hc || 'ー'}</td>
-                    <td>${item.scramble || 'ー'}</td>
+                    <td>${item.hc}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -124,31 +103,18 @@ $(document).ready(function () {
             scheduleArea.hide();
         }
 
-        // --- 明日のスケジュール計算 ---
+        // --- 明日のHCスケジュール計算 ---
         const tomorrowFirstHc = Math.floor((prev / tomorrowData.addVal) + 1) * tomorrowData.addVal;
         let tomorrowEvents = {};
-
         let tCurrentHc = tomorrowFirstHc;
         let tHcCount = 1;
         while (tCurrentHc <= maxBattle) {
             if (tCurrentHc >= startBattle) {
-                if (!tomorrowEvents[tCurrentHc]) tomorrowEvents[tCurrentHc] = { hc: '', scramble: '' };
+                if (!tomorrowEvents[tCurrentHc]) tomorrowEvents[tCurrentHc] = { hc: '' };
                 tomorrowEvents[tCurrentHc].hc = `${tHcCount}回目`;
             }
             tCurrentHc += tomorrowData.addVal;
             tHcCount++;
-        }
-
-        let tSBattle = Math.floor(prev / scrambleInterval) * scrambleInterval + scrambleInterval;
-        let tScrambleCount = 1;
-
-        while (tSBattle <= maxBattle) {
-            if (tSBattle >= startBattle) {
-                if (!tomorrowEvents[tSBattle]) tomorrowEvents[tSBattle] = { hc: '', scramble: '' };
-                tomorrowEvents[tSBattle].scramble = `${tScrambleCount}回目`;
-            }
-            tSBattle += scrambleInterval;
-            tScrambleCount++;
         }
 
         const tomorrowSortedBattles = Object.keys(tomorrowEvents).map(Number).sort((a, b) => a - b);
@@ -159,19 +125,11 @@ $(document).ready(function () {
             tomorrowSortedBattles.forEach(battle => {
                 const item = tomorrowEvents[battle];
                 const tr = document.createElement('tr');
-                
-                if (item.hc && item.scramble) {
-                    tr.className = 'row-both';
-                } else if (item.scramble) {
-                    tr.className = 'row-scramble';
-                } else {
-                    tr.className = 'row-hc';
-                }
+                tr.className = 'row-hc';
 
                 tr.innerHTML = `
                     <td><strong>${battle.toLocaleString()}戦</strong></td>
-                    <td>${item.hc || 'ー'}</td>
-                    <td>${item.scramble || 'ー'}</td>
+                    <td>${item.hc}</td>
                 `;
                 tomorrowTbody.appendChild(tr);
             });
