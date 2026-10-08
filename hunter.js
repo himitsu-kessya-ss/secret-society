@@ -1,4 +1,4 @@
-// hunter.js （完全版：名声15番目・クレジット19番目対応 ＆ 明日表に当日/翌日の2列比較対応）
+// hunter.js （完全版：周期数値の動的表示 ＆ 明日列の別カラー対応）
 $(document).ready(function () {
     let globalMechDataList = [];
     let globalRouteData = [];
@@ -67,9 +67,13 @@ $(document).ready(function () {
         const startBattle = prev + 1;
         const maxBattle = prev + 1500;
 
-        // サブテキストに周期（加算値）を反映
+        // サブテキストおよびテーブル見出しに実際の周期数値を反映
         $('#today-subtext').text(`※本日の加算値（周期: ${data.addVal}）をベースにHC出現タイミングを表示します。`);
         $('#tomorrow-subtext').text(`※同じ戦闘回数における「今日のHC（周期: ${data.addVal}）」と「明日のHC（周期: ${tomorrowData.addVal}）」のタイミングを比較できます。`);
+        
+        // ヘッダー名に実際の周期数値を反映
+        $('#th-today-label').text(`今日のHC（${data.addVal}）`);
+        $('#th-tomorrow-label').text(`明日のHC（${tomorrowData.addVal}）`);
 
         // --- 当日のHCスケジュール計算 ---
         const firstHc = Math.floor((prev / data.addVal) + 1) * data.addVal;
@@ -147,7 +151,7 @@ $(document).ready(function () {
                 tr.innerHTML = `
                     <td><strong>${battle.toLocaleString()}戦</strong></td>
                     <td>${item.todayHc || 'ー'}</td>
-                    <td>${item.tomorrowHc || 'ー'}</td>
+                    <td class="col-tomorrow">${item.tomorrowHc || 'ー'}</td>
                 `;
                 tomorrowTbody.appendChild(tr);
             });
