@@ -32,7 +32,7 @@
             <input type="number" id="input-battle" class="calc-input" placeholder="現在の総戦闘回数を入力して下さい...">
             <div id="calc-res" class="result-box">現在の総戦闘回数を入力してください</div>
 
-            <!-- 当日のスケジュール表（スクランブル情報も統合表示） -->
+            <!-- 当日のスケジュール表（HCとスクランブルを2列で表示） -->
             <div id="schedule-area" style="margin-top: 20px; display: none;">
                 <div style="font-weight: bold; color: var(--accent-color); margin-bottom: 5px;">📊 入力した戦闘回数 ＋1500戦までのスケジュール（今日のHC ＆ スクランブル）</div>
                 <div class="schedule-subtext" id="today-subtext">※本日の加算値をベースにHCおよびスクランブル出現タイミングを表示します。</div>
@@ -40,7 +40,8 @@
                     <thead>
                         <tr>
                             <th>戦闘回数</th>
-                            <th>イベント・タイミング</th>
+                            <th id="th-today-hc-col">HC</th>
+                            <th style="color: #ff7675;">スクランブル</th>
                         </tr>
                     </thead>
                     <tbody>
