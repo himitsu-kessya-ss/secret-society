@@ -1,38 +1,7 @@
-// hunter.js （完全版：スクランブルのテキスト抽出を強化）
+// hunter.js （完全版：HCとスクランブルの計算式による独立2列表示）
 $(document).ready(function () {
     let globalMechDataList = [];
     let globalRouteData = [];
-    let scrambleBattles = new Set(); // スクランブルの戦闘回数を格納するセット
-
-    // 特殊戦闘ファイルからスクランブルの回数を自動で抽出する関数
-    function loadScrambleData() {
-        return $.ajax({
-            url: "特殊戦闘（HCやスクランブルなど）.txt",
-            dataType: "arraybuffer"
-        }).then(buf => {
-            let txt = new TextDecoder('utf-8').decode(buf);
-            if (txt.includes('\uFFFD')) {
-                txt = new TextDecoder('shift-jis').decode(buf);
-            }
-            
-            scrambleBattles.clear();
-            const lines = txt.split('\n');
-            lines.forEach(line => {
-                // 「○戦」や「○戦目」などのパターンを柔軟に数値として抽出
-                const matches = line.match(/([\d,]+)\s*戦/g);
-                if (matches) {
-                    matches.forEach(m => {
-                        let num = parseInt(m.replace(/[,戦\s目]/g, ''), 10);
-                        if (!isNaN(num) && num > 0) {
-                            scrambleBattles.add(num);
-                        }
-                    });
-                }
-            });
-        }).catch(err => {
-            console.log("スクランブルファイルの読み込みスキップ または エラー:", err);
-        });
-    }
 
     // 早見表のHTMLを自動生成して埋め込む
     function initHayamiTable() {
@@ -125,13 +94,20 @@ $(document).ready(function () {
             hcCount++;
         }
 
-        // 2. スクランブルの発生タイミングをマッピング
-        scrambleBattles.forEach(battleNum => {
-            if (battleNum >= startBattle && battleNum <= maxBattle) {
-                if (!events[battleNum]) events[battleNum] = { hc: '', scramble: '' };
-                events[battleNum].scramble = "スクランブル";
+        // 2. スクランブルの発生タイミングを計算でマッピング（158戦ごと）
+        const scrambleInterval = 158;
+        let sBattle = Math.floor(prev / scrambleInterval) * scrambleInterval + scrambleInterval;
+        let scrambleCount = 1;
+
+        while (sBattle <= maxBattle) {
+            // スクラブルのカウントを正しく追跡するため、より小さい戦闘回数からの累積を考慮
+            if (sBattle >= startBattle) {
+                if (!events[sBattle]) events[sBattle] = { hc: '', scramble: '' };
+                events[sBattle].scramble = `${scrambleCount}回目`;
             }
-        });
+            sBattle += scrambleInterval;
+            scrambleCount++;
+        }
 
         const sortedBattles = Object.keys(events).map(Number).sort((a, b) => a - b);
 
@@ -141,7 +117,15 @@ $(document).ready(function () {
             sortedBattles.forEach(battle => {
                 const item = events[battle];
                 const tr = document.createElement('tr');
-                tr.className = 'row-hc';
+                
+                // 行のハイライト切り替え（両方重なる場合、スクランブルのみ、HCのみ）
+                if (item.hc && item.scramble) {
+                    tr.className = 'row-both';
+                } else if (item.scramble) {
+                    tr.className = 'row-scramble';
+                } else {
+                    tr.className = 'row-hc';
+                }
 
                 tr.innerHTML = `
                     <td><strong>${battle.toLocaleString()}戦</strong></td>
@@ -411,13 +395,11 @@ $(document).ready(function () {
         }
     });
 
-    // 初期化実行（スクランブルデータを事前に読み込んでから各種初期化）
-    loadScrambleData().always(() => {
-        initHayamiTable();
-        refreshTodayTab();
-        // 初期入力値がある場合はスケジュールを即座に計算・反映させる
-        if ($('#input-battle').val()) {
-            updateSchedules();
-        }
-    });
+    // 初期化実行
+    initHayamiTable();
+    refreshTodayTab();
+    // すでに数値が入力されている場合は即座に反映
+    if ($('#input-battle').val()) {
+        updateSchedules();
+    }
 });
