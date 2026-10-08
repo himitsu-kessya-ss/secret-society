@@ -1,7 +1,39 @@
-// hunter.js （完全版：周期数値の動的表示 ＆ 明日列の別カラー対応）
+// hunter.js （完全版：スクランブル自動抽出 ＆ 当日スケジュール統合 ＆ 明日列別カラー対応）
 $(document).ready(function () {
     let globalMechDataList = [];
     let globalRouteData = [];
+    let scrambleBattles = new Set(); // スクランブルの戦闘回数を格納するセット
+
+    // 特殊戦闘ファイルからスクランブルの回数を自動で抽出する関数
+    function loadScrambleData() {
+        return $.ajax({
+            url: "特殊戦闘（HCやスクランブルなど）.txt",
+            dataType: "arraybuffer"
+        }).then(buf => {
+            let txt = new TextDecoder('utf-8').decode(buf);
+            if (txt.includes('\uFFFD')) {
+                txt = new TextDecoder('shift-jis').decode(buf);
+            }
+            
+            scrambleBattles.clear();
+            // テキスト内から「数字＋戦」または「数字」のパターンを走査してスクランブル回数を抽出
+            const lines = txt.split('\n');
+            lines.forEach(line => {
+                // 例: 「45588戦」や「45,588戦」のような記述をマッチさせる
+                const matches = line.match(/([\d,]+)\s*戦/g);
+                if (matches) {
+                    matches.forEach(m => {
+                        let num = parseInt(m.replace(/[,戦\s]/g, ''), 10);
+                        if (!isNaN(num) && num > 0) {
+                            scrambleBattles.add(num);
+                        }
+                    });
+                }
+            });
+        }).catch(err => {
+            console.log("スクランブルファイルの読み込みスキップ または エラー:", err);
+        });
+    }
 
     // 早見表のHTMLを自動生成して埋め込む
     function initHayamiTable() {
@@ -45,9 +77,9 @@ $(document).ready(function () {
         return { day: d, addVal: 111, range: "1 - 100" };
     }
 
-    // ① 計算機と＋1500戦スケジュール（当日 ＆ 明日比較）の即時反映
-    $('#input-battle').on('input', function() {
-        const prev = parseInt($(this).val());
+    // ① 計算機と＋1500戦スケジュール（当日スケジュールにスクランブルを統合）の即時反映
+    function updateSchedules() {
+        const prev = parseInt($('#input-battle').val());
         const data = getTodayData();
         const tomorrowData = getTomorrowData();
 
@@ -68,14 +100,13 @@ $(document).ready(function () {
         const maxBattle = prev + 1500;
 
         // サブテキストおよびテーブル見出しに実際の周期数値を反映
-        $('#today-subtext').text(`※本日の加算値（周期: ${data.addVal}）をベースにHC出現タイミングを表示します。`);
+        $('#today-subtext').text(`※本日の加算値（周期: ${data.addVal}）をベースにHCおよびスクランブル出現タイミングを表示します。`);
         $('#tomorrow-subtext').text(`※同じ戦闘回数における「今日のHC（周期: ${data.addVal}）」と「明日のHC（周期: ${tomorrowData.addVal}）」のタイミングを比較できます。`);
         
-        // ヘッダー名に実際の周期数値を反映
         $('#th-today-label').text(`今日のHC（${data.addVal}）`);
         $('#th-tomorrow-label').text(`明日のHC（${tomorrowData.addVal}）`);
 
-        // --- 当日のHCスケジュール計算 ---
+        // --- 当日のHCスケジュール ＆ スクランブル計算 ---
         const firstHc = Math.floor((prev / data.addVal) + 1) * data.addVal;
         $('#calc-res').html(`今日の最初のHCは <strong style="color:var(--accent-color);">${firstHc.toLocaleString()}</strong> 戦目です`);
 
@@ -84,12 +115,20 @@ $(document).ready(function () {
         let hcCount = 1;
         while (currentHc <= maxBattle) {
             if (currentHc >= startBattle) {
-                if (!events[currentHc]) events[currentHc] = { hc: '' };
-                events[currentHc].hc = `${hcCount}回目`;
+                if (!events[currentHc]) events[currentHc] = [];
+                events[currentHc].push(`${hcCount}回目`);
             }
             currentHc += data.addVal;
             hcCount++;
         }
+
+        // スクランブル発生タイミングも当日の表に統合
+        scrambleBattles.forEach(battleNum => {
+            if (battleNum >= startBattle && battleNum <= maxBattle) {
+                if (!events[battleNum]) events[battleNum] = [];
+                events[battleNum].push("スクランブル");
+            }
+        });
 
         const sortedBattles = Object.keys(events).map(Number).sort((a, b) => a - b);
 
@@ -97,13 +136,16 @@ $(document).ready(function () {
         if (sortedBattles.length > 0) {
             scheduleArea.show();
             sortedBattles.forEach(battle => {
-                const item = events[battle];
+                const infoList = events[battle];
                 const tr = document.createElement('tr');
-                tr.className = 'row-hc';
+                
+                // スクランブルが含まれている場合は専用の強調クラスを付与
+                let isScrambleRow = infoList.some(item => item.includes("スクランブル"));
+                tr.className = isScrambleRow ? 'col-scramble' : 'row-hc';
 
                 tr.innerHTML = `
                     <td><strong>${battle.toLocaleString()}戦</strong></td>
-                    <td>${item.hc}</td>
+                    <td>${infoList.join(' ＆ ')}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -114,7 +156,6 @@ $(document).ready(function () {
         // --- 明日のスケジュール表（当日HC ＆ 明日HC の2列比較用マップ作成） ---
         let combinedEvents = {};
 
-        // 1. 当日周期のHCをマッピング
         let tCurrentHc = Math.floor((prev / data.addVal) + 1) * data.addVal;
         let tHcCount = 1;
         while (tCurrentHc <= maxBattle) {
@@ -126,7 +167,6 @@ $(document).ready(function () {
             tHcCount++;
         }
 
-        // 2. 翌日周期のHCをマッピング
         let tmCurrentHc = Math.floor((prev / tomorrowData.addVal) + 1) * tomorrowData.addVal;
         let tmHcCount = 1;
         while (tmCurrentHc <= maxBattle) {
@@ -158,6 +198,10 @@ $(document).ready(function () {
         } else {
             tomorrowScheduleArea.hide();
         }
+    }
+
+    $('#input-battle').on('input', function() {
+        updateSchedules();
     });
 
     // ② 今日のデータ更新 & ③ ランキング解析のトリガー
@@ -213,7 +257,6 @@ $(document).ready(function () {
         return rows.filter(row => row.length > 0 && row.some(val => val !== ""));
     }
 
-    // 文字列を安全に数値に変換するヘルパー関数
     function parseNumber(val) {
         if (!val) return 0;
         let cleaned = String(val).replace(/["',]/g, '').trim();
@@ -221,7 +264,6 @@ $(document).ready(function () {
         return isNaN(num) ? 0 : num;
     }
 
-    // ★列位置の指定：機体名=2列目(index 1)、名声=15番目(index 14)、クレジット=19番目(index 18)
     function getMechColumnIndices() {
         return { 
             nameIdx: 1,      // 機体名
@@ -230,7 +272,6 @@ $(document).ready(function () {
         };
     }
 
-    // 派生ルートを辿って累計コスト（名声・クレジット）を合算する関数
     function calculateCumulativeCost(targetMechName) {
         const { nameIdx, fameIdx, creditIdx } = getMechColumnIndices();
         
@@ -272,7 +313,6 @@ $(document).ready(function () {
         return { totalFame: sumFame, totalCredit: sumCredit };
     }
 
-    // ③ 正しいCSVファイル（機体一覧 ＆ 派生ルート）の非同期取得 ＆ ランキング算出
     function loadAndRankUnits(min, max) {
         const MECH_CSV = "route/GL)機体一覧 - 機体一覧.csv";
         const ROUTE_CSV = "route/GL)機体派生ルート_260924 - 派生ルート.csv";
@@ -370,7 +410,9 @@ $(document).ready(function () {
         }
     });
 
-    // 初期化実行
-    initHayamiTable();
-    refreshTodayTab();
+    // 初期化実行（スクランブルデータを事前に読み込んでから各種初期化）
+    loadScrambleData().always(() => {
+        initHayamiTable();
+        refreshTodayTab();
+    });
 });
