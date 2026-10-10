@@ -26,7 +26,6 @@ let csvWeaponsData = [];
 // ==========================================
 async function loadData() {
     try {
-        // 1. 武器一覧データの読み込み（同階層または arms/ フォルダ内を自動判定）
         let resW = await fetch('arms_weponlist.csv').catch(() => null);
         if (!resW || !resW.ok) {
             resW = await fetch('arms/arms_weponlist.csv');
@@ -34,14 +33,12 @@ async function loadData() {
         const txtW = await resW.text();
         renderTable('weapon', txtW);
 
-        // シミュレーター用にも武器リストデータをパースして保持
         csvWeaponsData = parseCSVToObjects(txtW);
         initBaseWeaponOptions();
         initUpgradeInputs();
         initSpecialLabels();
         calculateSimulation();
 
-        // 2. 装備一覧データの読み込み
         let resE = await fetch('装備一覧.csv').catch(() => null);
         if (!resE || !resE.ok) {
             resE = await fetch('arms/装備一覧.csv');
@@ -49,7 +46,6 @@ async function loadData() {
         const txtE = await resE.text();
         renderTable('equip', txtE);
 
-        // 3. 武器庫システム解説の読み込み
         let resS = await fetch('武器庫.txt').catch(() => null);
         if (!resS || !resS.ok) {
             resS = await fetch('arms/武器庫.txt');
@@ -211,10 +207,15 @@ function initUpgradeInputs() {
         container.innerHTML += `
             <div class="sim-form-group" id="group_${key}">
                 <label>${item.name} (${changeStr} / 基準Cr: ${item.baseCr.toLocaleString()})</label>
-                <div class="counter-control">
-                    <button class="counter-btn" onclick="changeCount('${key}', -1)">-</button>
-                    <input type="number" id="count_${key}" value="0" min="-10" max="20" onchange="calculateSimulation()">
-                    <button class="counter-btn" onclick="changeCount('${key}', 1)">+</button>
+                <div class="counter-control-wrapper" style="display: flex; align-items: center; justify-content: space-between;">
+                    <div class="counter-control">
+                        <button class="counter-btn" onclick="changeCount('${key}', -1)">-</button>
+                        <input type="number" id="count_${key}" value="0" min="-10" max="20" onchange="calculateSimulation()">
+                        <button class="counter-btn" onclick="changeCount('${key}', 1)">+</button>
+                    </div>
+                    <div id="cost_display_${key}" style="font-size: 0.85rem; color: var(--accent-color); font-weight: bold; text-align: right; min-width: 100px;">
+                        0 Cr
+                    </div>
                 </div>
             </div>
         `;
@@ -231,7 +232,7 @@ function initSpecialLabels() {
     if (labelRename) labelRename.innerHTML = `${cfg.rename.name} <span style="color:#aaa; font-weight:normal;">(固定: ${cfg.rename.cr.toLocaleString()}Cr / ${cfg.rename.fame}Pt)</span>`;
     if (labelUniversal) labelUniversal.innerHTML = `${cfg.universal.name} <span style="color:var(--accent-color);">[固定: ${cfg.universal.cr.toLocaleString()}Cr / ${cfg.universal.fame}Pt]</span>`;
     if (labelLimitBreak) labelLimitBreak.innerHTML = `${cfg.limitBreak.name} <span style="color:var(--accent-color);">[固定: ${cfg.limitBreak.cr.toLocaleString()}Cr / ${cfg.limitBreak.fame}Pt]</span>`;
-    if (labelElementChange) labelElementChange.innerHTML = `${cfg.elementChange.name} <span style="color:var(--accent-color);">[固定: ${cfg.elementChange.cr.toLocaleString()}Cr]</span>`;
+    if (labelElementChange) labelElementChange.innerHTML = `${cfg.elementChange.name} <span style="color:#aaa; font-weight:normal;">(固定: ${cfg.elementChange.cr.toLocaleString()}Cr) ※「変更なし」以外で自動適用</span>`;
 }
 
 function changeMastery(amount) {
@@ -281,11 +282,15 @@ function calculateSimulation() {
     const baseWeight = Number(base.重量 || base.軽量化 || base.weight || 50);
     const baseAttacks = Number(base.HIT || base.攻撃回数 || base.attacks || 1);
 
-    const elementCheck = document.getElementById('elementChangeCheck');
+    // 属性変更セレクトボックスの選択値取得
     const elementSelect = document.getElementById('elementSelect');
+    const selectedElement = elementSelect ? elementSelect.value : "変更なし";
     let currentElement = baseElement;
-    if (elementCheck && elementCheck.checked && elementSelect) {
-        currentElement = elementSelect.value;
+    let isElementChanged = false;
+
+    if (selectedElement !== "変更なし") {
+        currentElement = selectedElement;
+        isElementChanged = true;
     }
 
     const ammoGroup = document.getElementById('group_ammo');
@@ -325,16 +330,14 @@ function calculateSimulation() {
         attacks: Math.max(1, baseAttacks + (counts.attacks * UPGRADE_CONFIG.attacks.value))
     };
 
-    // 改造回数の合計（特殊項目除く）
     let totalModCount = 0;
     for (const key in counts) {
         if (counts[key] > 0) totalModCount += counts[key];
     }
 
-    // 週の維持費計算：1000cr + 改造回数(特殊除く) × 50
     const simCost = 1000 + (totalModCount * 50);
 
-    // --- 2. 比較テーブル描画（最低射程と最大射程を分離） ---
+    // --- 2. 比較テーブル描画 ---
     const tbody = document.getElementById('comparisonTableBody');
     const universalCheck = document.getElementById('universalCheck');
     if (tbody) {
@@ -394,7 +397,7 @@ function calculateSimulation() {
         `;
     }
 
-    // --- 3. 明細とコスト合計計算（累進課金ルール適用） ---
+    // --- 3. 明細と各項目の個別費用表示の更新 ---
     let receiptHTML = '';
     let totalCr = basePrice;
     let totalFame = 0;
@@ -409,8 +412,11 @@ function calculateSimulation() {
         receiptHTML += `<div class="receipt-item"><span>- 名称変更 (固定)</span><span>${SPECIAL_CUSTOM_CONFIG.rename.cr.toLocaleString()} Cr</span></div>`;
     }
 
+    // 各改造項目のループ（各項目の右側コスト表示も同時に計算して更新）
     for (const key in UPGRADE_CONFIG) {
         const count = counts[key];
+        const costDisplayEl = document.getElementById(`cost_display_${key}`);
+        
         if (count > 0) {
             let itemTotalCost = 0;
             for (let i = 1; i <= count; i++) {
@@ -421,8 +427,22 @@ function calculateSimulation() {
 
             totalCr += itemTotalCost;
             receiptHTML += `<div class="receipt-item"><span>- ${UPGRADE_CONFIG[key].name}強化 x ${count}</span><span>${itemTotalCost.toLocaleString()} Cr</span></div>`;
+            
+            if (costDisplayEl) {
+                costDisplayEl.innerText = itemTotalCost.toLocaleString() + " Cr";
+                costDisplayEl.style.color = "var(--accent-color)";
+            }
         } else if (count < 0) {
             receiptHTML += `<div class="receipt-item"><span>- ${UPGRADE_CONFIG[key].name}ダウン x ${Math.abs(count)}</span><span>0 Cr (無料)</span></div>`;
+            if (costDisplayEl) {
+                costDisplayEl.innerText = "0 Cr (無料)";
+                costDisplayEl.style.color = "#888";
+            }
+        } else {
+            if (costDisplayEl) {
+                costDisplayEl.innerText = "0 Cr";
+                costDisplayEl.style.color = "#888";
+            }
         }
     }
 
@@ -440,7 +460,7 @@ function calculateSimulation() {
         receiptHTML += `<div class="receipt-item"><span>- ${SPECIAL_CUSTOM_CONFIG.limitBreak.name} (固定)</span><span>${SPECIAL_CUSTOM_CONFIG.limitBreak.cr.toLocaleString()} Cr</span></div>`;
     }
 
-    if (elementCheck && elementCheck.checked) {
+    if (isElementChanged) {
         totalCr += SPECIAL_CUSTOM_CONFIG.elementChange.cr;
         totalFame += SPECIAL_CUSTOM_CONFIG.elementChange.fame;
         receiptHTML += `<div class="receipt-item"><span>- ${SPECIAL_CUSTOM_CONFIG.elementChange.name} (${currentElement})</span><span>${SPECIAL_CUSTOM_CONFIG.elementChange.cr.toLocaleString()} Cr</span></div>`;
