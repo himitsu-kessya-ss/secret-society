@@ -48,7 +48,7 @@ html, body {
     border: 1px solid var(--accent-color); color: white; border-radius: 4px;
 }
 
-/* メインコンテンツ領域（スクロールバーが正常に機能し、下部に見切れないよう余裕を確保） */
+/* メインコンテンツ領域 */
 .main-content {
     height: calc(100% - var(--header-total-height));
     overflow-y: auto; 
@@ -56,11 +56,29 @@ html, body {
     box-sizing: border-box;
 }
 
-/* 通常のテーブル（武器・装備一覧用） */
-.tab-content > table { width: 100%; border-collapse: collapse; background: var(--card-bg); font-size: 0.85rem; }
+/* 📋 通常のテーブル（武器・装備一覧用）：列ズレ防止対応 */
+.tab-content > table { 
+    width: 100%; 
+    border-collapse: separate; 
+    border-spacing: 0; 
+    background: var(--card-bg); 
+    font-size: 0.85rem; 
+}
 .tab-content > table thead th {
-    position: sticky; top: 0; background: #333; color: var(--accent-color); z-index: 50;
-    padding: 8px; border: 1px solid var(--border-color); white-space: nowrap; box-shadow: 0 2px 2px rgba(0,0,0,0.5);
+    position: sticky; 
+    top: 0; 
+    background: #333; 
+    color: var(--accent-color); 
+    z-index: 50;
+    padding: 8px; 
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+    white-space: nowrap; 
+    box-shadow: 0 2px 2px rgba(0,0,0,0.3);
+}
+.tab-content > table thead th:first-child {
+    border-left: 1px solid var(--border-color);
 }
 
 /* シミュレーション結果内のテーブル専用 */
