@@ -212,7 +212,7 @@ function initUpgradeInputs() {
                 <div class="counter-control-wrapper">
                     <div class="counter-control">
                         <button class="counter-btn" onclick="changeCount('${key}', -1)">-</button>
-                        <input type="number" id="count_${key}" value="0" min="-10" max="20" onchange="calculateSimulation()">
+                        <input type="number" id="count_${key}" value="0" min="-10" max="999" onchange="calculateSimulation()">
                         <button class="counter-btn" onclick="changeCount('${key}', 1)">+</button>
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px;">
@@ -254,7 +254,14 @@ function changeCount(key, amount) {
     if (!input) return;
     let val = parseInt(input.value) + amount;
     let min = parseInt(input.min);
-    let max = parseInt(input.max);
+    
+    // 上限解放チェックの状態を確認
+    const limitBreakCheck = document.getElementById('limitBreakCheck');
+    let max = 999; // 上限なし（事実上の無制限）
+    if (!limitBreakCheck || !limitBreakCheck.checked) {
+        max = 30; // 上限解放がない場合は30回まで
+    }
+
     if (val >= min && val <= max) {
         input.value = val;
         calculateSimulation();
@@ -308,7 +315,6 @@ function calculateSimulation() {
     let mastery = parseInt(masteryInput.value) || 200;
     if (mastery < 200) mastery = 200;
 
-    // 熟練度によるコスト倍率（初期値200なら 1.0）
     const costMultiplier = 1 + (mastery - 200) * 0.005;
 
     const selectEl = document.getElementById('baseWeaponSelect');
@@ -322,7 +328,7 @@ function calculateSimulation() {
     const baseAmmo = Number(base.弾数 !== undefined ? base.弾数 : (base.ammo !== undefined ? base.ammo : 10));
     const baseEnergy = Number(base.消費EN || base.省エネ || base.EN || base.energy || 10);
     const baseMinRange = Number(base.最低射程 || base.minRange || 1);
-    const baseMaxRange = Number(base.最大射程 || base.maxRange || 3);
+    const baseMaxRange = Number(base.maximumRange || base.最大射程 || base.maxRange || 3);
     const baseWeight = Number(base.重量 || base.軽量化 || base.weight || 50);
     const baseAttacks = Number(base.HIT || base.攻撃回数 || base.attacks || 1);
 
@@ -351,22 +357,47 @@ function calculateSimulation() {
         if (ammoGroup) ammoGroup.style.opacity = "1.0";
     }
 
+    const limitBreakCheck = document.getElementById('limitBreakCheck');
+    const isLimitBroken = limitBreakCheck ? limitBreakCheck.checked : false;
+    const maxAllowedCount = isLimitBroken ? 999 : 30;
+
     const counts = {};
     for (const key in UPGRADE_CONFIG) {
         const el = document.getElementById(`count_${key}`);
-        counts[key] = el ? (parseInt(el.value) || 0) : 0;
+        let val = el ? (parseInt(el.value) || 0) : 0;
+        
+        if (val > maxAllowedCount) val = maxAllowedCount;
+        if (val < -10) val = -10;
+        if (el && parseInt(el.value) !== val) {
+            el.value = val;
+        }
+        counts[key] = val;
     }
 
     // --- 1. ステータス計算 ---
     let currentPower = basePower;
+    const maxPowerLimit = basePower * 2; // 威力（ダメージ）は初期値の2倍までがキャップ
+
     for (let i = 0; i < Math.abs(counts.power); i++) {
         const diff = Math.ceil(currentPower * UPGRADE_CONFIG.power.rate);
         if (counts.power > 0) {
-            currentPower += diff;
+            if (currentPower + diff <= maxPowerLimit) {
+                currentPower += diff;
+            } else {
+                currentPower = maxPowerLimit;
+                break;
+            }
         } else {
             currentPower -= diff;
         }
     }
+
+    // 軽量化の計算
+    let currentWeight = baseWeight;
+    for (let i = 0; i < Math.abs(counts.weight); i++) {
+        currentWeight += UPGRADE_CONFIG.weight.value;
+    }
+    if (currentWeight < 5) currentWeight = 5;
 
     const simData = {
         element: currentElement,
@@ -375,10 +406,11 @@ function calculateSimulation() {
         energy: Math.max(1, baseEnergy + (counts.energy * UPGRADE_CONFIG.energy.value)),
         minRange: Math.max(1, baseMinRange + (counts.minRange * UPGRADE_CONFIG.minRange.value)),
         maxRange: Math.max(1, baseMaxRange + (counts.maxRange * UPGRADE_CONFIG.maxRange.value)),
-        weight: Math.max(5, baseWeight + (counts.weight * UPGRADE_CONFIG.weight.value)),
+        weight: currentWeight,
         attacks: Math.max(1, baseAttacks + (counts.attacks * UPGRADE_CONFIG.attacks.value))
     };
 
+    // 合計カスタム回数の計算
     let totalModCount = 0;
     for (const key in counts) {
         if (counts[key] > 0) totalModCount += counts[key];
@@ -463,7 +495,6 @@ function calculateSimulation() {
         const count = counts[key];
         const costDisplayEl = document.getElementById(`cost_display_${key}`);
         
-        // 累計コスト計算（レシート用：熟練度倍率を反映）
         if (count > 0) {
             let itemTotalCost = 0;
             for (let i = 1; i <= count; i++) {
@@ -477,7 +508,6 @@ function calculateSimulation() {
             receiptHTML += `<div class="receipt-item"><span>- ${UPGRADE_CONFIG[key].name}ダウン x ${Math.abs(count)}</span><span>0 cr (無料)</span></div>`;
         }
 
-        // 各項目に表示する「次に＋を押したときにかかる費用」（熟練度倍率を反映）
         if (costDisplayEl) {
             let nextStep = count >= 0 ? count + 1 : 1;
             let tierMultiplier = Math.ceil(nextStep / 2);
@@ -493,6 +523,7 @@ function calculateSimulation() {
         }
     }
 
+    const universalCheckElem = document.getElementById('universalCheck');
     const limitBreakCheckElem = document.getElementById('limitBreakCheck');
 
     if (universalCheckElem && universalCheckElem.checked) {
@@ -514,10 +545,12 @@ function calculateSimulation() {
     }
 
     const receiptItemsEl = document.getElementById('receiptItems');
+    const totalModCountEl = document.getElementById('totalModCount');
     const totalCreditEl = document.getElementById('totalCredit');
     const totalFameEl = document.getElementById('totalFame');
 
     if (receiptItemsEl) receiptItemsEl.innerHTML = receiptHTML;
+    if (totalModCountEl) totalModCountEl.innerText = totalModCount + " 回";
     if (totalCreditEl) totalCreditEl.innerText = totalCr.toLocaleString() + " cr";
     if (totalFameEl) totalFameEl.innerText = totalFame.toLocaleString();
 }
