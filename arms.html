@@ -16,6 +16,7 @@
             <button class="tab-btn active" onclick="switchTab('weapon')">⚔️ 武器一覧</button>
             <button class="tab-btn" onclick="switchTab('equip')">🛡️ 装備一覧</button>
             <button class="tab-btn" onclick="switchTab('system')">⚙️ 独自システム「武器庫」解説</button>
+            <button class="tab-btn" onclick="switchTab('simulation')">🛠️ 武器庫シミュレーション</button>
         </div>
         
         <div class="search-area" id="search-wrapper">
@@ -25,6 +26,7 @@
     </div>
 
     <div class="main-content">
+        <!-- 武器一覧タブ -->
         <div id="weapon" class="tab-content">
             <table>
                 <thead><tr id="weapon-head"></tr></thead>
@@ -32,6 +34,7 @@
             </table>
         </div>
 
+        <!-- 装備一覧タブ -->
         <div id="equip" class="tab-content" style="display:none;">
             <table>
                 <thead><tr id="equip-head"></tr></thead>
@@ -39,19 +42,110 @@
             </table>
         </div>
 
+        <!-- 独自システム解説タブ -->
         <div id="system" class="tab-content" style="display:none;">
             <div class="info-box" id="system-content">読み込み中...</div>
         </div>
+
+        <!-- 🛠️ 武器庫シミュレーションタブ -->
+        <div id="simulation" class="tab-content" style="display:none;">
+            <div class="simulator-grid">
+                
+                <!-- 左側：設定パネル -->
+                <div class="sim-panel">
+                    <h2>▼ カスタム設定</h2>
+
+                    <!-- プレイヤー熟練度 -->
+                    <div class="sim-form-group" style="background: rgba(0, 212, 255, 0.05); padding: 12px; border-radius: 4px; border: 1px solid var(--border-color);">
+                        <label style="color: var(--accent-color); font-weight: bold;">プレイヤー熟練度 (武器庫開放: 200)</label>
+                        <div class="counter-control">
+                            <button class="counter-btn" onclick="changeMastery(-10)">-10</button>
+                            <button class="counter-btn" onclick="changeMastery(-1)">-</button>
+                            <input type="number" id="playerMastery" value="200" min="200" max="1000" onchange="calculateSimulation()" style="width: 80px;">
+                            <button class="counter-btn" onclick="changeMastery(1)">+</button>
+                            <button class="counter-btn" onclick="changeMastery(10)">+10</button>
+                        </div>
+                        <div style="font-size: 0.75rem; color: #888; margin-top: 4px;">※熟練度200基準。1上昇につき改造費 +0.5% (特殊項目を除く)</div>
+                    </div>
+
+                    <!-- ベース武器選択 -->
+                    <div class="sim-form-group">
+                        <label>ベース武器の選択 (arms/arms_weponlist.csvより)</label>
+                        <select id="baseWeaponSelect" onchange="calculateSimulation()"></select>
+                    </div>
+
+                    <!-- 武器の改名 -->
+                    <div class="sim-form-group">
+                        <label id="labelRename">名称変更</label>
+                        <input type="text" id="customNameInput" value="マイ・専用カスタム" oninput="calculateSimulation()">
+                    </div>
+
+                    <!-- 改造コントロールの動的生成領域 -->
+                    <div id="upgradeControls"></div>
+
+                    <!-- 特殊機能オプション -->
+                    <div class="sim-form-group" style="margin-top: 15px;">
+                        <label>特殊機能オプション</label>
+                        <div class="sim-checkbox-group">
+                            <input type="checkbox" id="universalCheck" onchange="calculateSimulation()">
+                            <label for="universalCheck" id="labelUniversal" style="margin:0; color:#fff; cursor:pointer; font-size:0.9rem;"></label>
+                        </div>
+                        <div class="sim-checkbox-group">
+                            <input type="checkbox" id="limitBreakCheck" onchange="calculateSimulation()">
+                            <label for="limitBreakCheck" id="labelLimitBreak" style="margin:0; color:#fff; cursor:pointer; font-size:0.9rem;"></label>
+                        </div>
+                        <div class="sim-checkbox-group">
+                            <input type="checkbox" id="elementChangeCheck" onchange="calculateSimulation()">
+                            <label for="elementChangeCheck" id="labelElementChange" style="margin:0; color:#fff; cursor:pointer; font-size:0.9rem;"></label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右側：結果表示パネル -->
+                <div class="sim-panel">
+                    <h2>▼ シミュレーション結果</h2>
+
+                    <!-- ステータス比較テーブル -->
+                    <div class="sim-form-group">
+                        <label>性能比較（改造前 ➔ シミュレーション後）</label>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>項目</th>
+                                    <th>改造前</th>
+                                    <th>シミュレーション後</th>
+                                </tr>
+                            </thead>
+                            <tbody id="comparisonTableBody"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- レシート風コスト明細 -->
+                    <div class="receipt-box">
+                        <div class="receipt-title">RECEIPT // 費用明細</div>
+                        <div id="receiptItems"></div>
+                        <div class="receipt-total">
+                            <span>合計クレジット (Cr):</span>
+                            <span id="totalCredit" style="color: var(--accent-color);">0 Cr</span>
+                        </div>
+                        <div class="receipt-total" style="font-size: 0.95rem; border-top: none; padding-top: 2px;">
+                            <span>合計名声:</span>
+                            <span id="totalFame" style="color: #ff9900;">0 Pt</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
     </div>
 
-    <!-- 共通ヘッダーを読み込んで現在地をアクティブにする処理 -->
+    <!-- 共通ヘッダー読み込みスクリプト -->
     <script>
         fetch('header.html')
             .then(response => response.text())
             .then(data => {
                 document.getElementById('header-container').innerHTML = data;
                 
-                // 現在開いているページを自動判定してナビに active クラスをつける
                 const currentPath = window.location.pathname.split('/').pop();
                 const navLinks = document.querySelectorAll('.nav-links a');
                 navLinks.forEach(link => {
@@ -62,7 +156,8 @@
             });
     </script>
 
-    <!-- 外部JavaScriptファイルの読み込み -->
+    <!-- 外部JavaScript（data.js と arms.js） -->
+    <script src="data.js"></script>
     <script src="arms.js"></script>
 
     <!-- アクセス解析カウンター -->
