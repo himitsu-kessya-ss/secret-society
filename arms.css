@@ -53,11 +53,20 @@ html, body {
     overflow: auto; padding: 10px 20px 20px 20px; box-sizing: border-box;
 }
 
-table { width: 100%; border-collapse: collapse; background: var(--card-bg); font-size: 0.85rem; }
-thead th {
+/* 通常のテーブル（武器・装備一覧用） */
+.tab-content > table { width: 100%; border-collapse: collapse; background: var(--card-bg); font-size: 0.85rem; }
+.tab-content > table thead th {
     position: sticky; top: 0; background: #333; color: var(--accent-color); z-index: 50;
     padding: 8px; border: 1px solid var(--border-color); white-space: nowrap; box-shadow: 0 2px 2px rgba(0,0,0,0.5);
 }
+
+/* シミュレーション結果内のテーブル専用 */
+.sim-panel table { width: 100%; border-collapse: collapse; background: var(--card-bg); font-size: 0.85rem; }
+.sim-panel thead th {
+    background: #333; color: var(--accent-color);
+    padding: 6px 8px; border: 1px solid var(--border-color); white-space: nowrap;
+}
+
 td { border: 1px solid var(--border-color); padding: 6px 8px; white-space: nowrap; }
 tr:nth-child(even) { background-color: #1e2124; }
 tr:hover { background-color: #2c3e50; }
@@ -65,11 +74,10 @@ tr:hover { background-color: #2c3e50; }
 .info-box { background: #2d3136; padding: 20px; border-left: 4px solid var(--accent-color); line-height: 1.8; white-space: pre-wrap; margin-top: 10px; }
 
 /* ==========================================
-   🛠️ 武器庫シミュレーション専用のCSSパーツ（強制横並び・コンパクト化）
+   🛠️ 武器庫シミュレーション専用のCSSパーツ
    ========================================== */
 .simulator-grid {
     display: grid;
-    /* 画面幅にかかわらず、左側400px、右側残りのスペースで確実に横並びにする */
     grid-template-columns: 400px 1fr;
     gap: 15px;
     margin-top: 5px;
