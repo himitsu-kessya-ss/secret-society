@@ -257,11 +257,22 @@ function changeCount(key, amount) {
     
     // 上限解放チェックの状態を確認
     const limitBreakCheck = document.getElementById('limitBreakCheck');
-    let max = 999; // 上限なし（無制限）
-    if (!limitBreakCheck || !limitBreakCheck.checked) {
-        max = 30; // 上限解放がない場合は30回まで
+    let isLimitBroken = limitBreakCheck ? limitBreakCheck.checked : false;
+
+    // 上限解放がない場合、全項目の合計プラス回数が30回を超えないように制限
+    if (!isLimitBroken && amount > 0) {
+        let currentTotalPositive = 0;
+        for (const k in UPGRADE_CONFIG) {
+            const el = document.getElementById(`count_${k}`);
+            let v = el ? (parseInt(el.value) || 0) : 0;
+            if (v > 0) currentTotalPositive += v;
+        }
+        if (currentTotalPositive >= 30) {
+            return; // 30回に達している場合はこれ以上増やせない
+        }
     }
 
+    let max = isLimitBroken ? 999 : 30;
     if (val >= min && val <= max) {
         input.value = val;
         calculateSimulation();
@@ -359,19 +370,33 @@ function calculateSimulation() {
 
     const limitBreakCheckElem = document.getElementById('limitBreakCheck');
     const isLimitBroken = limitBreakCheckElem ? limitBreakCheckElem.checked : false;
-    const maxAllowedCount = isLimitBroken ? 999 : 30;
 
+    // 各入力値を安全に取得＆合計回数の制限を適用
     const counts = {};
+    let totalPositiveCount = 0;
+
     for (const key in UPGRADE_CONFIG) {
         const el = document.getElementById(`count_${key}`);
         let val = el ? (parseInt(el.value) || 0) : 0;
-        
-        if (val > maxAllowedCount) val = maxAllowedCount;
         if (val < -10) val = -10;
-        if (el && parseInt(el.value) !== val) {
-            el.value = val;
-        }
         counts[key] = val;
+        if (val > 0) totalPositiveCount += val;
+    }
+
+    // 上限解放がないのに合計が30を超えている場合の自動補正
+    if (!isLimitBroken && totalPositiveCount > 30) {
+        let excess = totalPositiveCount - 30;
+        // 順番にプラス分から減らして30にする
+        for (const key in UPGRADE_CONFIG) {
+            if (counts[key] > 0) {
+                let reduce = Math.min(counts[key], excess);
+                counts[key] -= reduce;
+                excess -= reduce;
+                const el = document.getElementById(`count_${key}`);
+                if (el) el.value = counts[key];
+                if (excess === 0) break;
+            }
+        }
     }
 
     // --- 1. ステータス計算 ---
@@ -410,7 +435,7 @@ function calculateSimulation() {
         attacks: Math.max(1, baseAttacks + (counts.attacks * UPGRADE_CONFIG.attacks.value))
     };
 
-    // 合計カスタム回数の計算
+    // 合計カスタム回数の再計算
     let totalModCount = 0;
     for (const key in counts) {
         if (counts[key] > 0) totalModCount += counts[key];
