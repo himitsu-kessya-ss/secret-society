@@ -257,7 +257,6 @@ function changeCount(key, amount) {
     let max = parseInt(input.max);
     if (val >= min && val <= max) {
         input.value = val;
-        // ★修正点：値を変更した後に必ず計算関数を呼び出すようにしました
         calculateSimulation();
     }
 }
@@ -308,6 +307,9 @@ function calculateSimulation() {
 
     let mastery = parseInt(masteryInput.value) || 200;
     if (mastery < 200) mastery = 200;
+
+    // 熟練度によるコスト倍率（初期値200なら 1.0）
+    const costMultiplier = 1 + (mastery - 200) * 0.005;
 
     const selectEl = document.getElementById('baseWeaponSelect');
     const baseIndex = selectEl ? selectEl.value : 0;
@@ -461,11 +463,12 @@ function calculateSimulation() {
         const count = counts[key];
         const costDisplayEl = document.getElementById(`cost_display_${key}`);
         
+        // 累計コスト計算（レシート用：熟練度倍率を反映）
         if (count > 0) {
             let itemTotalCost = 0;
             for (let i = 1; i <= count; i++) {
                 let tierMultiplier = Math.ceil(i / 2);
-                let singleCost = Math.round(UPGRADE_CONFIG[key].baseCr * costMultiplier * tierMultiplier * costMultiplier);
+                let singleCost = Math.round(UPGRADE_CONFIG[key].baseCr * costMultiplier * tierMultiplier);
                 itemTotalCost += singleCost;
             }
             totalCr += itemTotalCost;
@@ -474,10 +477,11 @@ function calculateSimulation() {
             receiptHTML += `<div class="receipt-item"><span>- ${UPGRADE_CONFIG[key].name}ダウン x ${Math.abs(count)}</span><span>0 cr (無料)</span></div>`;
         }
 
+        // 各項目に表示する「次に＋を押したときにかかる費用」（熟練度倍率を反映）
         if (costDisplayEl) {
             let nextStep = count >= 0 ? count + 1 : 1;
             let tierMultiplier = Math.ceil(nextStep / 2);
-            let nextCost = Math.round(UPGRADE_CONFIG[key].baseCr * costMultiplier * tierMultiplier * costMultiplier);
+            let nextCost = Math.round(UPGRADE_CONFIG[key].baseCr * costMultiplier * tierMultiplier);
             
             if (count < 0) {
                 costDisplayEl.innerText = "0 cr (無料)";
