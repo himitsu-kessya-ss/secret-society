@@ -80,11 +80,11 @@
                         <input type="text" id="customNameInput" value="マイ・専用カスタム" oninput="calculateSimulation()">
                     </div>
 
-                    <!-- 属性変更の選択肢追加 -->
+                    <!-- 属性変更（セレクトボックスを選ぶだけで自動適用） -->
                     <div class="sim-form-group">
-                        <label id="labelElementChangeSelect">属性変更 (属性変更カスタム用)</label>
+                        <label id="labelElementChange">属性変更カスタム</label>
                         <select id="elementSelect" onchange="calculateSimulation()">
-                            <option value="変更なし">変更なし</option>
+                            <option value="変更なし">変更なし (属性変更しない)</option>
                             <option value="ビーム">ビーム</option>
                             <option value="実弾">実弾</option>
                             <option value="ヒート">ヒート</option>
@@ -95,9 +95,9 @@
                     <!-- 改造コントロールの動的生成領域 -->
                     <div id="upgradeControls"></div>
 
-                    <!-- 特殊カスタムオプション（限定解除・上限解放・属性変更のON/OFF） -->
+                    <!-- 特殊カスタムオプション（限定解除・上限解放） -->
                     <div class="sim-form-group" style="margin-top: 15px;">
-                        <label>特殊カスタムオプション（固定コスト）</label>
+                        <label>その他の特殊カスタムオプション（固定コスト）</label>
                         <div class="sim-checkbox-group">
                             <input type="checkbox" id="universalCheck" onchange="calculateSimulation()">
                             <label for="universalCheck" id="labelUniversal" style="margin:0; color:#fff; cursor:pointer; font-size:0.9rem;"></label>
@@ -105,10 +105,6 @@
                         <div class="sim-checkbox-group">
                             <input type="checkbox" id="limitBreakCheck" onchange="calculateSimulation()">
                             <label for="limitBreakCheck" id="labelLimitBreak" style="margin:0; color:#fff; cursor:pointer; font-size:0.9rem;"></label>
-                        </div>
-                        <div class="sim-checkbox-group">
-                            <input type="checkbox" id="elementChangeCheck" onchange="calculateSimulation()">
-                            <label for="elementChangeCheck" id="labelElementChange" style="margin:0; color:#fff; cursor:pointer; font-size:0.9rem;"></label>
                         </div>
                     </div>
                 </div>
