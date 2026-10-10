@@ -56,11 +56,10 @@ html, body {
     box-sizing: border-box;
 }
 
-/* 📋 通常のテーブル（武器・装備一覧用）：列ズレ防止対応 */
+/* 📋 通常のテーブル（武器・装備一覧用）：ヘッダー位置・潜り込み完全修正 */
 .tab-content > table { 
     width: 100%; 
-    border-collapse: separate; 
-    border-spacing: 0; 
+    border-collapse: collapse; 
     background: var(--card-bg); 
     font-size: 0.85rem; 
 }
@@ -69,16 +68,11 @@ html, body {
     top: 0; 
     background: #333; 
     color: var(--accent-color); 
-    z-index: 50;
+    z-index: 100;
     padding: 8px; 
-    border-top: 1px solid var(--border-color);
-    border-bottom: 1px solid var(--border-color);
-    border-right: 1px solid var(--border-color);
+    border: 1px solid var(--border-color);
     white-space: nowrap; 
-    box-shadow: 0 2px 2px rgba(0,0,0,0.3);
-}
-.tab-content > table thead th:first-child {
-    border-left: 1px solid var(--border-color);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }
 
 /* シミュレーション結果内のテーブル専用 */
