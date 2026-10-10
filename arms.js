@@ -334,7 +334,7 @@ function calculateSimulation() {
     // 週の維持費計算：1000cr + 改造回数(特殊除く) × 50
     const simCost = 1000 + (totalModCount * 50);
 
-    // --- 2. 比較テーブル描画 ---
+    // --- 2. 比較テーブル描画（最低射程と最大射程を分離） ---
     const tbody = document.getElementById('comparisonTableBody');
     const universalCheck = document.getElementById('universalCheck');
     if (tbody) {
@@ -367,9 +367,14 @@ function calculateSimulation() {
                 <td>${simData.energy} <span class="diff-plus">(${simData.energy - baseEnergy >= 0 ? '+' : ''}${simData.energy - baseEnergy})</span></td>
             </tr>
             <tr>
-                <td>射程</td>
-                <td>${baseMinRange} ~ ${baseMaxRange}</td>
-                <td>${simData.minRange} ~ ${simData.maxRange}</td>
+                <td>最低射程</td>
+                <td>${baseMinRange}</td>
+                <td>${simData.minRange} <span class="diff-plus">(${simData.minRange - baseMinRange >= 0 ? '+' : ''}${simData.minRange - baseMinRange})</span></td>
+            </tr>
+            <tr>
+                <td>最大射程</td>
+                <td>${baseMaxRange}</td>
+                <td>${simData.maxRange} <span class="diff-plus">(${simData.maxRange - baseMaxRange >= 0 ? '+' : ''}${simData.maxRange - baseMaxRange})</span></td>
             </tr>
             <tr>
                 <td>重量 (軽量化)</td>
@@ -404,15 +409,11 @@ function calculateSimulation() {
         receiptHTML += `<div class="receipt-item"><span>- 名称変更 (固定)</span><span>${SPECIAL_CUSTOM_CONFIG.rename.cr.toLocaleString()} Cr</span></div>`;
     }
 
-    // 各改造項目のコスト計算（2回実行ごとに倍率が 1, 2, 3, 4, 5... と増加）
     for (const key in UPGRADE_CONFIG) {
         const count = counts[key];
         if (count > 0) {
             let itemTotalCost = 0;
-            let breakdownText = "";
-
             for (let i = 1; i <= count; i++) {
-                // 2回実行ごとに倍率アップ (1〜2回目:1倍, 3〜4回目:2倍, 5〜6回目:3倍...)
                 let tierMultiplier = Math.ceil(i / 2);
                 let singleCost = Math.round(UPGRADE_CONFIG[key].baseCr * costMultiplier * tierMultiplier);
                 itemTotalCost += singleCost;
