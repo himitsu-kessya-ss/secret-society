@@ -70,7 +70,7 @@
 
                     <!-- ベース武器選択 -->
                     <div class="sim-form-group">
-                        <label>ベース武器の選択 (arms_weponlist.csvの名称)</label>
+                        <label>ベース武器の選択 (arms/arms_weponlist.csv)</label>
                         <select id="baseWeaponSelect" onchange="calculateSimulation()"></select>
                     </div>
 
@@ -80,7 +80,7 @@
                         <input type="text" id="customNameInput" value="マイ・専用カスタム" oninput="calculateSimulation()">
                     </div>
 
-                    <!-- 属性変更（セレクトボックスで選ぶだけで自動適用） -->
+                    <!-- 属性変更セレクトボックス -->
                     <div class="sim-form-group">
                         <label id="labelElementChange">属性変更カスタム</label>
                         <select id="elementSelect" onchange="calculateSimulation()">
