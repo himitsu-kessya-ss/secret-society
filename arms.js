@@ -193,7 +193,6 @@ function initBaseWeaponOptions() {
     }
 
     csvWeaponsData.forEach((w, index) => {
-        // プルダウンには「名称」を表示
         const name = w.名称 || w.name || w.武器名 || `武器 #${index + 1}`;
         const price = w.価格 || w.price || w.購入価格 || 0;
         select.innerHTML += `<option value="${index}">${name} (価格: ${Number(price).toLocaleString()} Cr)</option>`;
@@ -271,7 +270,6 @@ function calculateSimulation() {
     const baseIndex = selectEl ? selectEl.value : 0;
     const base = csvWeaponsData[baseIndex] || csvWeaponsData[0];
 
-    // CSVの各列名からデータを取得（表記ゆれにも対応）
     const baseName = base.名称 || base.name || base.武器名 || "不明な武器";
     const basePrice = Number(base.価格 || base.price || base.購入価格 || 0);
     const baseElement = base.属性 || base.element || "ビーム";
@@ -282,9 +280,7 @@ function calculateSimulation() {
     const baseMaxRange = Number(base.最大射程 || base.maxRange || 3);
     const baseWeight = Number(base.重量 || base.軽量化 || base.weight || 50);
     const baseAttacks = Number(base.HIT || base.攻撃回数 || base.attacks || 1);
-    const baseCost = Number(base.維持費 || base.cost || 50000);
 
-    // 属性変更チェックがONなら、選択された属性に変化
     const elementCheck = document.getElementById('elementChangeCheck');
     const elementSelect = document.getElementById('elementSelect');
     let currentElement = baseElement;
@@ -329,9 +325,14 @@ function calculateSimulation() {
         attacks: Math.max(1, baseAttacks + (counts.attacks * UPGRADE_CONFIG.attacks.value))
     };
 
-    let totalMods = 0;
-    for (const key in counts) { if (counts[key] > 0) totalMods += counts[key]; }
-    const simCost = baseCost + (totalMods * 100000);
+    // 改造回数の合計（特殊項目除く）
+    let totalModCount = 0;
+    for (const key in counts) {
+        if (counts[key] > 0) totalModCount += counts[key];
+    }
+
+    // 週の維持費計算：1000cr + 改造回数(特殊除く) × 50
+    const simCost = 1000 + (totalModCount * 50);
 
     // --- 2. 比較テーブル描画 ---
     const tbody = document.getElementById('comparisonTableBody');
@@ -382,13 +383,13 @@ function calculateSimulation() {
             </tr>
             <tr>
                 <td>週の維持費</td>
-                <td>${baseCost.toLocaleString()} Cr</td>
+                <td>-</td>
                 <td style="color:var(--accent-color);">${simCost.toLocaleString()} Cr/週</td>
             </tr>
         `;
     }
 
-    // --- 3. 明細とコスト合計計算 ---
+    // --- 3. 明細とコスト合計計算（累進課金ルール適用） ---
     let receiptHTML = '';
     let totalCr = basePrice;
     let totalFame = 0;
@@ -403,13 +404,22 @@ function calculateSimulation() {
         receiptHTML += `<div class="receipt-item"><span>- 名称変更 (固定)</span><span>${SPECIAL_CUSTOM_CONFIG.rename.cr.toLocaleString()} Cr</span></div>`;
     }
 
+    // 各改造項目のコスト計算（2回実行ごとに倍率が 1, 2, 3, 4, 5... と増加）
     for (const key in UPGRADE_CONFIG) {
         const count = counts[key];
         if (count > 0) {
-            const unitCost = Math.round(UPGRADE_CONFIG[key].baseCr * costMultiplier);
-            const cost = unitCost * count;
-            totalCr += cost;
-            receiptHTML += `<div class="receipt-item"><span>- ${UPGRADE_CONFIG[key].name}強化 x ${count}</span><span>${cost.toLocaleString()} Cr</span></div>`;
+            let itemTotalCost = 0;
+            let breakdownText = "";
+
+            for (let i = 1; i <= count; i++) {
+                // 2回実行ごとに倍率アップ (1〜2回目:1倍, 3〜4回目:2倍, 5〜6回目:3倍...)
+                let tierMultiplier = Math.ceil(i / 2);
+                let singleCost = Math.round(UPGRADE_CONFIG[key].baseCr * costMultiplier * tierMultiplier);
+                itemTotalCost += singleCost;
+            }
+
+            totalCr += itemTotalCost;
+            receiptHTML += `<div class="receipt-item"><span>- ${UPGRADE_CONFIG[key].name}強化 x ${count}</span><span>${itemTotalCost.toLocaleString()} Cr</span></div>`;
         } else if (count < 0) {
             receiptHTML += `<div class="receipt-item"><span>- ${UPGRADE_CONFIG[key].name}ダウン x ${Math.abs(count)}</span><span>0 Cr (無料)</span></div>`;
         }
