@@ -392,12 +392,12 @@ function calculateSimulation() {
         }
     }
 
-    // 軽量化の計算
+    // 軽量化の計算（重量の下限は 1）
     let currentWeight = baseWeight;
     for (let i = 0; i < Math.abs(counts.weight); i++) {
         currentWeight += UPGRADE_CONFIG.weight.value;
     }
-    if (currentWeight < 5) currentWeight = 5;
+    if (currentWeight < 1) currentWeight = 1;
 
     const simData = {
         element: currentElement,
