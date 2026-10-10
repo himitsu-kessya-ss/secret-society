@@ -74,7 +74,7 @@
                         <select id="baseWeaponSelect" onchange="calculateSimulation()"></select>
                     </div>
 
-                    <!-- 武器の改名（特殊オプション1） -->
+                    <!-- 武器の改名 -->
                     <div class="sim-form-group">
                         <label id="labelRename">名称変更</label>
                         <input type="text" id="customNameInput" value="マイ・専用カスタム" oninput="calculateSimulation()">
@@ -156,8 +156,7 @@
             });
     </script>
 
-    <!-- 外部JavaScript（data.js と arms.js） -->
-    <script src="data.js"></script>
+    <!-- 外部JavaScript（arms.js のみ読み込み） -->
     <script src="arms.js"></script>
 
     <!-- アクセス解析カウンター -->
