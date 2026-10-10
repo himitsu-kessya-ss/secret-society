@@ -70,7 +70,7 @@
 
                     <!-- ベース武器選択 -->
                     <div class="sim-form-group">
-                        <label>ベース武器の選択 (arms_weponlist.csvの名称)</label>
+                        <label>ベース武器の選択 (arms_weponlist.csvより)</label>
                         <select id="baseWeaponSelect" onchange="calculateSimulation()"></select>
                     </div>
 
@@ -80,24 +80,12 @@
                         <input type="text" id="customNameInput" value="マイ・専用カスタム" oninput="calculateSimulation()">
                     </div>
 
-                    <!-- 属性変更セレクトボックス -->
-                    <div class="sim-form-group">
-                        <label id="labelElementChange">属性変更カスタム</label>
-                        <select id="elementSelect" onchange="calculateSimulation()">
-                            <option value="変更なし">変更なし (属性変更しない)</option>
-                            <option value="ビーム">ビーム</option>
-                            <option value="実弾">実弾</option>
-                            <option value="ヒート">ヒート</option>
-                            <option value="海洋強化">海洋強化</option>
-                        </select>
-                    </div>
-
                     <!-- 改造コントロールの動的生成領域 -->
                     <div id="upgradeControls"></div>
 
-                    <!-- 特殊カスタムオプション（限定解除・上限解放） -->
+                    <!-- 特殊カスタムオプション（限定解除・上限解放・属性変更） -->
                     <div class="sim-form-group" style="margin-top: 15px;">
-                        <label>その他の特殊カスタムオプション（固定コスト）</label>
+                        <label>特殊カスタムオプション（固定コスト）</label>
                         <div class="sim-checkbox-group">
                             <input type="checkbox" id="universalCheck" onchange="calculateSimulation()">
                             <label for="universalCheck" id="labelUniversal" style="margin:0; color:#fff; cursor:pointer; font-size:0.9rem;"></label>
@@ -106,6 +94,21 @@
                             <input type="checkbox" id="limitBreakCheck" onchange="calculateSimulation()">
                             <label for="limitBreakCheck" id="labelLimitBreak" style="margin:0; color:#fff; cursor:pointer; font-size:0.9rem;"></label>
                         </div>
+                        <div class="sim-checkbox-group">
+                            <input type="checkbox" id="elementChangeCheck" onchange="calculateSimulation()">
+                            <label for="elementChangeCheck" id="labelElementChange" style="margin:0; color:#fff; cursor:pointer; font-size:0.9rem;"></label>
+                        </div>
+                    </div>
+
+                    <!-- 属性変更のセレクトボックス -->
+                    <div class="sim-form-group" id="elementSelectGroup" style="display:none; margin-top: 10px;">
+                        <label>変更後の属性を選択</label>
+                        <select id="elementSelect" onchange="calculateSimulation()">
+                            <option value="ビーム">ビーム</option>
+                            <option value="実弾">実弾</option>
+                            <option value="ヒート">ヒート</option>
+                            <option value="海洋強化">海洋強化</option>
+                        </select>
                     </div>
                 </div>
 
@@ -147,27 +150,21 @@
         </div>
     </div>
 
-    <!-- 共通ヘッダー読み込みスクリプト（安全設計） -->
+    <!-- 共通ヘッダー読み込みスクリプト -->
     <script>
         fetch('header.html')
-            .then(response => {
-                if (!response.ok) throw new Error('ヘッダー読み込み失敗');
-                return response.text();
-            })
+            .then(response => response.text())
             .then(data => {
-                const container = document.getElementById('header-container');
-                if (container) {
-                    container.innerHTML = data;
-                    const currentPath = window.location.pathname.split('/').pop();
-                    const navLinks = document.querySelectorAll('.nav-links a');
-                    navLinks.forEach(link => {
-                        if (link.getAttribute('href') === currentPath) {
-                            link.classList.add('active');
-                        }
-                    });
-                }
-            })
-            .catch(err => console.log("ヘッダーはスキップまたは別パスです: ", err));
+                document.getElementById('header-container').innerHTML = data;
+                
+                const currentPath = window.location.pathname.split('/').pop();
+                const navLinks = document.querySelectorAll('.nav-links a');
+                navLinks.forEach(link => {
+                    if (link.getAttribute('href') === currentPath) {
+                        link.classList.add('active');
+                    }
+                });
+            });
     </script>
 
     <!-- 外部JavaScript（arms.js のみ読み込み） -->
