@@ -229,9 +229,9 @@ function initSpecialLabels() {
     const labelLimitBreak = document.getElementById('labelLimitBreak');
     const labelElementChange = document.getElementById('labelElementChange');
 
-    if (labelRename) labelRename.innerHTML = `${cfg.rename.name} <span style="color:#aaa; font-weight:normal;">(固定: ${cfg.rename.cr.toLocaleString()}Cr / ${cfg.rename.fame}Pt)</span>`;
-    if (labelUniversal) labelUniversal.innerHTML = `${cfg.universal.name} <span style="color:var(--accent-color);">[固定: ${cfg.universal.cr.toLocaleString()}Cr / ${cfg.universal.fame}Pt]</span>`;
-    if (labelLimitBreak) labelLimitBreak.innerHTML = `${cfg.limitBreak.name} <span style="color:var(--accent-color);">[固定: ${cfg.limitBreak.cr.toLocaleString()}Cr / ${cfg.limitBreak.fame}Pt]</span>`;
+    if (labelRename) labelRename.innerHTML = `${cfg.rename.name} <span style="color:#aaa; font-weight:normal;">(固定: ${cfg.rename.cr.toLocaleString()}Cr / 名声${cfg.rename.fame})</span>`;
+    if (labelUniversal) labelUniversal.innerHTML = `${cfg.universal.name} <span style="color:var(--accent-color);">[固定: ${cfg.universal.cr.toLocaleString()}Cr / 名声${cfg.universal.fame}]</span>`;
+    if (labelLimitBreak) labelLimitBreak.innerHTML = `${cfg.limitBreak.name} <span style="color:var(--accent-color);">[固定: ${cfg.limitBreak.cr.toLocaleString()}Cr / 名声${cfg.limitBreak.fame}]</span>`;
     if (labelElementChange) labelElementChange.innerHTML = `${cfg.elementChange.name} <span style="color:#aaa; font-weight:normal;">(固定: ${cfg.elementChange.cr.toLocaleString()}Cr) ※「変更なし」以外で自動適用</span>`;
 }
 
@@ -282,7 +282,6 @@ function calculateSimulation() {
     const baseWeight = Number(base.重量 || base.軽量化 || base.weight || 50);
     const baseAttacks = Number(base.HIT || base.攻撃回数 || base.attacks || 1);
 
-    // 属性変更セレクトボックスの選択値取得
     const elementSelect = document.getElementById('elementSelect');
     const selectedElement = elementSelect ? elementSelect.value : "変更なし";
     let currentElement = baseElement;
@@ -397,7 +396,7 @@ function calculateSimulation() {
         `;
     }
 
-    // --- 3. 明細と各項目の個別費用表示の更新 ---
+    // --- 3. 明細と各項目の個別費用表示の更新（名声単位なし） ---
     let receiptHTML = '';
     let totalCr = basePrice;
     let totalFame = 0;
@@ -412,7 +411,6 @@ function calculateSimulation() {
         receiptHTML += `<div class="receipt-item"><span>- 名称変更 (固定)</span><span>${SPECIAL_CUSTOM_CONFIG.rename.cr.toLocaleString()} Cr</span></div>`;
     }
 
-    // 各改造項目のループ（各項目の右側コスト表示も同時に計算して更新）
     for (const key in UPGRADE_CONFIG) {
         const count = counts[key];
         const costDisplayEl = document.getElementById(`cost_display_${key}`);
@@ -447,6 +445,7 @@ function calculateSimulation() {
     }
 
     const limitBreakCheck = document.getElementById('limitBreakCheck');
+    const universalCheck = document.getElementById('universalCheck');
 
     if (universalCheck && universalCheck.checked) {
         totalCr += SPECIAL_CUSTOM_CONFIG.universal.cr;
@@ -472,7 +471,8 @@ function calculateSimulation() {
 
     if (receiptItemsEl) receiptItemsEl.innerHTML = receiptHTML;
     if (totalCreditEl) totalCreditEl.innerText = totalCr.toLocaleString() + " Cr";
-    if (totalFameEl) totalFameEl.innerText = totalFame.toLocaleString() + " Pt";
+    // 名声の単位（Pt等）を完全に除外し、数値のみ表示
+    if (totalFameEl) totalFameEl.innerText = totalFame.toLocaleString();
 }
 
 // ページ読み込み時にデータを取得開始
