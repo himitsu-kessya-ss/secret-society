@@ -56,21 +56,21 @@ html, body {
 table { width: 100%; border-collapse: collapse; background: var(--card-bg); font-size: 0.85rem; min-width: 900px; }
 thead th {
     position: sticky; top: 0; background: #333; color: var(--accent-color); z-index: 50;
-    padding: 12px 10px; border: 1px solid var(--border-color); white-space: nowrap; box-shadow: 0 2px 2px rgba(0,0,0,0.5);
+    padding: 10px 8px; border: 1px solid var(--border-color); white-space: nowrap; box-shadow: 0 2px 2px rgba(0,0,0,0.5);
 }
-td { border: 1px solid var(--border-color); padding: 10px; white-space: nowrap; }
+td { border: 1px solid var(--border-color); padding: 8px 10px; white-space: nowrap; }
 tr:nth-child(even) { background-color: #1e2124; }
 tr:hover { background-color: #2c3e50; }
 
 .info-box { background: #2d3136; padding: 20px; border-left: 4px solid var(--accent-color); line-height: 1.8; white-space: pre-wrap; margin-top: 10px; }
 
 /* ==========================================
-   🛠️ 武器庫シミュレーション専用のCSSパーツ
+   🛠️ 武器庫シミュレーション専用のCSSパーツ（コンパクト化）
    ========================================== */
 .simulator-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 15px;
     margin-top: 10px;
 }
 
@@ -82,28 +82,28 @@ tr:hover { background-color: #2c3e50; }
     background: var(--card-bg);
     border: 1px solid var(--border-color);
     border-radius: 6px;
-    padding: 20px;
+    padding: 15px;
     box-sizing: border-box;
 }
 
 .sim-panel h2 {
     color: var(--accent-color);
     border-bottom: 1px solid var(--border-color);
-    padding-bottom: 8px;
+    padding-bottom: 6px;
     margin-top: 0;
-    margin-bottom: 15px;
-    font-size: 1.1rem;
+    margin-bottom: 12px;
+    font-size: 1rem;
 }
 
 .sim-form-group {
-    margin-bottom: 15px;
+    margin-bottom: 10px;
 }
 
 .sim-form-group label {
     display: block;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: #aaa;
-    margin-bottom: 5px;
+    margin-bottom: 3px;
 }
 
 .sim-form-group select, 
@@ -112,9 +112,9 @@ tr:hover { background-color: #2c3e50; }
     background: #1a1c1e;
     border: 1px solid var(--border-color);
     color: var(--text-color);
-    padding: 10px;
+    padding: 7px 10px;
     border-radius: 4px;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     box-sizing: border-box;
 }
 
@@ -124,19 +124,29 @@ tr:hover { background-color: #2c3e50; }
     outline: none;
 }
 
+.counter-control-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    padding: 5px 8px;
+    border-radius: 4px;
+}
+
 .counter-control {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
 }
 
 .counter-btn {
     background: #333;
     border: 1px solid var(--border-color);
     color: var(--text-color);
-    width: 34px;
-    height: 34px;
-    font-size: 1.1rem;
+    width: 28px;
+    height: 28px;
+    font-size: 1rem;
     font-weight: bold;
     border-radius: 4px;
     cursor: pointer;
@@ -149,31 +159,64 @@ tr:hover { background-color: #2c3e50; }
 }
 
 .counter-control input[type="number"] {
-    width: 70px;
+    width: 50px;
     text-align: center;
     background: #1a1c1e;
     border: 1px solid var(--border-color);
     color: var(--text-color);
-    padding: 8px;
+    padding: 5px;
     border-radius: 4px;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
+}
+
+.item-clear-btn {
+    background: #442222;
+    border: 1px solid #663333;
+    color: #ff9999;
+    padding: 4px 8px;
+    font-size: 0.75rem;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.item-clear-btn:hover {
+    background: #ff4444;
+    color: #fff;
+}
+
+.global-clear-btn {
+    background: #552222;
+    border: 1px solid #883333;
+    color: #ffcccc;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    width: 100%;
+    margin-top: 10px;
+    transition: 0.2s;
+}
+.global-clear-btn:hover {
+    background: #cc2222;
+    color: #fff;
 }
 
 .sim-checkbox-group {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     cursor: pointer;
-    background: rgba(0, 212, 255, 0.05);
+    background: rgba(0, 212, 255, 0.03);
     border: 1px dashed var(--accent-color);
-    padding: 10px;
+    padding: 8px;
     border-radius: 4px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
 }
 
 .sim-checkbox-group input {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     accent-color: var(--accent-color);
 }
 
@@ -186,34 +229,35 @@ tr:hover { background-color: #2c3e50; }
     background: #1a1c1e;
     border: 1px dashed var(--border-color);
     border-radius: 6px;
-    padding: 15px;
+    padding: 12px;
     font-family: 'Courier New', Courier, monospace;
-    margin-top: 15px;
+    margin-top: 10px;
 }
 
 .receipt-title {
     font-weight: bold;
     color: var(--accent-color);
     border-bottom: 1px dashed var(--border-color);
-    padding-bottom: 5px;
-    margin-bottom: 8px;
+    padding-bottom: 4px;
+    margin-bottom: 6px;
+    font-size: 0.9rem;
 }
 
 .receipt-item {
     display: flex;
     justify-content: space-between;
-    font-size: 0.85rem;
-    margin-bottom: 4px;
+    font-size: 0.8rem;
+    margin-bottom: 3px;
     color: #aaa;
 }
 
 .receipt-total {
     display: flex;
     justify-content: space-between;
-    font-size: 1.05rem;
+    font-size: 0.95rem;
     font-weight: bold;
     color: #fff;
     border-top: 1px solid var(--border-color);
-    padding-top: 6px;
-    margin-top: 6px;
+    padding-top: 5px;
+    margin-top: 5px;
 }
