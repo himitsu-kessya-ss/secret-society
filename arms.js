@@ -339,6 +339,13 @@ function calculateSimulation() {
     const baseName = base.名称 || base.name || base.武器名 || "不明な武器";
     const basePrice = Number(base.価格 || base.price || base.購入価格 || 0);
     const baseElement = base.属性 || base.element || "ビーム";
+    
+    // CSVから説明（備考・特性など）のデータを安全に取得する
+    let baseDesc = base.説明 || base.description || base.備考 || base.メモ || "";
+    if (!baseDesc || baseDesc.toString().trim() === "") {
+        baseDesc = "ー";
+    }
+
     const basePower = Number(base.ダメージ || base.威力 || base.power || 100);
     const baseAmmo = Number(base.弾数 !== undefined ? base.弾数 : (base.ammo !== undefined ? base.ammo : 10));
     const baseEnergy = Number(base.消費EN || base.省エネ || base.EN || base.energy || 10);
@@ -464,6 +471,10 @@ function calculateSimulation() {
                 <td style="color:var(--accent-color); font-weight:bold;">${simData.element}</td>
             </tr>
             <tr>
+                <td>説明 (特性)</td>
+                <td colspan="2" style="color: #bbb;">${baseDesc}</td>
+            </tr>
+            <tr>
                 <td>ダメージ (威力)</td>
                 <td>${basePower.toLocaleString()}</td>
                 <td>${simData.power.toLocaleString()} <span class="diff-plus">(${simData.power - basePower >= 0 ? '+' : ''}${simData.power - basePower})</span></td>
@@ -539,7 +550,7 @@ function calculateSimulation() {
         if (costDisplayEl) {
             let nextStep = count >= 0 ? count + 1 : 1;
             let tierMultiplier = Math.ceil(nextStep / 2);
-            let nextCost = Math.round(UPGRADE_CONFIG[key].baseCr * tierMultiplier); // 簡易化
+            let nextCost = Math.round(UPGRADE_CONFIG[key].baseCr * tierMultiplier);
             
             if (count < 0) {
                 costDisplayEl.innerText = "0 cr (無料)";
