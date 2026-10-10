@@ -539,7 +539,7 @@ function calculateSimulation() {
         if (costDisplayEl) {
             let nextStep = count >= 0 ? count + 1 : 1;
             let tierMultiplier = Math.ceil(nextStep / 2);
-            let nextCost = Math.round(UPGRADE_CONFIG[key].baseCr * costMultiplier * tierMultiplier);
+            let nextCost = Math.round(UPGRADE_CONFIG[key].baseCr * tierMultiplier); // 簡易化
             
             if (count < 0) {
                 costDisplayEl.innerText = "0 cr (無料)";
