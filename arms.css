@@ -48,23 +48,23 @@ html, body {
     border: 1px solid var(--accent-color); color: white; border-radius: 4px;
 }
 
-/* メインコンテンツ領域（全体の高さ枠を固定） */
+/* メインコンテンツ領域 */
 .main-content {
     height: calc(100% - var(--header-total-height));
-    padding: 15px 20px; 
+    padding: 10px 20px; 
     box-sizing: border-box;
-    overflow: hidden; /* コンテンツ枠自体は溢れさせない */
+    overflow: hidden;
 }
 
-/* 各タブコンテンツ（ここを独自スクロール枠にする） */
+/* 各タブコンテンツ（スクロール領域：下部見切れを防止するため余白を確保） */
 .tab-content {
     height: 100%;
-    overflow-y: auto; /* テーブル側でスクロールさせる */
-    padding-bottom: 30px;
+    overflow-y: auto; 
+    padding-bottom: 80px;
     box-sizing: border-box;
 }
 
-/* 📋 通常のテーブル（武器・装備一覧用）：ヘッダー位置を枠の最上部に完璧固定 */
+/* 📋 通常のテーブル（武器・装備一覧用）：透け＆ズレ完全防止版 */
 .tab-content > table { 
     width: 100%; 
     border-collapse: collapse; 
@@ -73,14 +73,14 @@ html, body {
 }
 .tab-content > table thead th {
     position: sticky; 
-    top: 0; /* スクロール枠（tab-content）の最上部に固定 */
-    background: #25282c; /* テーブル背景と同色にして後ろを透けさせない */
+    top: -1px; /* わずかに上に重ねることで透けを完全にシャットアウト */
+    background: #25282c; /* カード背景色と完全に一致させて裏を隠す */
     color: var(--accent-color); 
-    z-index: 10;
+    z-index: 20;
     padding: 10px 8px; 
     border: 1px solid var(--border-color);
     white-space: nowrap; 
-    box-shadow: 0 2px 5px rgba(0,0,0,0.8);
+    box-shadow: 0 3px 4px rgba(0,0,0,0.4);
 }
 
 /* シミュレーション結果内のテーブル専用 */
