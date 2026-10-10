@@ -22,19 +22,20 @@ const UPGRADE_CONFIG = {
 let csvWeaponsData = [];
 
 // ==========================================
-// 2. CSV/TXT 読み込み＆初期化処理
+// 2. CSV/TXT 読み込み＆初期化処理（自動フォールバック付き）
 // ==========================================
 async function loadData() {
     try {
-        // 同階層を優先し、失敗したら arms/ フォルダ内を探す安全設計
         let resW = await fetch('arms_weponlist.csv').catch(() => null);
         if (!resW || !resW.ok) {
-            resW = await fetch('arms/arms_weponlist.csv');
+            resW = await fetch('arms/arms_weponlist.csv').catch(() => null);
         }
-        const txtW = await resW.text();
-        renderTable('weapon', txtW);
+        if (resW && resW.ok) {
+            const txtW = await resW.text();
+            renderTable('weapon', txtW);
+            csvWeaponsData = parseCSVToObjects(txtW);
+        }
 
-        csvWeaponsData = parseCSVToObjects(txtW);
         initBaseWeaponOptions();
         initUpgradeInputs();
         initSpecialLabels();
@@ -42,28 +43,29 @@ async function loadData() {
 
         let resE = await fetch('装備一覧.csv').catch(() => null);
         if (!resE || !resE.ok) {
-            resE = await fetch('arms/装備一覧.csv');
+            resE = await fetch('arms/装備一覧.csv').catch(() => null);
         }
-        const txtE = await resE.text();
-        renderTable('equip', txtE);
+        if (resE && resE.ok) {
+            const txtE = await resE.text();
+            renderTable('equip', txtE);
+        }
 
         let resS = await fetch('武器庫.txt').catch(() => null);
         if (!resS || !resS.ok) {
-            resS = await fetch('arms/武器庫.txt');
+            resS = await fetch('arms/武器庫.txt').catch(() => null);
         }
-        const txtS = await resS.text();
         const sysContent = document.getElementById('system-content');
         if (sysContent) {
-            sysContent.innerText = txtS;
+            if (resS && resS.ok) {
+                sysContent.innerText = await resS.text();
+            } else {
+                sysContent.innerText = "武器庫の解説テキストが見つかりませんでした。";
+            }
         }
 
         updateSearchOptions();
     } catch (e) {
         console.error("データ読み込みエラー:", e);
-        const sysContent = document.getElementById('system-content');
-        if (sysContent) {
-            sysContent.innerText = "エラー：データファイルの読み込みに失敗しました（CSVやテキストファイルの配置場所を確認してください）。";
-        }
     }
 }
 
@@ -270,7 +272,7 @@ function calculateSimulation() {
 
     const selectEl = document.getElementById('baseWeaponSelect');
     const baseIndex = selectEl ? selectEl.value : 0;
-    const base = csvWeaponsData[baseIndex] || csvWeaponsData[0];
+    const base = csvWeaponsData[baseIndex] || csvWeaponsData[0] || {};
 
     const baseName = base.名称 || base.name || base.武器名 || "不明な武器";
     const basePrice = Number(base.価格 || base.price || base.購入価格 || 0);
