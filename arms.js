@@ -26,10 +26,8 @@ let csvWeaponsData = [];
 // ==========================================
 async function loadData() {
     try {
-        let resW = await fetch('arms_weponlist.csv').catch(() => null);
-        if (!resW || !resW.ok) {
-            resW = await fetch('arms/arms_weponlist.csv');
-        }
+        // armsフォルダ配下から確実に読み込む
+        const resW = await fetch('arms/arms_weponlist.csv');
         const txtW = await resW.text();
         renderTable('weapon', txtW);
 
@@ -39,17 +37,11 @@ async function loadData() {
         initSpecialLabels();
         calculateSimulation();
 
-        let resE = await fetch('装備一覧.csv').catch(() => null);
-        if (!resE || !resE.ok) {
-            resE = await fetch('arms/装備一覧.csv');
-        }
+        const resE = await fetch('arms/装備一覧.csv');
         const txtE = await resE.text();
         renderTable('equip', txtE);
 
-        let resS = await fetch('武器庫.txt').catch(() => null);
-        if (!resS || !resS.ok) {
-            resS = await fetch('arms/武器庫.txt');
-        }
+        const resS = await fetch('arms/武器庫.txt');
         const txtS = await resS.text();
         const sysContent = document.getElementById('system-content');
         if (sysContent) {
@@ -61,7 +53,7 @@ async function loadData() {
         console.error("データ読み込みエラー:", e);
         const sysContent = document.getElementById('system-content');
         if (sysContent) {
-            sysContent.innerText = "エラー：データファイルの読み込みに失敗しました（CSVやテキストファイルの配置場所を確認してください）。";
+            sysContent.innerText = "エラー：データファイルの読み込みに失敗しました（arms/ フォルダ内に csv や txt ファイルが正しく配置されているかご確認ください）。";
         }
     }
 }
@@ -396,7 +388,7 @@ function calculateSimulation() {
         `;
     }
 
-    // --- 3. 明細と各項目の個別費用表示の更新（名声単位なし） ---
+    // --- 3. 明細と各項目の個別費用表示の更新 ---
     let receiptHTML = '';
     let totalCr = basePrice;
     let totalFame = 0;
@@ -471,7 +463,6 @@ function calculateSimulation() {
 
     if (receiptItemsEl) receiptItemsEl.innerHTML = receiptHTML;
     if (totalCreditEl) totalCreditEl.innerText = totalCr.toLocaleString() + " Cr";
-    // 名声の単位（Pt等）を完全に除外し、数値のみ表示
     if (totalFameEl) totalFameEl.innerText = totalFame.toLocaleString();
 }
 
