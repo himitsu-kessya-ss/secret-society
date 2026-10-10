@@ -147,21 +147,27 @@
         </div>
     </div>
 
-    <!-- 共通ヘッダー読み込みスクリプト -->
+    <!-- 共通ヘッダー読み込みスクリプト（安全設計） -->
     <script>
         fetch('header.html')
-            .then(response => response.text())
+            .then(response => {
+                if (!response.ok) throw new Error('ヘッダー読み込み失敗');
+                return response.text();
+            })
             .then(data => {
-                document.getElementById('header-container').innerHTML = data;
-                
-                const currentPath = window.location.pathname.split('/').pop();
-                const navLinks = document.querySelectorAll('.nav-links a');
-                navLinks.forEach(link => {
-                    if (link.getAttribute('href') === currentPath) {
-                        link.classList.add('active');
-                    }
-                });
-            });
+                const container = document.getElementById('header-container');
+                if (container) {
+                    container.innerHTML = data;
+                    const currentPath = window.location.pathname.split('/').pop();
+                    const navLinks = document.querySelectorAll('.nav-links a');
+                    navLinks.forEach(link => {
+                        if (link.getAttribute('href') === currentPath) {
+                            link.classList.add('active');
+                        }
+                    });
+                }
+            })
+            .catch(err => console.log("ヘッダーはスキップまたは別パスです: ", err));
     </script>
 
     <!-- 外部JavaScript（arms.js のみ読み込み） -->
