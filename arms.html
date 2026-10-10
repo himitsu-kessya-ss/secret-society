@@ -53,7 +53,10 @@
                 
                 <!-- 左側：設定パネル -->
                 <div class="sim-panel">
-                    <h2>▼ 武器カスタマイズ</h2>
+                    <div class="sim-panel-header">
+                        <h2>▼ 武器カスタマイズ</h2>
+                        <button class="item-clear-btn" onclick="resetAllCustoms()" style="padding: 4px 8px; font-size: 0.75rem;">全クリア</button>
+                    </div>
 
                     <!-- プレイヤー熟練度 -->
                     <div class="sim-form-group" style="background: rgba(0, 212, 255, 0.03); padding: 6px 8px; border-radius: 4px; border: 1px solid var(--border-color);">
@@ -112,14 +115,13 @@
                             <label for="limitBreakCheck" id="labelLimitBreak" style="margin:0; color:#fff; cursor:pointer; font-size:0.8rem;"></label>
                         </div>
                     </div>
-
-                    <!-- 全クリアボタン（ここに確実に配置！） -->
-                    <button class="global-clear-btn" onclick="resetAllCustoms()">すべてのカスタムをクリア</button>
                 </div>
 
                 <!-- 右側：結果表示パネル -->
                 <div class="sim-panel">
-                    <h2>▼ シミュレーション結果</h2>
+                    <div class="sim-panel-header">
+                        <h2>▼ シミュレーション結果</h2>
+                    </div>
 
                     <!-- ステータス比較テーブル -->
                     <div class="sim-form-group">
