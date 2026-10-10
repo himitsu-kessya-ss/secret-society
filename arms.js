@@ -290,11 +290,11 @@ function resetAllCustoms() {
         if (input) input.value = 0;
     }
 
-    const universalCheck = document.getElementById('universalCheck');
-    if (universalCheck) universalCheck.checked = false;
+    const universalCheckEl = document.getElementById('universalCheck');
+    if (universalCheckEl) universalCheckEl.checked = false;
 
-    const limitBreakCheck = document.getElementById('limitBreakCheck');
-    if (limitBreakCheck) limitBreakCheck.checked = false;
+    const limitBreakCheckEl = document.getElementById('limitBreakCheck');
+    if (limitBreakCheckEl) limitBreakCheckEl.checked = false;
 
     calculateSimulation();
 }
@@ -381,14 +381,14 @@ function calculateSimulation() {
 
     // --- 2. 比較テーブル描画 ---
     const tbody = document.getElementById('comparisonTableBody');
-    const universalCheck = document.getElementById('universalCheck');
+    const universalCheckElem = document.getElementById('universalCheck');
     if (tbody) {
         tbody.innerHTML = `
             <tr>
                 <td>装備制限</td>
                 <td>専用機限定</td>
                 <td style="color:var(--accent-color); font-weight:bold;">
-                    ${universalCheck && universalCheck.checked ? "汎用（全機体装備可）" : "専用機限定"}
+                    ${universalCheckElem && universalCheckElem.checked ? "汎用（全機体装備可）" : "専用機限定"}
                 </td>
             </tr>
             <tr>
@@ -462,7 +462,7 @@ function calculateSimulation() {
             let itemTotalCost = 0;
             for (let i = 1; i <= count; i++) {
                 let tierMultiplier = Math.ceil(i / 2);
-                let singleCost = Math.round(UPGRADE_CONFIG[key].baseCr * costMultiplier * tierMultiplier * costMultiplier); // 熟練度補正反映
+                let singleCost = Math.round(UPGRADE_CONFIG[key].baseCr * costMultiplier * tierMultiplier * costMultiplier);
                 itemTotalCost += singleCost;
             }
 
@@ -487,16 +487,15 @@ function calculateSimulation() {
         }
     }
 
-    const limitBreakCheck = document.getElementById('limitBreakCheck');
-    const universalCheck = document.getElementById('universalCheck');
+    const limitBreakCheckElem = document.getElementById('limitBreakCheck');
 
-    if (universalCheck && universalCheck.checked) {
+    if (universalCheckElem && universalCheckElem.checked) {
         totalCr += SPECIAL_CUSTOM_CONFIG.universal.cr;
         totalFame += SPECIAL_CUSTOM_CONFIG.universal.fame;
         receiptHTML += `<div class="receipt-item"><span>- ${SPECIAL_CUSTOM_CONFIG.universal.name} (固定)</span><span>${SPECIAL_CUSTOM_CONFIG.universal.cr.toLocaleString()} Cr</span></div>`;
     }
 
-    if (limitBreakCheck && limitBreakCheck.checked) {
+    if (limitBreakCheckElem && limitBreakCheckElem.checked) {
         totalCr += SPECIAL_CUSTOM_CONFIG.limitBreak.cr;
         totalFame += SPECIAL_CUSTOM_CONFIG.limitBreak.fame;
         receiptHTML += `<div class="receipt-item"><span>- ${SPECIAL_CUSTOM_CONFIG.limitBreak.name} (固定)</span><span>${SPECIAL_CUSTOM_CONFIG.limitBreak.cr.toLocaleString()} Cr</span></div>`;
