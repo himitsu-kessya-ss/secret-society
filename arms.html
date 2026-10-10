@@ -56,12 +56,12 @@
                     <h2>▼ カスタム設定</h2>
 
                     <!-- プレイヤー熟練度 -->
-                    <div class="sim-form-group" style="background: rgba(0, 212, 255, 0.03); padding: 8px 10px; border-radius: 4px; border: 1px solid var(--border-color);">
-                        <label style="color: var(--accent-color); font-weight: bold; margin-bottom: 3px;">プレイヤー熟練度 (武器庫開放: 200)</label>
+                    <div class="sim-form-group" style="background: rgba(0, 212, 255, 0.03); padding: 6px 8px; border-radius: 4px; border: 1px solid var(--border-color);">
+                        <label style="color: var(--accent-color); font-weight: bold; margin-bottom: 2px;">プレイヤー熟練度 (武器庫開放: 200)</label>
                         <div class="counter-control">
                             <button class="counter-btn" onclick="changeMastery(-10)">-10</button>
                             <button class="counter-btn" onclick="changeMastery(-1)">-</button>
-                            <input type="number" id="playerMastery" value="200" min="200" max="1000" onchange="calculateSimulation()" style="width: 70px;">
+                            <input type="number" id="playerMastery" value="200" min="200" max="1000" onchange="calculateSimulation()" style="width: 60px;">
                             <button class="counter-btn" onclick="changeMastery(1)">+</button>
                             <button class="counter-btn" onclick="changeMastery(10)">+10</button>
                         </div>
@@ -95,15 +95,15 @@
                     <div id="upgradeControls"></div>
 
                     <!-- 特殊カスタムオプション（限定解除・上限解放） -->
-                    <div class="sim-form-group" style="margin-top: 10px;">
+                    <div class="sim-form-group" style="margin-top: 6px;">
                         <label>その他の特殊カスタムオプション（固定コスト）</label>
                         <div class="sim-checkbox-group">
                             <input type="checkbox" id="universalCheck" onchange="calculateSimulation()">
-                            <label for="universalCheck" id="labelUniversal" style="margin:0; color:#fff; cursor:pointer; font-size:0.85rem;"></label>
+                            <label for="universalCheck" id="labelUniversal" style="margin:0; color:#fff; cursor:pointer; font-size:0.8rem;"></label>
                         </div>
                         <div class="sim-checkbox-group">
                             <input type="checkbox" id="limitBreakCheck" onchange="calculateSimulation()">
-                            <label for="limitBreakCheck" id="labelLimitBreak" style="margin:0; color:#fff; cursor:pointer; font-size:0.85rem;"></label>
+                            <label for="limitBreakCheck" id="labelLimitBreak" style="margin:0; color:#fff; cursor:pointer; font-size:0.8rem;"></label>
                         </div>
                     </div>
 
@@ -138,7 +138,7 @@
                             <span>合計クレジット (Cr):</span>
                             <span id="totalCredit" style="color: var(--accent-color);">0 Cr</span>
                         </div>
-                        <div class="receipt-total" style="font-size: 0.9rem; border-top: none; padding-top: 2px;">
+                        <div class="receipt-total" style="font-size: 0.85rem; border-top: none; padding-top: 2px;">
                             <span>合計名声:</span>
                             <span id="totalFame" style="color: #ff9900;">0</span>
                         </div>
