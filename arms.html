@@ -56,21 +56,20 @@
                     <h2>▼ カスタム設定</h2>
 
                     <!-- プレイヤー熟練度 -->
-                    <div class="sim-form-group" style="background: rgba(0, 212, 255, 0.05); padding: 12px; border-radius: 4px; border: 1px solid var(--border-color);">
-                        <label style="color: var(--accent-color); font-weight: bold;">プレイヤー熟練度 (武器庫開放: 200)</label>
+                    <div class="sim-form-group" style="background: rgba(0, 212, 255, 0.03); padding: 8px 10px; border-radius: 4px; border: 1px solid var(--border-color);">
+                        <label style="color: var(--accent-color); font-weight: bold; margin-bottom: 3px;">プレイヤー熟練度 (武器庫開放: 200)</label>
                         <div class="counter-control">
                             <button class="counter-btn" onclick="changeMastery(-10)">-10</button>
                             <button class="counter-btn" onclick="changeMastery(-1)">-</button>
-                            <input type="number" id="playerMastery" value="200" min="200" max="1000" onchange="calculateSimulation()" style="width: 80px;">
+                            <input type="number" id="playerMastery" value="200" min="200" max="1000" onchange="calculateSimulation()" style="width: 70px;">
                             <button class="counter-btn" onclick="changeMastery(1)">+</button>
                             <button class="counter-btn" onclick="changeMastery(10)">+10</button>
                         </div>
-                        <div style="font-size: 0.75rem; color: #888; margin-top: 4px;">※熟練度200基準。1上昇につき改造費 +0.5% (特殊項目を除く)</div>
                     </div>
 
                     <!-- ベース武器選択 -->
                     <div class="sim-form-group">
-                        <label>ベース武器の選択 (arms_weponlist.csvより)</label>
+                        <label>ベース武器の選択</label>
                         <select id="baseWeaponSelect" onchange="calculateSimulation()"></select>
                     </div>
 
@@ -80,36 +79,36 @@
                         <input type="text" id="customNameInput" value="マイ・専用カスタム" oninput="calculateSimulation()">
                     </div>
 
-                    <!-- 改造コントロールの動的生成領域 -->
-                    <div id="upgradeControls"></div>
-
-                    <!-- 特殊カスタムオプション（限定解除・上限解放・属性変更） -->
-                    <div class="sim-form-group" style="margin-top: 15px;">
-                        <label>特殊カスタムオプション（固定コスト）</label>
-                        <div class="sim-checkbox-group">
-                            <input type="checkbox" id="universalCheck" onchange="calculateSimulation()">
-                            <label for="universalCheck" id="labelUniversal" style="margin:0; color:#fff; cursor:pointer; font-size:0.9rem;"></label>
-                        </div>
-                        <div class="sim-checkbox-group">
-                            <input type="checkbox" id="limitBreakCheck" onchange="calculateSimulation()">
-                            <label for="limitBreakCheck" id="labelLimitBreak" style="margin:0; color:#fff; cursor:pointer; font-size:0.9rem;"></label>
-                        </div>
-                        <div class="sim-checkbox-group">
-                            <input type="checkbox" id="elementChangeCheck" onchange="calculateSimulation()">
-                            <label for="elementChangeCheck" id="labelElementChange" style="margin:0; color:#fff; cursor:pointer; font-size:0.9rem;"></label>
-                        </div>
-                    </div>
-
-                    <!-- 属性変更のセレクトボックス -->
-                    <div class="sim-form-group" id="elementSelectGroup" style="display:none; margin-top: 10px;">
-                        <label>変更後の属性を選択</label>
+                    <!-- 属性変更セレクトボックス -->
+                    <div class="sim-form-group">
+                        <label id="labelElementChange">属性変更カスタム</label>
                         <select id="elementSelect" onchange="calculateSimulation()">
+                            <option value="変更なし">変更なし (属性変更しない)</option>
                             <option value="ビーム">ビーム</option>
                             <option value="実弾">実弾</option>
                             <option value="ヒート">ヒート</option>
                             <option value="海洋強化">海洋強化</option>
                         </select>
                     </div>
+
+                    <!-- 改造コントロールの動的生成領域 -->
+                    <div id="upgradeControls"></div>
+
+                    <!-- 特殊カスタムオプション（限定解除・上限解放） -->
+                    <div class="sim-form-group" style="margin-top: 10px;">
+                        <label>その他の特殊カスタムオプション（固定コスト）</label>
+                        <div class="sim-checkbox-group">
+                            <input type="checkbox" id="universalCheck" onchange="calculateSimulation()">
+                            <label for="universalCheck" id="labelUniversal" style="margin:0; color:#fff; cursor:pointer; font-size:0.85rem;"></label>
+                        </div>
+                        <div class="sim-checkbox-group">
+                            <input type="checkbox" id="limitBreakCheck" onchange="calculateSimulation()">
+                            <label for="limitBreakCheck" id="labelLimitBreak" style="margin:0; color:#fff; cursor:pointer; font-size:0.85rem;"></label>
+                        </div>
+                    </div>
+
+                    <!-- 全クリアボタン -->
+                    <button class="global-clear-btn" onclick="resetAllCustoms()">すべてのカスタムをクリア</button>
                 </div>
 
                 <!-- 右側：結果表示パネル -->
@@ -133,13 +132,13 @@
 
                     <!-- レシート風コスト明細 -->
                     <div class="receipt-box">
-                        <div class="receipt-title">RECEIPT // 費用明細</div>
+                        <div class="receipt-title">武器カスタムコスト・明細</div>
                         <div id="receiptItems"></div>
                         <div class="receipt-total">
                             <span>合計クレジット (Cr):</span>
                             <span id="totalCredit" style="color: var(--accent-color);">0 Cr</span>
                         </div>
-                        <div class="receipt-total" style="font-size: 0.95rem; border-top: none; padding-top: 2px;">
+                        <div class="receipt-total" style="font-size: 0.9rem; border-top: none; padding-top: 2px;">
                             <span>合計名声:</span>
                             <span id="totalFame" style="color: #ff9900;">0</span>
                         </div>
@@ -153,18 +152,24 @@
     <!-- 共通ヘッダー読み込みスクリプト -->
     <script>
         fetch('header.html')
-            .then(response => response.text())
+            .then(response => {
+                if (!response.ok) throw new Error('ヘッダー読み込み失敗');
+                return response.text();
+            })
             .then(data => {
-                document.getElementById('header-container').innerHTML = data;
-                
-                const currentPath = window.location.pathname.split('/').pop();
-                const navLinks = document.querySelectorAll('.nav-links a');
-                navLinks.forEach(link => {
-                    if (link.getAttribute('href') === currentPath) {
-                        link.classList.add('active');
-                    }
-                });
-            });
+                const container = document.getElementById('header-container');
+                if (container) {
+                    container.innerHTML = data;
+                    const currentPath = window.location.pathname.split('/').pop();
+                    const navLinks = document.querySelectorAll('.nav-links a');
+                    navLinks.forEach(link => {
+                        if (link.getAttribute('href') === currentPath) {
+                            link.classList.add('active');
+                        }
+                    });
+                }
+            })
+            .catch(err => console.log("ヘッダー読み込みスキップ: ", err));
     </script>
 
     <!-- 外部JavaScript（arms.js のみ読み込み） -->
