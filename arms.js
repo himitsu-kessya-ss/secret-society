@@ -1,54 +1,122 @@
-// CSV/TXT 読み込み処理
+// ==========================================
+// グローバルにCSVから読み込んだ武器データを格納する配列
+// ==========================================
+let csvWeaponsData = [];
+
+// ==========================================
+// CSV/TXT 読み込み＆初期化処理
+// ==========================================
 async function loadData() {
     try {
-        const resW = await fetch('arms_weponlist.csv');
+        // 1. 武器一覧データの読み込み (armsフォルダ配下)
+        const resW = await fetch('arms/arms_weponlist.csv');
         const txtW = await resW.text();
         renderTable('weapon', txtW);
 
-        const resE = await fetch('装備一覧.csv');
+        // シミュレーター用にも武器リストデータをパースして保持
+        csvWeaponsData = parseCSVToObjects(txtW);
+        initBaseWeaponOptions();
+        initUpgradeInputs();
+        initSpecialLabels();
+        calculateSimulation();
+
+        // 2. 装備一覧データの読み込み (armsフォルダ配下)
+        const resE = await fetch('arms/装備一覧.csv');
         const txtE = await resE.text();
         renderTable('equip', txtE);
 
-        const resS = await fetch('武器庫.txt');
+        // 3. 武器庫システム解説の読み込み (armsフォルダ配下)
+        const resS = await fetch('arms/武器庫.txt');
         const txtS = await resS.text();
         document.getElementById('system-content').innerText = txtS;
 
         updateSearchOptions();
     } catch (e) {
-        document.getElementById('system-content').innerText = "エラー：GitHubにアップロードして確認してください。";
+        console.error("データ読み込みエラー:", e);
+        const sysContent = document.getElementById('system-content');
+        if (sysContent) {
+            sysContent.innerText = "エラー：データファイルの読み込みに失敗しました（arms/ フォルダの配置を確認してください）。";
+        }
     }
 }
 
+// テーブル描画用
 function renderTable(type, csvData) {
     const rows = csvData.split(/\r?\n/).filter(row => row.trim() !== '');
     if (rows.length === 0) return;
     
     const headers = rows[0].split(',');
-    document.getElementById(`${type}-head`).innerHTML = headers.map(h => `<th>${h}</th>`).join('');
+    const headEl = document.getElementById(`${type}-head`);
+    if (headEl) {
+        headEl.innerHTML = headers.map(h => `<th>${h.trim().replace(/^["']|["']$/g, '')}</th>`).join('');
+    }
     
-    const body = rows.slice(1).map(row => {
-        const cols = row.split(',');
-        return `<tr>${cols.map(c => `<td>${c}</td>`).join('')}</tr>`;
-    }).join('');
-    document.getElementById(`${type}-body`).innerHTML = body;
+    const bodyEl = document.getElementById(`${type}-body`);
+    if (bodyEl) {
+        const body = rows.slice(1).map(row => {
+            const cols = row.split(',');
+            return `<tr>${cols.map(c => `<td>${c.trim().replace(/^["']\vert{}["']$/g, '')}</td>`).join('')}</tr>`;
+        }).join('');
+        bodyEl.innerHTML = body;
+    }
 }
 
+// CSVテキストをオブジェクトの配列に変換するヘルパー関数
+function parseCSVToObjects(text) {
+    const rows = text.trim().split(/\r?\n/).filter(row => row.trim() !== '');
+    if (rows.length < 2) return [];
+
+    const headers = rows[0].split(',').map(h => h.trim().replace(/^["']|["']$/g, ''));
+    const result = [];
+
+    for (let i = 1; i < rows.length; i++) {
+        const cols = rows[i].split(',').map(val => val.trim().replace(/^["']|["']$/g, ''));
+        const obj = {};
+        headers.forEach((header, index) => {
+            let val = cols[index] !== undefined ? cols[index] : '';
+            if (!isNaN(val) && val !== '') {
+                val = Number(val);
+            }
+            obj[header] = val;
+        });
+        result.push(obj);
+    }
+    return result;
+}
+
+// ==========================================
+// タブ切り替え・検索処理
+// ==========================================
 function switchTab(tabName) {
     document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById(tabName).style.display = 'block';
-    event.currentTarget.classList.add('active');
-    document.getElementById('search-wrapper').style.visibility = (tabName === 'system') ? 'hidden' : 'visible';
+    
+    const targetTab = document.getElementById(tabName);
+    if (targetTab) targetTab.style.display = 'block';
+    
+    if (event && event.currentTarget) {
+        event.currentTarget.classList.add('active');
+    }
+    
+    const searchWrapper = document.getElementById('search-wrapper');
+    if (searchWrapper) {
+        searchWrapper.style.visibility = (tabName === 'system' || tabName === 'simulation') ? 'hidden' : 'visible';
+    }
+    
     updateSearchOptions();
-    document.getElementById('search-box').value = '';
+    const searchBox = document.getElementById('search-box');
+    if (searchBox) searchBox.value = '';
     filterData();
 }
 
 function updateSearchOptions() {
     const activeTab = document.querySelector('.tab-content[style*="block"], .tab-content:not([style*="none"])');
-    if (!activeTab) return;
+    if (!activeTab || activeTab.id === 'simulation' || activeTab.id === 'system') return;
+    
     const headers = activeTab.querySelectorAll('th');
     const select = document.getElementById('search-column');
+    if (!select) return;
+    
     let options = '<option value="all">すべての項目</option>';
     headers.forEach((th, index) => {
         options += `<option value="${index}">${th.innerText}</option>`;
@@ -57,11 +125,16 @@ function updateSearchOptions() {
 }
 
 function filterData() {
-    const input = document.getElementById('search-box').value.toUpperCase();
-    const colIndex = document.getElementById('search-column').value;
-    const activeTab = document.querySelector('.tab-content[style*="block"], .tab-content:not([style*="none"])');
-    const rows = activeTab.querySelectorAll('tbody tr');
+    const searchBox = document.getElementById('search-box');
+    const searchCol = document.getElementById('search-column');
+    if (!searchBox || !searchCol) return;
 
+    const input = searchBox.value.toUpperCase();
+    const colIndex = searchCol.value;
+    const activeTab = document.querySelector('.tab-content[style*="block"], .tab-content:not([style*="none"])');
+    if (!activeTab || activeTab.id === 'simulation' || activeTab.id === 'system') return;
+
+    const rows = activeTab.querySelectorAll('tbody tr');
     rows.forEach(row => {
         let match = false;
         const cells = row.getElementsByTagName('td');
@@ -73,6 +146,264 @@ function filterData() {
         }
         row.style.display = match ? "" : "none";
     });
+}
+
+// ==========================================
+// 武器庫シミュレーション関連の関数群
+// ==========================================
+
+// ベース武器のドロップダウン初期化
+function initBaseWeaponOptions() {
+    const select = document.getElementById('baseWeaponSelect');
+    if (!select) return;
+    select.innerHTML = '';
+    
+    if (csvWeaponsData.length === 0) {
+        select.innerHTML = '<option value="">武器データがありません</option>';
+        return;
+    }
+
+    csvWeaponsData.forEach((w, index) => {
+        const name = w.name || w.武器名 || `武器 #${index + 1}`;
+        const price = w.price || w.価格 || w.購入価格 || 0;
+        select.innerHTML += `<option value="${index}">${name} (価格: ${Number(price).toLocaleString()} Cr)</option>`;
+    });
+}
+
+// 改造項目の入力フォームを data.js に基づいて自動生成
+function initUpgradeInputs() {
+    const container = document.getElementById('upgradeControls');
+    if (!container || typeof UPGRADE_CONFIG === 'undefined') return;
+    container.innerHTML = '';
+
+    for (const key in UPGRADE_CONFIG) {
+        const item = UPGRADE_CONFIG[key];
+        let changeStr = item.rate ? `+${item.rate * 100}%(切り上げ)` : (item.value > 0 ? `+${item.value}` : `${item.value}`);
+        
+        container.innerHTML += `
+            <div class="sim-form-group" id="group_${key}">
+                <label>${item.name} (${changeStr} / 基準Cr: ${item.baseCr.toLocaleString()})</label>
+                <div class="counter-control">
+                    <button class="counter-btn" onclick="changeCount('${key}', -1)">-</button>
+                    <input type="number" id="count_${key}" value="0" min="-10" max="20" onchange="calculateSimulation()">
+                    <button class="counter-btn" onclick="changeCount('${key}', 1)">+</button>
+                </div>
+            </div>
+        `;
+    }
+}
+
+// 特殊機能ラベルの初期化
+function initSpecialLabels() {
+    if (typeof SPECIAL_CUSTOM_CONFIG === 'undefined') return;
+    const cfg = SPECIAL_CUSTOM_CONFIG;
+    
+    const labelRename = document.getElementById('labelRename');
+    const labelUniversal = document.getElementById('labelUniversal');
+    const labelLimitBreak = document.getElementById('labelLimitBreak');
+    const labelElementChange = document.getElementById('labelElementChange');
+
+    if (labelRename) labelRename.innerHTML = `${cfg.rename.name} <span style="color:#aaa; font-weight:normal;">(固定: ${cfg.rename.cr.toLocaleString()}Cr / ${cfg.rename.fame}Pt)</span>`;
+    if (labelUniversal) labelUniversal.innerHTML = `${cfg.universal.name} <span style="color:var(--accent-color);">[固定: ${cfg.universal.cr.toLocaleString()}Cr / ${cfg.universal.fame}Pt]</span>`;
+    if (labelLimitBreak) labelLimitBreak.innerHTML = `${cfg.limitBreak.name} <span style="color:var(--accent-color);">[固定: ${cfg.limitBreak.cr.toLocaleString()}Cr / ${cfg.limitBreak.fame}Pt]</span>`;
+    if (labelElementChange) labelElementChange.innerHTML = `${cfg.elementChange.name} <span style="color:var(--accent-color);">[固定: ${cfg.elementChange.cr.toLocaleString()}Cr]</span>`;
+}
+
+// 熟練度調整ボタン
+function changeMastery(amount) {
+    const input = document.getElementById('playerMastery');
+    if (!input) return;
+    let val = parseInt(input.value) + amount;
+    if (val < 200) val = 200;
+    input.value = val;
+    calculateSimulation();
+}
+
+// 回数増減ボタン
+function changeCount(key, amount) {
+    const input = document.getElementById(`count_${key}`);
+    if (!input) return;
+    let val = parseInt(input.value) + amount;
+    let min = parseInt(input.min);
+    let max = parseInt(input.max);
+    if (val >= min && val <= max) {
+        input.value = val;
+        calculateSimulation();
+    }
+}
+
+// シミュレーション計算とUI描画のメイン処理
+function calculateSimulation() {
+    if (csvWeaponsData.length === 0) return;
+
+    const masteryInput = document.getElementById('playerMastery');
+    if (!masteryInput) return;
+
+    let mastery = parseInt(masteryInput.value) || 200;
+    if (mastery < 200) mastery = 200;
+
+    const costMultiplier = 1 + (mastery - 200) * 0.005;
+
+    const selectEl = document.getElementById('baseWeaponSelect');
+    const baseIndex = selectEl ? selectEl.value : 0;
+    const base = csvWeaponsData[baseIndex] || csvWeaponsData[0];
+
+    const baseName = base.name || base.武器名 || "不明な武器";
+    const basePrice = Number(base.price || base.価格 || base.購入価格 || 0);
+    const basePower = Number(base.power || base.威力 || 100);
+    const baseAmmo = Number(base.ammo !== undefined ? base.ammo : (base.弾数 !== undefined ? base.弾数 : 10));
+    const baseEnergy = Number(base.energy || base.省エネ || base.EN || 10);
+    const baseAttacks = Number(base.attacks || base.攻撃回数 || 1);
+    const baseMinRange = Number(base.minRange || base.最低射程 || 1);
+    const baseMaxRange = Number(base.maxRange || base.最大射程 || 3);
+    const baseWeight = Number(base.weight || base.軽量化 || base.重量 || 50);
+    const baseCost = Number(base.cost || base.維持費 || 50000);
+
+    const ammoGroup = document.getElementById('group_ammo');
+    const ammoInput = document.getElementById('count_ammo');
+    if (baseAmmo === 0) {
+        if (ammoGroup) ammoGroup.style.opacity = "0.3";
+        if (ammoInput) ammoInput.value = 0;
+    } else {
+        if (ammoGroup) ammoGroup.style.opacity = "1.0";
+    }
+
+    const counts = {};
+    for (const key in UPGRADE_CONFIG) {
+        const el = document.getElementById(`count_${key}`);
+        counts[key] = el ? (parseInt(el.value) || 0) : 0;
+    }
+
+    // --- 1. ステータス計算 ---
+    let currentPower = basePower;
+    for (let i = 0; i < Math.abs(counts.power); i++) {
+        const diff = Math.ceil(currentPower * UPGRADE_CONFIG.power.rate);
+        if (counts.power > 0) {
+            currentPower += diff;
+        } else {
+            currentPower -= diff;
+        }
+    }
+
+    const simData = {
+        power: currentPower,
+        ammo: baseAmmo === 0 ? 0 : Math.max(1, baseAmmo + (counts.ammo * UPGRADE_CONFIG.ammo.value)),
+        energy: Math.max(1, baseEnergy + (counts.energy * UPGRADE_CONFIG.energy.value)),
+        attacks: Math.max(1, baseAttacks + (counts.attacks * UPGRADE_CONFIG.attacks.value)),
+        minRange: Math.max(1, baseMinRange + (counts.minRange * UPGRADE_CONFIG.minRange.value)),
+        maxRange: Math.max(1, baseMaxRange + (counts.maxRange * UPGRADE_CONFIG.maxRange.value)),
+        weight: Math.max(5, baseWeight + (counts.weight * UPGRADE_CONFIG.weight.value))
+    };
+
+    let totalMods = 0;
+    for (const key in counts) { if (counts[key] > 0) totalMods += counts[key]; }
+    const simCost = baseCost + (totalMods * 100000);
+
+    // --- 2. 比較テーブル描画 ---
+    const tbody = document.getElementById('comparisonTableBody');
+    const universalCheck = document.getElementById('universalCheck');
+    if (tbody) {
+        tbody.innerHTML = `
+            <tr>
+                <td>装備制限</td>
+                <td>専用機限定</td>
+                <td style="color:var(--accent-color); font-weight:bold;">
+                    ${universalCheck && universalCheck.checked ? "汎用（全機体装備可）" : "専用機限定"}
+                </td>
+            </tr>
+            <tr>
+                <td>威力</td>
+                <td>${basePower.toLocaleString()}</td>
+                <td>${simData.power.toLocaleString()} <span class="diff-plus">(${simData.power - basePower >= 0 ? '+' : ''}${simData.power - basePower})</span></td>
+            </tr>
+            <tr>
+                <td>弾数</td>
+                <td>${baseAmmo === 0 ? "無限" : baseAmmo}</td>
+                <td>${baseAmmo === 0 ? "無限" : simData.ammo + ' <span class="diff-plus">(' + (simData.ammo - baseAmmo >= 0 ? '+' : '') + (simData.ammo - baseAmmo) + ')</span>'}</td>
+            </tr>
+            <tr>
+                <td>省エネ (EN)</td>
+                <td>${baseEnergy}</td>
+                <td>${simData.energy} <span class="diff-plus">(${simData.energy - baseEnergy >= 0 ? '+' : ''}${simData.energy - baseEnergy})</span></td>
+            </tr>
+            <tr>
+                <td>攻撃回数</td>
+                <td>${baseAttacks}</td>
+                <td>${simData.attacks} <span class="diff-plus">(${simData.attacks - baseAttacks >= 0 ? '+' : ''}${simData.attacks - baseAttacks})</span></td>
+            </tr>
+            <tr>
+                <td>射程</td>
+                <td>${baseMinRange} ~ ${baseMaxRange}</td>
+                <td>${simData.minRange} ~ ${simData.maxRange}</td>
+            </tr>
+            <tr>
+                <td>重量</td>
+                <td>${baseWeight}</td>
+                <td>${simData.weight} <span class="diff-plus">(${simData.weight - baseWeight >= 0 ? '+' : ''}${simData.weight - baseWeight})</span></td>
+            </tr>
+            <tr>
+                <td>週の維持費</td>
+                <td>${baseCost.toLocaleString()} Cr</td>
+                <td style="color:var(--accent-color);">${simCost.toLocaleString()} Cr/週</td>
+            </tr>
+        `;
+    }
+
+    // --- 3. 明細とコスト合計計算 ---
+    let receiptHTML = '';
+    let totalCr = basePrice;
+    let totalFame = 0;
+
+    receiptHTML += `<div class="receipt-item"><span>ベース武器: ${baseName}</span><span>${basePrice.toLocaleString()} Cr</span></div>`;
+
+    const customNameInput = document.getElementById('customNameInput');
+    const customName = customNameInput ? customNameInput.value.trim() : "";
+    if (customName !== "") {
+        totalCr += SPECIAL_CUSTOM_CONFIG.rename.cr;
+        totalFame += SPECIAL_CUSTOM_CONFIG.rename.fame;
+        receiptHTML += `<div class="receipt-item"><span>- 名称変更 (固定)</span><span>${SPECIAL_CUSTOM_CONFIG.rename.cr.toLocaleString()} Cr</span></div>`;
+    }
+
+    for (const key in UPGRADE_CONFIG) {
+        const count = counts[key];
+        if (count > 0) {
+            const unitCost = Math.round(UPGRADE_CONFIG[key].baseCr * costMultiplier);
+            const cost = unitCost * count;
+            totalCr += cost;
+            receiptHTML += `<div class="receipt-item"><span>- ${UPGRADE_CONFIG[key].name}強化 x ${count}</span><span>${cost.toLocaleString()} Cr</span></div>`;
+        } else if (count < 0) {
+            receiptHTML += `<div class="receipt-item"><span>- ${UPGRADE_CONFIG[key].name}ダウン x ${Math.abs(count)}</span><span>0 Cr (無料)</span></div>`;
+        }
+    }
+
+    const limitBreakCheck = document.getElementById('limitBreakCheck');
+    const elementChangeCheck = document.getElementById('elementChangeCheck');
+
+    if (universalCheck && universalCheck.checked) {
+        totalCr += SPECIAL_CUSTOM_CONFIG.universal.cr;
+        totalFame += SPECIAL_CUSTOM_CONFIG.universal.fame;
+        receiptHTML += `<div class="receipt-item"><span>- 限定解除 (固定)</span><span>${SPECIAL_CUSTOM_CONFIG.universal.cr.toLocaleString()} Cr</span></div>`;
+    }
+
+    if (limitBreakCheck && limitBreakCheck.checked) {
+        totalCr += SPECIAL_CUSTOM_CONFIG.limitBreak.cr;
+        totalFame += SPECIAL_CUSTOM_CONFIG.limitBreak.fame;
+        receiptHTML += `<div class="receipt-item"><span>- 上限解放 (固定)</span><span>${SPECIAL_CUSTOM_CONFIG.limitBreak.cr.toLocaleString()} Cr</span></div>`;
+    }
+
+    if (elementChangeCheck && elementChangeCheck.checked) {
+        totalCr += SPECIAL_CUSTOM_CONFIG.elementChange.cr;
+        totalFame += SPECIAL_CUSTOM_CONFIG.elementChange.fame;
+        receiptHTML += `<div class="receipt-item"><span>- 属性変更 (固定)</span><span>${SPECIAL_CUSTOM_CONFIG.elementChange.cr.toLocaleString()} Cr</span></div>`;
+    }
+
+    const receiptItemsEl = document.getElementById('receiptItems');
+    const totalCreditEl = document.getElementById('totalCredit');
+    const totalFameEl = document.getElementById('totalFame');
+
+    if (receiptItemsEl) receiptItemsEl.innerHTML = receiptHTML;
+    if (totalCreditEl) totalCreditEl.innerText = totalCr.toLocaleString() + " Cr";
+    if (totalFameEl) totalFameEl.innerText = totalFame.toLocaleString() + " Pt";
 }
 
 // ページ読み込み時にデータを取得開始
