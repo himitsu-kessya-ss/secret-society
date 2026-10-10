@@ -70,11 +70,11 @@
 
                     <!-- ベース武器選択 -->
                     <div class="sim-form-group">
-                        <label>ベース武器の選択 (arms/arms_weponlist.csvより)</label>
+                        <label>ベース武器の選択 (arms_weponlist.csvより)</label>
                         <select id="baseWeaponSelect" onchange="calculateSimulation()"></select>
                     </div>
 
-                    <!-- 武器の改名 -->
+                    <!-- 武器の改名（特殊オプション1） -->
                     <div class="sim-form-group">
                         <label id="labelRename">名称変更</label>
                         <input type="text" id="customNameInput" value="マイ・専用カスタム" oninput="calculateSimulation()">
@@ -83,9 +83,9 @@
                     <!-- 改造コントロールの動的生成領域 -->
                     <div id="upgradeControls"></div>
 
-                    <!-- 特殊機能オプション -->
+                    <!-- 特殊カスタムオプション（限定解除・上限解放・属性変更） -->
                     <div class="sim-form-group" style="margin-top: 15px;">
-                        <label>特殊機能オプション</label>
+                        <label>特殊カスタムオプション（固定コスト）</label>
                         <div class="sim-checkbox-group">
                             <input type="checkbox" id="universalCheck" onchange="calculateSimulation()">
                             <label for="universalCheck" id="labelUniversal" style="margin:0; color:#fff; cursor:pointer; font-size:0.9rem;"></label>
