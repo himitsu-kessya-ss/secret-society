@@ -257,7 +257,7 @@ function changeCount(key, amount) {
     
     // 上限解放チェックの状態を確認
     const limitBreakCheck = document.getElementById('limitBreakCheck');
-    let max = 999; // 上限なし（事実上の無制限）
+    let max = 999; // 上限なし（無制限）
     if (!limitBreakCheck || !limitBreakCheck.checked) {
         max = 30; // 上限解放がない場合は30回まで
     }
@@ -357,8 +357,8 @@ function calculateSimulation() {
         if (ammoGroup) ammoGroup.style.opacity = "1.0";
     }
 
-    const limitBreakCheck = document.getElementById('limitBreakCheck');
-    const isLimitBroken = limitBreakCheck ? limitBreakCheck.checked : false;
+    const limitBreakCheckElem = document.getElementById('limitBreakCheck');
+    const isLimitBroken = limitBreakCheckElem ? limitBreakCheckElem.checked : false;
     const maxAllowedCount = isLimitBroken ? 999 : 30;
 
     const counts = {};
@@ -522,9 +522,6 @@ function calculateSimulation() {
             }
         }
     }
-
-    const universalCheckElem = document.getElementById('universalCheck');
-    const limitBreakCheckElem = document.getElementById('limitBreakCheck');
 
     if (universalCheckElem && universalCheckElem.checked) {
         totalCr += SPECIAL_CUSTOM_CONFIG.universal.cr;
