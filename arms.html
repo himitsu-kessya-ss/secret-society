@@ -58,12 +58,15 @@
                     <!-- プレイヤー熟練度 -->
                     <div class="sim-form-group" style="background: rgba(0, 212, 255, 0.03); padding: 6px 8px; border-radius: 4px; border: 1px solid var(--border-color);">
                         <label style="color: var(--accent-color); font-weight: bold; margin-bottom: 2px;">プレイヤー熟練度 (武器庫開放: 200)</label>
-                        <div class="counter-control">
-                            <button class="counter-btn" onclick="changeMastery(-10)">-10</button>
-                            <button class="counter-btn" onclick="changeMastery(-1)">-</button>
-                            <input type="number" id="playerMastery" value="200" min="200" max="1000" onchange="calculateSimulation()" style="width: 60px;">
-                            <button class="counter-btn" onclick="changeMastery(1)">+</button>
-                            <button class="counter-btn" onclick="changeMastery(10)">+10</button>
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <div class="counter-control">
+                                <button class="counter-btn" onclick="changeMastery(-10)">-10</button>
+                                <button class="counter-btn" onclick="changeMastery(-1)">-</button>
+                                <input type="number" id="playerMastery" value="200" min="200" max="1000" onchange="calculateSimulation()" style="width: 60px;">
+                                <button class="counter-btn" onclick="changeMastery(1)">+</button>
+                                <button class="counter-btn" onclick="changeMastery(10)">+10</button>
+                            </div>
+                            <button class="item-clear-btn" onclick="clearMastery()">クリア</button>
                         </div>
                     </div>
 
