@@ -216,8 +216,8 @@ function initUpgradeInputs() {
                         <input type="number" id="count_${key}" value="0" min="-10" max="20" onchange="calculateSimulation()">
                         <button class="counter-btn" onclick="changeCount('${key}', 1)">+</button>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <div id="cost_display_${key}" style="font-size: 0.85rem; color: var(--accent-color); font-weight: bold; text-align: right; min-width: 90px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div id="cost_display_${key}" style="font-size: 0.8rem; color: var(--accent-color); font-weight: bold; text-align: right; min-width: 80px;">
                             0 Cr
                         </div>
                         <button class="item-clear-btn" onclick="clearItem('${key}')">クリア</button>
@@ -290,11 +290,11 @@ function resetAllCustoms() {
         if (input) input.value = 0;
     }
 
-    const universalCheckEl = document.getElementById('universalCheck');
-    if (universalCheckEl) universalCheckEl.checked = false;
+    const universalCheckElem = document.getElementById('universalCheck');
+    if (universalCheckElem) universalCheckElem.checked = false;
 
-    const limitBreakCheckEl = document.getElementById('limitBreakCheck');
-    if (limitBreakCheckEl) limitBreakCheckEl.checked = false;
+    const limitBreakCheckElem = document.getElementById('limitBreakCheck');
+    if (limitBreakCheckElem) limitBreakCheckElem.checked = false;
 
     calculateSimulation();
 }
