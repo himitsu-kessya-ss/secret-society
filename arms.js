@@ -249,6 +249,14 @@ function changeMastery(amount) {
     calculateSimulation();
 }
 
+function clearMastery() {
+    const input = document.getElementById('playerMastery');
+    if (input) {
+        input.value = 200;
+        calculateSimulation();
+    }
+}
+
 function changeCount(key, amount) {
     const input = document.getElementById(`count_${key}`);
     if (!input) return;
@@ -288,31 +296,27 @@ function clearItem(key) {
 }
 
 function resetAllCustoms() {
-    const masteryInput = document.getElementById('playerMastery');
-    if (masteryInput) masteryInput.value = 200;
+    // 武器カスタムの回数リセット
+    for (const key in UPGRADE_CONFIG) {
+        const input = document.getElementById(`count_${key}`);
+        if (input) input.value = 0;
+    }
 
-    const baseSelect = document.getElementById('baseWeaponSelect');
-    if (baseSelect) baseSelect.selectedIndex = 0;
-
+    // 各種チェックボックスと入力項目のリセット
     const renameCheck = document.getElementById('renameCheck');
     if (renameCheck) renameCheck.checked = false;
 
     const customNameInput = document.getElementById('customNameInput');
     if (customNameInput) customNameInput.value = "";
 
-    const elementSelect = document.getElementById('elementSelect');
-    if (elementSelect) elementSelect.selectedIndex = 0;
-
-    for (const key in UPGRADE_CONFIG) {
-        const input = document.getElementById(`count_${key}`);
-        if (input) input.value = 0;
-    }
-
     const universalCheckElem = document.getElementById('universalCheck');
     if (universalCheckElem) universalCheckElem.checked = false;
 
     const limitBreakCheckElem = document.getElementById('limitBreakCheck');
     if (limitBreakCheckElem) limitBreakCheckElem.checked = false;
+
+    const elementSelect = document.getElementById('elementSelect');
+    if (elementSelect) elementSelect.selectedIndex = 0;
 
     calculateSimulation();
 }
@@ -386,7 +390,6 @@ function calculateSimulation() {
     // 上限解放がないのに合計が30を超えている場合の自動補正
     if (!isLimitBroken && totalPositiveCount > 30) {
         let excess = totalPositiveCount - 30;
-        // 順番にプラス分から減らして30にする
         for (const key in UPGRADE_CONFIG) {
             if (counts[key] > 0) {
                 let reduce = Math.min(counts[key], excess);
