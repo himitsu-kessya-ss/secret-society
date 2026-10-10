@@ -257,6 +257,7 @@ function changeCount(key, amount) {
     let max = parseInt(input.max);
     if (val >= min && val <= max) {
         input.value = val;
+        // ★修正点：値を変更した後に必ず計算関数を呼び出すようにしました
         calculateSimulation();
     }
 }
