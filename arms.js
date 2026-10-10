@@ -13,7 +13,7 @@ const UPGRADE_CONFIG = {
     ammo: { name: "弾数", value: 1, baseCr: 2000000, unit: "発" },
     energy: { name: "省エネ", value: -1, baseCr: 800000, unit: "" },
     attacks: { name: "攻撃回数 (HIT)", value: 1, baseCr: 4000000, unit: "回" },
-    minRange: { name: "最低射程", value: -1, baseCr: 400000, unit: "" },
+    minRange: { name: "最低射程", value: -1, baseCr: 400000, unit: "", minLimit: 0 }, // 最小値を0に設定
     maxRange: { name: "最大射程", value: 1, baseCr: 2000000, unit: "" },
     weight: { name: "軽量化", value: -1, baseCr: 800000, unit: "" }
 };
@@ -427,6 +427,13 @@ function calculateSimulation() {
         }
     }
 
+    // 最低射程の計算（最小値は 0 に制限）
+    let currentMinRange = baseMinRange;
+    for (let i = 0; i < Math.abs(counts.minRange); i++) {
+        currentMinRange += UPGRADE_CONFIG.minRange.value;
+    }
+    if (currentMinRange < 0) currentMinRange = 0;
+
     // 軽量化の計算（重量の下限は 1）
     let currentWeight = baseWeight;
     for (let i = 0; i < Math.abs(counts.weight); i++) {
@@ -439,7 +446,7 @@ function calculateSimulation() {
         power: currentPower,
         ammo: baseAmmo === 0 ? 0 : Math.max(1, baseAmmo + (counts.ammo * UPGRADE_CONFIG.ammo.value)),
         energy: Math.max(1, baseEnergy + (counts.energy * UPGRADE_CONFIG.energy.value)),
-        minRange: Math.max(1, baseMinRange + (counts.minRange * UPGRADE_CONFIG.minRange.value)),
+        minRange: currentMinRange,
         maxRange: Math.max(1, baseMaxRange + (counts.maxRange * UPGRADE_CONFIG.maxRange.value)),
         weight: currentWeight,
         attacks: Math.max(1, baseAttacks + (counts.attacks * UPGRADE_CONFIG.attacks.value))
