@@ -192,7 +192,7 @@ function initBaseWeaponOptions() {
     }
 
     csvWeaponsData.forEach((w, index) => {
-        // プルダウンには名称のみを表示（価格なし）
+        // プルダウンには「名称」のみを表示（価格表記なし）
         const name = w.名称 || w.name || w.武器名 || `武器 #${index + 1}`;
         select.innerHTML += `<option value="${index}">${name}</option>`;
     });
@@ -238,7 +238,7 @@ function initSpecialLabels() {
     if (labelRename) labelRename.innerHTML = `${cfg.rename.name} <span style="color:#aaa; font-weight:normal;">[固定: ${cfg.rename.cr.toLocaleString()}Cr / 名声${cfg.rename.fame}]</span>`;
     if (labelUniversal) labelUniversal.innerHTML = `${cfg.universal.name} <span style="color:var(--accent-color);">[固定: ${cfg.universal.cr.toLocaleString()}Cr / 名声${cfg.universal.fame}]</span>`;
     if (labelLimitBreak) labelLimitBreak.innerHTML = `${cfg.limitBreak.name} <span style="color:var(--accent-color);">[固定: ${cfg.limitBreak.cr.toLocaleString()}Cr / 名声${cfg.limitBreak.fame}]</span>`;
-    if (labelElementChange) labelElementChange.innerHTML = `${cfg.elementChange.name} <span style="color:var(--accent-color);">[固定: ${cfg.elementChange.cr.toLocaleString()}Cr]</span>`;
+    if (labelElementChange) labelElementChange.innerHTML = `${cfg.elementChange.name} <span style="color:#aaa; font-weight:normal;">[固定: ${cfg.elementChange.cr.toLocaleString()}Cr] ※「変更なし」以外で自動適用</span>`;
 }
 
 function changeMastery(amount) {
@@ -296,9 +296,6 @@ function resetAllCustoms() {
     const limitBreakCheck = document.getElementById('limitBreakCheck');
     if (limitBreakCheck) limitBreakCheck.checked = false;
 
-    const elementChangeCheck = document.getElementById('elementChangeCheck');
-    if (elementChangeCheck) elementChangeCheck.checked = false;
-
     calculateSimulation();
 }
 
@@ -328,17 +325,14 @@ function calculateSimulation() {
     const baseWeight = Number(base.重量 || base.軽量化 || base.weight || 50);
     const baseAttacks = Number(base.HIT || base.攻撃回数 || base.attacks || 1);
 
-    const elementCheck = document.getElementById('elementChangeCheck');
-    const elementSelectGroup = document.getElementById('elementSelectGroup');
     const elementSelect = document.getElementById('elementSelect');
-    
-    if (elementSelectGroup) {
-        elementSelectGroup.style.display = (elementCheck && elementCheck.checked) ? "block" : "none";
-    }
-
+    const selectedElement = elementSelect ? elementSelect.value : "変更なし";
     let currentElement = baseElement;
-    if (elementCheck && elementCheck.checked && elementSelect) {
-        currentElement = elementSelect.value;
+    let isElementChanged = false;
+
+    if (selectedElement !== "変更なし") {
+        currentElement = selectedElement;
+        isElementChanged = true;
     }
 
     const ammoGroup = document.getElementById('group_ammo');
@@ -468,7 +462,7 @@ function calculateSimulation() {
             let itemTotalCost = 0;
             for (let i = 1; i <= count; i++) {
                 let tierMultiplier = Math.ceil(i / 2);
-                let singleCost = Math.round(UPGRADE_CONFIG[key].baseCr * costMultiplier * tierMultiplier);
+                let singleCost = Math.round(UPGRADE_CONFIG[key].baseCr * costMultiplier * tierMultiplier * costMultiplier); // 熟練度補正反映
                 itemTotalCost += singleCost;
             }
 
@@ -508,7 +502,7 @@ function calculateSimulation() {
         receiptHTML += `<div class="receipt-item"><span>- ${SPECIAL_CUSTOM_CONFIG.limitBreak.name} (固定)</span><span>${SPECIAL_CUSTOM_CONFIG.limitBreak.cr.toLocaleString()} Cr</span></div>`;
     }
 
-    if (elementCheck && elementCheck.checked) {
+    if (isElementChanged) {
         totalCr += SPECIAL_CUSTOM_CONFIG.elementChange.cr;
         totalFame += SPECIAL_CUSTOM_CONFIG.elementChange.fame;
         receiptHTML += `<div class="receipt-item"><span>- ${SPECIAL_CUSTOM_CONFIG.elementChange.name} (${currentElement})</span><span>${SPECIAL_CUSTOM_CONFIG.elementChange.cr.toLocaleString()} Cr</span></div>`;
