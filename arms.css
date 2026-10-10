@@ -56,7 +56,12 @@ html, body {
     box-sizing: border-box;
 }
 
-/* 📋 通常のテーブル（武器・装備一覧用）：ヘッダー位置・潜り込み完全修正 */
+/* タブコンテンツ全体のラッパー */
+.tab-content {
+    position: relative;
+}
+
+/* 📋 通常のテーブル（武器・装備一覧用）：ヘッダーを正確な位置に固定 */
 .tab-content > table { 
     width: 100%; 
     border-collapse: collapse; 
@@ -65,10 +70,10 @@ html, body {
 }
 .tab-content > table thead th {
     position: sticky; 
-    top: 0; 
+    top: 0; /* スクロールコンテナの最上部にピタッと固定 */
     background: #333; 
     color: var(--accent-color); 
-    z-index: 100;
+    z-index: 50;
     padding: 8px; 
     border: 1px solid var(--border-color);
     white-space: nowrap; 
