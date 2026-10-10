@@ -12,7 +12,7 @@ const UPGRADE_CONFIG = {
     power: { name: "威力", rate: 0.03, baseCr: 4000000, unit: "%" },
     ammo: { name: "弾数", value: 1, baseCr: 2000000, unit: "発" },
     energy: { name: "省エネ", value: -1, baseCr: 800000, unit: "" },
-    attacks: { name: "攻撃回数", value: 1, baseCr: 4000000, unit: "回" },
+    attacks: { name: "攻撃回数 (HIT)", value: 1, baseCr: 4000000, unit: "回" },
     minRange: { name: "最低射程", value: -1, baseCr: 400000, unit: "" },
     maxRange: { name: "最大射程", value: 1, baseCr: 2000000, unit: "" },
     weight: { name: "軽量化", value: -1, baseCr: 800000, unit: "" }
@@ -193,8 +193,9 @@ function initBaseWeaponOptions() {
     }
 
     csvWeaponsData.forEach((w, index) => {
-        const name = w.name || w.武器名 || `武器 #${index + 1}`;
-        const price = w.price || w.価格 || w.購入価格 || 0;
+        // プルダウンには「名称」を表示
+        const name = w.名称 || w.name || w.武器名 || `武器 #${index + 1}`;
+        const price = w.価格 || w.price || w.購入価格 || 0;
         select.innerHTML += `<option value="${index}">${name} (価格: ${Number(price).toLocaleString()} Cr)</option>`;
     });
 }
@@ -270,16 +271,26 @@ function calculateSimulation() {
     const baseIndex = selectEl ? selectEl.value : 0;
     const base = csvWeaponsData[baseIndex] || csvWeaponsData[0];
 
-    const baseName = base.name || base.武器名 || "不明な武器";
-    const basePrice = Number(base.price || base.価格 || base.購入価格 || 0);
-    const basePower = Number(base.power || base.威力 || 100);
-    const baseAmmo = Number(base.ammo !== undefined ? base.ammo : (base.弾数 !== undefined ? base.弾数 : 10));
-    const baseEnergy = Number(base.energy || base.省エネ || base.EN || 10);
-    const baseAttacks = Number(base.attacks || base.攻撃回数 || 1);
-    const baseMinRange = Number(base.minRange || base.最低射程 || 1);
-    const baseMaxRange = Number(base.maxRange || base.最大射程 || 3);
-    const baseWeight = Number(base.weight || base.軽量化 || base.重量 || 50);
-    const baseCost = Number(base.cost || base.維持費 || 50000);
+    // CSVの各列名からデータを取得（表記ゆれにも対応）
+    const baseName = base.名称 || base.name || base.武器名 || "不明な武器";
+    const basePrice = Number(base.価格 || base.price || base.購入価格 || 0);
+    const baseElement = base.属性 || base.element || "ビーム";
+    const basePower = Number(base.ダメージ || base.威力 || base.power || 100);
+    const baseAmmo = Number(base.弾数 !== undefined ? base.弾数 : (base.ammo !== undefined ? base.ammo : 10));
+    const baseEnergy = Number(base.消費EN || base.省エネ || base.EN || base.energy || 10);
+    const baseMinRange = Number(base.最低射程 || base.minRange || 1);
+    const baseMaxRange = Number(base.最大射程 || base.maxRange || 3);
+    const baseWeight = Number(base.重量 || base.軽量化 || base.weight || 50);
+    const baseAttacks = Number(base.HIT || base.攻撃回数 || base.attacks || 1);
+    const baseCost = Number(base.維持費 || base.cost || 50000);
+
+    // 属性変更チェックがONなら、選択された属性に変化
+    const elementCheck = document.getElementById('elementChangeCheck');
+    const elementSelect = document.getElementById('elementSelect');
+    let currentElement = baseElement;
+    if (elementCheck && elementCheck.checked && elementSelect) {
+        currentElement = elementSelect.value;
+    }
 
     const ammoGroup = document.getElementById('group_ammo');
     const ammoInput = document.getElementById('count_ammo');
@@ -296,6 +307,7 @@ function calculateSimulation() {
         counts[key] = el ? (parseInt(el.value) || 0) : 0;
     }
 
+    // --- 1. ステータス計算 ---
     let currentPower = basePower;
     for (let i = 0; i < Math.abs(counts.power); i++) {
         const diff = Math.ceil(currentPower * UPGRADE_CONFIG.power.rate);
@@ -307,19 +319,21 @@ function calculateSimulation() {
     }
 
     const simData = {
+        element: currentElement,
         power: currentPower,
         ammo: baseAmmo === 0 ? 0 : Math.max(1, baseAmmo + (counts.ammo * UPGRADE_CONFIG.ammo.value)),
         energy: Math.max(1, baseEnergy + (counts.energy * UPGRADE_CONFIG.energy.value)),
-        attacks: Math.max(1, baseAttacks + (counts.attacks * UPGRADE_CONFIG.attacks.value)),
         minRange: Math.max(1, baseMinRange + (counts.minRange * UPGRADE_CONFIG.minRange.value)),
         maxRange: Math.max(1, baseMaxRange + (counts.maxRange * UPGRADE_CONFIG.maxRange.value)),
-        weight: Math.max(5, baseWeight + (counts.weight * UPGRADE_CONFIG.weight.value))
+        weight: Math.max(5, baseWeight + (counts.weight * UPGRADE_CONFIG.weight.value)),
+        attacks: Math.max(1, baseAttacks + (counts.attacks * UPGRADE_CONFIG.attacks.value))
     };
 
     let totalMods = 0;
     for (const key in counts) { if (counts[key] > 0) totalMods += counts[key]; }
     const simCost = baseCost + (totalMods * 100000);
 
+    // --- 2. 比較テーブル描画 ---
     const tbody = document.getElementById('comparisonTableBody');
     const universalCheck = document.getElementById('universalCheck');
     if (tbody) {
@@ -332,7 +346,12 @@ function calculateSimulation() {
                 </td>
             </tr>
             <tr>
-                <td>威力</td>
+                <td>属性</td>
+                <td>${baseElement}</td>
+                <td style="color:var(--accent-color); font-weight:bold;">${simData.element}</td>
+            </tr>
+            <tr>
+                <td>ダメージ (威力)</td>
                 <td>${basePower.toLocaleString()}</td>
                 <td>${simData.power.toLocaleString()} <span class="diff-plus">(${simData.power - basePower >= 0 ? '+' : ''}${simData.power - basePower})</span></td>
             </tr>
@@ -342,14 +361,9 @@ function calculateSimulation() {
                 <td>${baseAmmo === 0 ? "無限" : simData.ammo + ' <span class="diff-plus">(' + (simData.ammo - baseAmmo >= 0 ? '+' : '') + (simData.ammo - baseAmmo) + ')</span>'}</td>
             </tr>
             <tr>
-                <td>省エネ (EN)</td>
+                <td>消費EN (省エネ)</td>
                 <td>${baseEnergy}</td>
                 <td>${simData.energy} <span class="diff-plus">(${simData.energy - baseEnergy >= 0 ? '+' : ''}${simData.energy - baseEnergy})</span></td>
-            </tr>
-            <tr>
-                <td>攻撃回数</td>
-                <td>${baseAttacks}</td>
-                <td>${simData.attacks} <span class="diff-plus">(${simData.attacks - baseAttacks >= 0 ? '+' : ''}${simData.attacks - baseAttacks})</span></td>
             </tr>
             <tr>
                 <td>射程</td>
@@ -357,9 +371,14 @@ function calculateSimulation() {
                 <td>${simData.minRange} ~ ${simData.maxRange}</td>
             </tr>
             <tr>
-                <td>重量</td>
+                <td>重量 (軽量化)</td>
                 <td>${baseWeight}</td>
                 <td>${simData.weight} <span class="diff-plus">(${simData.weight - baseWeight >= 0 ? '+' : ''}${simData.weight - baseWeight})</span></td>
+            </tr>
+            <tr>
+                <td>HIT (攻撃回数)</td>
+                <td>${baseAttacks}</td>
+                <td>${simData.attacks} <span class="diff-plus">(${simData.attacks - baseAttacks >= 0 ? '+' : ''}${simData.attacks - baseAttacks})</span></td>
             </tr>
             <tr>
                 <td>週の維持費</td>
@@ -369,6 +388,7 @@ function calculateSimulation() {
         `;
     }
 
+    // --- 3. 明細とコスト合計計算 ---
     let receiptHTML = '';
     let totalCr = basePrice;
     let totalFame = 0;
@@ -396,7 +416,6 @@ function calculateSimulation() {
     }
 
     const limitBreakCheck = document.getElementById('limitBreakCheck');
-    const elementChangeCheck = document.getElementById('elementChangeCheck');
 
     if (universalCheck && universalCheck.checked) {
         totalCr += SPECIAL_CUSTOM_CONFIG.universal.cr;
@@ -410,10 +429,10 @@ function calculateSimulation() {
         receiptHTML += `<div class="receipt-item"><span>- ${SPECIAL_CUSTOM_CONFIG.limitBreak.name} (固定)</span><span>${SPECIAL_CUSTOM_CONFIG.limitBreak.cr.toLocaleString()} Cr</span></div>`;
     }
 
-    if (elementChangeCheck && elementChangeCheck.checked) {
+    if (elementCheck && elementCheck.checked) {
         totalCr += SPECIAL_CUSTOM_CONFIG.elementChange.cr;
         totalFame += SPECIAL_CUSTOM_CONFIG.elementChange.fame;
-        receiptHTML += `<div class="receipt-item"><span>- ${SPECIAL_CUSTOM_CONFIG.elementChange.name} (固定)</span><span>${SPECIAL_CUSTOM_CONFIG.elementChange.cr.toLocaleString()} Cr</span></div>`;
+        receiptHTML += `<div class="receipt-item"><span>- ${SPECIAL_CUSTOM_CONFIG.elementChange.name} (${currentElement})</span><span>${SPECIAL_CUSTOM_CONFIG.elementChange.cr.toLocaleString()} Cr</span></div>`;
     }
 
     const receiptItemsEl = document.getElementById('receiptItems');
