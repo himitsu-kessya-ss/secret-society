@@ -192,9 +192,9 @@ function initBaseWeaponOptions() {
     }
 
     csvWeaponsData.forEach((w, index) => {
+        // プルダウンには「名称」のみを表示（価格表記なし）
         const name = w.名称 || w.name || w.武器名 || `武器 #${index + 1}`;
-        const price = w.価格 || w.price || w.購入価格 || 0;
-        select.innerHTML += `<option value="${index}">${name} (価格: ${Number(price).toLocaleString()} Cr)</option>`;
+        select.innerHTML += `<option value="${index}">${name}</option>`;
     });
 }
 
@@ -210,10 +210,18 @@ function initUpgradeInputs() {
         container.innerHTML += `
             <div class="sim-form-group" id="group_${key}">
                 <label>${item.name} (${changeStr} / 基準Cr: ${item.baseCr.toLocaleString()})</label>
-                <div class="counter-control">
-                    <button class="counter-btn" onclick="changeCount('${key}', -1)">-</button>
-                    <input type="number" id="count_${key}" value="0" min="-10" max="20" onchange="calculateSimulation()">
-                    <button class="counter-btn" onclick="changeCount('${key}', 1)">+</button>
+                <div class="counter-control-wrapper">
+                    <div class="counter-control">
+                        <button class="counter-btn" onclick="changeCount('${key}', -1)">-</button>
+                        <input type="number" id="count_${key}" value="0" min="-10" max="20" onchange="calculateSimulation()">
+                        <button class="counter-btn" onclick="changeCount('${key}', 1)">+</button>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div id="cost_display_${key}" style="font-size: 0.85rem; color: var(--accent-color); font-weight: bold; text-align: right; min-width: 90px;">
+                            0 Cr
+                        </div>
+                        <button class="item-clear-btn" onclick="clearItem('${key}')">クリア</button>
+                    </div>
                 </div>
             </div>
         `;
@@ -227,10 +235,10 @@ function initSpecialLabels() {
     const labelLimitBreak = document.getElementById('labelLimitBreak');
     const labelElementChange = document.getElementById('labelElementChange');
 
-    if (labelRename) labelRename.innerHTML = `${cfg.rename.name} <span style="color:#aaa; font-weight:normal;">(固定: ${cfg.rename.cr.toLocaleString()}Cr / 名声${cfg.rename.fame})</span>`;
+    if (labelRename) labelRename.innerHTML = `${cfg.rename.name} <span style="color:#aaa; font-weight:normal;">[固定: ${cfg.rename.cr.toLocaleString()}Cr / 名声${cfg.rename.fame}]</span>`;
     if (labelUniversal) labelUniversal.innerHTML = `${cfg.universal.name} <span style="color:var(--accent-color);">[固定: ${cfg.universal.cr.toLocaleString()}Cr / 名声${cfg.universal.fame}]</span>`;
     if (labelLimitBreak) labelLimitBreak.innerHTML = `${cfg.limitBreak.name} <span style="color:var(--accent-color);">[固定: ${cfg.limitBreak.cr.toLocaleString()}Cr / 名声${cfg.limitBreak.fame}]</span>`;
-    if (labelElementChange) labelElementChange.innerHTML = `${cfg.elementChange.name} <span style="color:var(--accent-color);">[固定: ${cfg.elementChange.cr.toLocaleString()}Cr]</span>`;
+    if (labelElementChange) labelElementChange.innerHTML = `${cfg.elementChange.name} <span style="color:#aaa; font-weight:normal;">[固定: ${cfg.elementChange.cr.toLocaleString()}Cr] ※「変更なし」以外で自動適用</span>`;
 }
 
 function changeMastery(amount) {
@@ -252,6 +260,43 @@ function changeCount(key, amount) {
         input.value = val;
         calculateSimulation();
     }
+}
+
+// 個別項目のクリア
+function clearItem(key) {
+    const input = document.getElementById(`count_${key}`);
+    if (input) {
+        input.value = 0;
+        calculateSimulation();
+    }
+}
+
+// すべてのカスタムを一度にクリア
+function resetAllCustoms() {
+    const masteryInput = document.getElementById('playerMastery');
+    if (masteryInput) masteryInput.value = 200;
+
+    const baseSelect = document.getElementById('baseWeaponSelect');
+    if (baseSelect) baseSelect.selectedIndex = 0;
+
+    const customNameInput = document.getElementById('customNameInput');
+    if (customNameInput) customNameInput.value = "マイ・専用カスタム";
+
+    const elementSelect = document.getElementById('elementSelect');
+    if (elementSelect) elementSelect.value = "変更なし";
+
+    for (const key in UPGRADE_CONFIG) {
+        const input = document.getElementById(`count_${key}`);
+        if (input) input.value = 0;
+    }
+
+    const universalCheck = document.getElementById('universalCheck');
+    if (universalCheck) universalCheck.checked = false;
+
+    const limitBreakCheck = document.getElementById('limitBreakCheck');
+    if (limitBreakCheck) limitBreakCheck.checked = false;
+
+    calculateSimulation();
 }
 
 function calculateSimulation() {
@@ -280,18 +325,14 @@ function calculateSimulation() {
     const baseWeight = Number(base.重量 || base.軽量化 || base.weight || 50);
     const baseAttacks = Number(base.HIT || base.攻撃回数 || base.attacks || 1);
 
-    // 属性変更チェックボックスとセレクトボックスの連動制御
-    const elementCheck = document.getElementById('elementChangeCheck');
-    const elementSelectGroup = document.getElementById('elementSelectGroup');
     const elementSelect = document.getElementById('elementSelect');
-    
-    if (elementSelectGroup) {
-        elementSelectGroup.style.display = (elementCheck && elementCheck.checked) ? "block" : "none";
-    }
-
+    const selectedElement = elementSelect ? elementSelect.value : "変更なし";
     let currentElement = baseElement;
-    if (elementCheck && elementCheck.checked && elementSelect) {
-        currentElement = elementSelect.value;
+    let isElementChanged = false;
+
+    if (selectedElement !== "変更なし") {
+        currentElement = selectedElement;
+        isElementChanged = true;
     }
 
     const ammoGroup = document.getElementById('group_ammo');
@@ -398,7 +439,7 @@ function calculateSimulation() {
         `;
     }
 
-    // --- 3. 明細とコスト合計計算（累進課金ルール適用） ---
+    // --- 3. 明細と各項目の個別費用表示の更新 ---
     let receiptHTML = '';
     let totalCr = basePrice;
     let totalFame = 0;
@@ -415,6 +456,8 @@ function calculateSimulation() {
 
     for (const key in UPGRADE_CONFIG) {
         const count = counts[key];
+        const costDisplayEl = document.getElementById(`cost_display_${key}`);
+        
         if (count > 0) {
             let itemTotalCost = 0;
             for (let i = 1; i <= count; i++) {
@@ -425,12 +468,27 @@ function calculateSimulation() {
 
             totalCr += itemTotalCost;
             receiptHTML += `<div class="receipt-item"><span>- ${UPGRADE_CONFIG[key].name}強化 x ${count}</span><span>${itemTotalCost.toLocaleString()} Cr</span></div>`;
+            
+            if (costDisplayEl) {
+                costDisplayEl.innerText = itemTotalCost.toLocaleString() + " Cr";
+                costDisplayEl.style.color = "var(--accent-color)";
+            }
         } else if (count < 0) {
             receiptHTML += `<div class="receipt-item"><span>- ${UPGRADE_CONFIG[key].name}ダウン x ${Math.abs(count)}</span><span>0 Cr (無料)</span></div>`;
+            if (costDisplayEl) {
+                costDisplayEl.innerText = "0 Cr (無料)";
+                costDisplayEl.style.color = "#888";
+            }
+        } else {
+            if (costDisplayEl) {
+                costDisplayEl.innerText = "0 Cr";
+                costDisplayEl.style.color = "#888";
+            }
         }
     }
 
     const limitBreakCheck = document.getElementById('limitBreakCheck');
+    const universalCheck = document.getElementById('universalCheck');
 
     if (universalCheck && universalCheck.checked) {
         totalCr += SPECIAL_CUSTOM_CONFIG.universal.cr;
@@ -444,7 +502,7 @@ function calculateSimulation() {
         receiptHTML += `<div class="receipt-item"><span>- ${SPECIAL_CUSTOM_CONFIG.limitBreak.name} (固定)</span><span>${SPECIAL_CUSTOM_CONFIG.limitBreak.cr.toLocaleString()} Cr</span></div>`;
     }
 
-    if (elementCheck && elementCheck.checked) {
+    if (isElementChanged) {
         totalCr += SPECIAL_CUSTOM_CONFIG.elementChange.cr;
         totalFame += SPECIAL_CUSTOM_CONFIG.elementChange.fame;
         receiptHTML += `<div class="receipt-item"><span>- ${SPECIAL_CUSTOM_CONFIG.elementChange.name} (${currentElement})</span><span>${SPECIAL_CUSTOM_CONFIG.elementChange.cr.toLocaleString()} Cr</span></div>`;
@@ -456,7 +514,6 @@ function calculateSimulation() {
 
     if (receiptItemsEl) receiptItemsEl.innerHTML = receiptHTML;
     if (totalCreditEl) totalCreditEl.innerText = totalCr.toLocaleString() + " Cr";
-    // 名声の単位（Pt等）を外して数値のみ表示
     if (totalFameEl) totalFameEl.innerText = totalFame.toLocaleString();
 }
 
