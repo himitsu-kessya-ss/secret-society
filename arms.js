@@ -192,7 +192,6 @@ function initBaseWeaponOptions() {
     }
 
     csvWeaponsData.forEach((w, index) => {
-        // プルダウンには「名称」のみを表示（価格表記なし）
         const name = w.名称 || w.name || w.武器名 || `武器 #${index + 1}`;
         select.innerHTML += `<option value="${index}">${name}</option>`;
     });
@@ -209,7 +208,7 @@ function initUpgradeInputs() {
         
         container.innerHTML += `
             <div class="sim-form-group" id="group_${key}">
-                <label>${item.name} (${changeStr} / 基準Cr: ${item.baseCr.toLocaleString()})</label>
+                <label>${item.name} (${changeStr} / 基準cr: ${item.baseCr.toLocaleString()})</label>
                 <div class="counter-control-wrapper">
                     <div class="counter-control">
                         <button class="counter-btn" onclick="changeCount('${key}', -1)">-</button>
@@ -218,7 +217,7 @@ function initUpgradeInputs() {
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <div id="cost_display_${key}" style="font-size: 0.8rem; color: var(--accent-color); font-weight: bold; text-align: right; min-width: 80px;">
-                            0 Cr
+                            0 cr
                         </div>
                         <button class="item-clear-btn" onclick="clearItem('${key}')">クリア</button>
                     </div>
@@ -235,10 +234,10 @@ function initSpecialLabels() {
     const labelLimitBreak = document.getElementById('labelLimitBreak');
     const labelElementChange = document.getElementById('labelElementChange');
 
-    if (labelRename) labelRename.innerHTML = `${cfg.rename.name} <span style="color:#aaa; font-weight:normal;">[固定: ${cfg.rename.cr.toLocaleString()}Cr / 名声${cfg.rename.fame}]</span>`;
-    if (labelUniversal) labelUniversal.innerHTML = `${cfg.universal.name} <span style="color:var(--accent-color);">[固定: ${cfg.universal.cr.toLocaleString()}Cr / 名声${cfg.universal.fame}]</span>`;
-    if (labelLimitBreak) labelLimitBreak.innerHTML = `${cfg.limitBreak.name} <span style="color:var(--accent-color);">[固定: ${cfg.limitBreak.cr.toLocaleString()}Cr / 名声${cfg.limitBreak.fame}]</span>`;
-    if (labelElementChange) labelElementChange.innerHTML = `${cfg.elementChange.name} <span style="color:#aaa; font-weight:normal;">[固定: ${cfg.elementChange.cr.toLocaleString()}Cr] ※「変更なし」以外で自動適用</span>`;
+    if (labelRename) labelRename.innerHTML = `${cfg.rename.name} <span style="color:var(--accent-color);">[固定: ${cfg.rename.cr.toLocaleString()}cr / 名声${cfg.rename.fame}]</span>`;
+    if (labelUniversal) labelUniversal.innerHTML = `${cfg.universal.name} <span style="color:var(--accent-color);">[固定: ${cfg.universal.cr.toLocaleString()}cr / 名声${cfg.universal.fame}]</span>`;
+    if (labelLimitBreak) labelLimitBreak.innerHTML = `${cfg.limitBreak.name} <span style="color:var(--accent-color);">[固定: ${cfg.limitBreak.cr.toLocaleString()}cr / 名声${cfg.limitBreak.fame}]</span>`;
+    if (labelElementChange) labelElementChange.innerHTML = `${cfg.elementChange.name} <span style="color:#aaa; font-weight:normal;">[固定: ${cfg.elementChange.cr.toLocaleString()}cr] ※「変更なし」以外で自動適用</span>`;
 }
 
 function changeMastery(amount) {
@@ -262,7 +261,6 @@ function changeCount(key, amount) {
     }
 }
 
-// 個別項目のクリア
 function clearItem(key) {
     const input = document.getElementById(`count_${key}`);
     if (input) {
@@ -271,7 +269,6 @@ function clearItem(key) {
     }
 }
 
-// すべてのカスタムを一度にクリア
 function resetAllCustoms() {
     const masteryInput = document.getElementById('playerMastery');
     if (masteryInput) masteryInput.value = 200;
@@ -279,8 +276,11 @@ function resetAllCustoms() {
     const baseSelect = document.getElementById('baseWeaponSelect');
     if (baseSelect) baseSelect.selectedIndex = 0;
 
+    const renameCheck = document.getElementById('renameCheck');
+    if (renameCheck) renameCheck.checked = false;
+
     const customNameInput = document.getElementById('customNameInput');
-    if (customNameInput) customNameInput.value = "マイ・専用カスタム";
+    if (customNameInput) customNameInput.value = "";
 
     const elementSelect = document.getElementById('elementSelect');
     if (elementSelect) elementSelect.selectedIndex = 0;
@@ -308,8 +308,6 @@ function calculateSimulation() {
     let mastery = parseInt(masteryInput.value) || 200;
     if (mastery < 200) mastery = 200;
 
-    const costMultiplier = 1 + (mastery - 200) * 0.005;
-
     const selectEl = document.getElementById('baseWeaponSelect');
     const baseIndex = selectEl ? selectEl.value : 0;
     const base = csvWeaponsData[baseIndex] || csvWeaponsData[0] || {};
@@ -324,6 +322,12 @@ function calculateSimulation() {
     const baseMaxRange = Number(base.最大射程 || base.maxRange || 3);
     const baseWeight = Number(base.重量 || base.軽量化 || base.weight || 50);
     const baseAttacks = Number(base.HIT || base.攻撃回数 || base.attacks || 1);
+
+    const renameCheck = document.getElementById('renameCheck');
+    const renameInputGroup = document.getElementById('renameInputGroup');
+    if (renameInputGroup) {
+        renameInputGroup.style.display = (renameCheck && renameCheck.checked) ? "block" : "none";
+    }
 
     const elementSelect = document.getElementById('elementSelect');
     const selectedElement = elementSelect ? elementSelect.value : "変更なし";
@@ -434,24 +438,22 @@ function calculateSimulation() {
             <tr>
                 <td>週の維持費</td>
                 <td>-</td>
-                <td style="color:var(--accent-color);">${simCost.toLocaleString()} Cr/週</td>
+                <td style="color:var(--accent-color);">${simCost.toLocaleString()} cr/週</td>
             </tr>
         `;
     }
 
-    // --- 3. 明細と各項目の個別費用表示の更新 ---
+    // --- 3. 明細と各項目の「次の段階のコスト」表示の更新 ---
     let receiptHTML = '';
     let totalCr = basePrice;
     let totalFame = 0;
 
-    receiptHTML += `<div class="receipt-item"><span>ベース武器: ${baseName}</span><span>${basePrice.toLocaleString()} Cr</span></div>`;
+    receiptHTML += `<div class="receipt-item"><span>ベース武器: ${baseName}</span><span>${basePrice.toLocaleString()} cr</span></div>`;
 
-    const customNameInput = document.getElementById('customNameInput');
-    const customName = customNameInput ? customNameInput.value.trim() : "";
-    if (customName !== "") {
+    if (renameCheck && renameCheck.checked) {
         totalCr += SPECIAL_CUSTOM_CONFIG.rename.cr;
         totalFame += SPECIAL_CUSTOM_CONFIG.rename.fame;
-        receiptHTML += `<div class="receipt-item"><span>- 名称変更 (固定)</span><span>${SPECIAL_CUSTOM_CONFIG.rename.cr.toLocaleString()} Cr</span></div>`;
+        receiptHTML += `<div class="receipt-item"><span>- 名称変更 (固定)</span><span>${SPECIAL_CUSTOM_CONFIG.rename.cr.toLocaleString()} cr</span></div>`;
     }
 
     for (const key in UPGRADE_CONFIG) {
@@ -465,24 +467,23 @@ function calculateSimulation() {
                 let singleCost = Math.round(UPGRADE_CONFIG[key].baseCr * costMultiplier * tierMultiplier * costMultiplier);
                 itemTotalCost += singleCost;
             }
-
             totalCr += itemTotalCost;
-            receiptHTML += `<div class="receipt-item"><span>- ${UPGRADE_CONFIG[key].name}強化 x ${count}</span><span>${itemTotalCost.toLocaleString()} Cr</span></div>`;
-            
-            if (costDisplayEl) {
-                costDisplayEl.innerText = itemTotalCost.toLocaleString() + " Cr";
-                costDisplayEl.style.color = "var(--accent-color)";
-            }
+            receiptHTML += `<div class="receipt-item"><span>- ${UPGRADE_CONFIG[key].name}強化 x ${count}</span><span>${itemTotalCost.toLocaleString()} cr</span></div>`;
         } else if (count < 0) {
-            receiptHTML += `<div class="receipt-item"><span>- ${UPGRADE_CONFIG[key].name}ダウン x ${Math.abs(count)}</span><span>0 Cr (無料)</span></div>`;
-            if (costDisplayEl) {
-                costDisplayEl.innerText = "0 Cr (無料)";
+            receiptHTML += `<div class="receipt-item"><span>- ${UPGRADE_CONFIG[key].name}ダウン x ${Math.abs(count)}</span><span>0 cr (無料)</span></div>`;
+        }
+
+        if (costDisplayEl) {
+            let nextStep = count >= 0 ? count + 1 : 1;
+            let tierMultiplier = Math.ceil(nextStep / 2);
+            let nextCost = Math.round(UPGRADE_CONFIG[key].baseCr * costMultiplier * tierMultiplier * costMultiplier);
+            
+            if (count < 0) {
+                costDisplayEl.innerText = "0 cr (無料)";
                 costDisplayEl.style.color = "#888";
-            }
-        } else {
-            if (costDisplayEl) {
-                costDisplayEl.innerText = "0 Cr";
-                costDisplayEl.style.color = "#888";
+            } else {
+                costDisplayEl.innerText = nextCost.toLocaleString() + " cr";
+                costDisplayEl.style.color = "var(--accent-color)";
             }
         }
     }
@@ -492,19 +493,19 @@ function calculateSimulation() {
     if (universalCheckElem && universalCheckElem.checked) {
         totalCr += SPECIAL_CUSTOM_CONFIG.universal.cr;
         totalFame += SPECIAL_CUSTOM_CONFIG.universal.fame;
-        receiptHTML += `<div class="receipt-item"><span>- ${SPECIAL_CUSTOM_CONFIG.universal.name} (固定)</span><span>${SPECIAL_CUSTOM_CONFIG.universal.cr.toLocaleString()} Cr</span></div>`;
+        receiptHTML += `<div class="receipt-item"><span>- ${SPECIAL_CUSTOM_CONFIG.universal.name} (固定)</span><span>${SPECIAL_CUSTOM_CONFIG.universal.cr.toLocaleString()} cr</span></div>`;
     }
 
     if (limitBreakCheckElem && limitBreakCheckElem.checked) {
         totalCr += SPECIAL_CUSTOM_CONFIG.limitBreak.cr;
         totalFame += SPECIAL_CUSTOM_CONFIG.limitBreak.fame;
-        receiptHTML += `<div class="receipt-item"><span>- ${SPECIAL_CUSTOM_CONFIG.limitBreak.name} (固定)</span><span>${SPECIAL_CUSTOM_CONFIG.limitBreak.cr.toLocaleString()} Cr</span></div>`;
+        receiptHTML += `<div class="receipt-item"><span>- ${SPECIAL_CUSTOM_CONFIG.limitBreak.name} (固定)</span><span>${SPECIAL_CUSTOM_CONFIG.limitBreak.cr.toLocaleString()} cr</span></div>`;
     }
 
     if (isElementChanged) {
         totalCr += SPECIAL_CUSTOM_CONFIG.elementChange.cr;
         totalFame += SPECIAL_CUSTOM_CONFIG.elementChange.fame;
-        receiptHTML += `<div class="receipt-item"><span>- ${SPECIAL_CUSTOM_CONFIG.elementChange.name} (${currentElement})</span><span>${SPECIAL_CUSTOM_CONFIG.elementChange.cr.toLocaleString()} Cr</span></div>`;
+        receiptHTML += `<div class="receipt-item"><span>- ${SPECIAL_CUSTOM_CONFIG.elementChange.name} (${currentElement})</span><span>${SPECIAL_CUSTOM_CONFIG.elementChange.cr.toLocaleString()} cr</span></div>`;
     }
 
     const receiptItemsEl = document.getElementById('receiptItems');
@@ -512,7 +513,7 @@ function calculateSimulation() {
     const totalFameEl = document.getElementById('totalFame');
 
     if (receiptItemsEl) receiptItemsEl.innerHTML = receiptHTML;
-    if (totalCreditEl) totalCreditEl.innerText = totalCr.toLocaleString() + " Cr";
+    if (totalCreditEl) totalCreditEl.innerText = totalCr.toLocaleString() + " cr";
     if (totalFameEl) totalFameEl.innerText = totalFame.toLocaleString();
 }
 
