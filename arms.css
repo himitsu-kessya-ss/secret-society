@@ -50,31 +50,33 @@ html, body {
 
 .main-content {
     height: calc(100% - var(--header-total-height));
-    overflow: auto; padding: 0 20px 20px 20px; box-sizing: border-box;
+    overflow: auto; padding: 10px 20px 20px 20px; box-sizing: border-box;
 }
 
-table { width: 100%; border-collapse: collapse; background: var(--card-bg); font-size: 0.85rem; min-width: 900px; }
+table { width: 100%; border-collapse: collapse; background: var(--card-bg); font-size: 0.85rem; }
 thead th {
     position: sticky; top: 0; background: #333; color: var(--accent-color); z-index: 50;
-    padding: 10px 8px; border: 1px solid var(--border-color); white-space: nowrap; box-shadow: 0 2px 2px rgba(0,0,0,0.5);
+    padding: 8px; border: 1px solid var(--border-color); white-space: nowrap; box-shadow: 0 2px 2px rgba(0,0,0,0.5);
 }
-td { border: 1px solid var(--border-color); padding: 8px 10px; white-space: nowrap; }
+td { border: 1px solid var(--border-color); padding: 6px 8px; white-space: nowrap; }
 tr:nth-child(even) { background-color: #1e2124; }
 tr:hover { background-color: #2c3e50; }
 
 .info-box { background: #2d3136; padding: 20px; border-left: 4px solid var(--accent-color); line-height: 1.8; white-space: pre-wrap; margin-top: 10px; }
 
 /* ==========================================
-   🛠️ 武器庫シミュレーション専用のCSSパーツ（コンパクト化）
+   🛠️ 武器庫シミュレーション専用のCSSパーツ（横並び・コンパクト化）
    ========================================== */
 .simulator-grid {
     display: grid;
-    grid-template-columns: 1.1fr 0.9fr;
+    /* 100%表示でも確実に左右に並ぶよう、比率を最適化 */
+    grid-template-columns: 420px 1fr;
     gap: 15px;
-    margin-top: 10px;
+    margin-top: 5px;
+    align-items: start;
 }
 
-@media (max-width: 1000px) {
+@media (max-width: 1200px) {
     .simulator-grid { grid-template-columns: 1fr; }
 }
 
@@ -82,28 +84,28 @@ tr:hover { background-color: #2c3e50; }
     background: var(--card-bg);
     border: 1px solid var(--border-color);
     border-radius: 6px;
-    padding: 15px;
+    padding: 12px 15px;
     box-sizing: border-box;
 }
 
 .sim-panel h2 {
     color: var(--accent-color);
     border-bottom: 1px solid var(--border-color);
-    padding-bottom: 6px;
+    padding-bottom: 5px;
     margin-top: 0;
-    margin-bottom: 12px;
-    font-size: 1rem;
+    margin-bottom: 10px;
+    font-size: 0.95rem;
 }
 
 .sim-form-group {
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 .sim-form-group label {
     display: block;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: #aaa;
-    margin-bottom: 3px;
+    margin-bottom: 2px;
 }
 
 .sim-form-group select, 
@@ -112,9 +114,9 @@ tr:hover { background-color: #2c3e50; }
     background: #1a1c1e;
     border: 1px solid var(--border-color);
     color: var(--text-color);
-    padding: 7px 10px;
+    padding: 6px 8px;
     border-radius: 4px;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     box-sizing: border-box;
 }
 
@@ -130,25 +132,25 @@ tr:hover { background-color: #2c3e50; }
     justify-content: space-between;
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid var(--border-color);
-    padding: 5px 8px;
+    padding: 4px 6px;
     border-radius: 4px;
 }
 
 .counter-control {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
 }
 
 .counter-btn {
     background: #333;
     border: 1px solid var(--border-color);
     color: var(--text-color);
-    width: 28px;
-    height: 28px;
-    font-size: 1rem;
+    width: 24px;
+    height: 24px;
+    font-size: 0.9rem;
     font-weight: bold;
-    border-radius: 4px;
+    border-radius: 3px;
     cursor: pointer;
     transition: 0.2s;
 }
@@ -159,22 +161,22 @@ tr:hover { background-color: #2c3e50; }
 }
 
 .counter-control input[type="number"] {
-    width: 50px;
+    width: 42px;
     text-align: center;
     background: #1a1c1e;
     border: 1px solid var(--border-color);
     color: var(--text-color);
-    padding: 5px;
-    border-radius: 4px;
-    font-size: 0.9rem;
+    padding: 4px;
+    border-radius: 3px;
+    font-size: 0.85rem;
 }
 
 .item-clear-btn {
     background: #442222;
     border: 1px solid #663333;
     color: #ff9999;
-    padding: 4px 8px;
-    font-size: 0.75rem;
+    padding: 3px 6px;
+    font-size: 0.7rem;
     border-radius: 3px;
     cursor: pointer;
     transition: 0.2s;
@@ -188,13 +190,13 @@ tr:hover { background-color: #2c3e50; }
     background: #552222;
     border: 1px solid #883333;
     color: #ffcccc;
-    padding: 6px 12px;
-    font-size: 0.85rem;
+    padding: 5px 10px;
+    font-size: 0.8rem;
     border-radius: 4px;
     cursor: pointer;
     font-weight: bold;
     width: 100%;
-    margin-top: 10px;
+    margin-top: 8px;
     transition: 0.2s;
 }
 .global-clear-btn:hover {
@@ -205,18 +207,18 @@ tr:hover { background-color: #2c3e50; }
 .sim-checkbox-group {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     cursor: pointer;
     background: rgba(0, 212, 255, 0.03);
     border: 1px dashed var(--accent-color);
-    padding: 8px;
+    padding: 6px 8px;
     border-radius: 4px;
-    margin-bottom: 6px;
+    margin-bottom: 5px;
 }
 
 .sim-checkbox-group input {
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     accent-color: var(--accent-color);
 }
 
@@ -229,7 +231,7 @@ tr:hover { background-color: #2c3e50; }
     background: #1a1c1e;
     border: 1px dashed var(--border-color);
     border-radius: 6px;
-    padding: 12px;
+    padding: 10px 12px;
     font-family: 'Courier New', Courier, monospace;
     margin-top: 10px;
 }
@@ -238,26 +240,26 @@ tr:hover { background-color: #2c3e50; }
     font-weight: bold;
     color: var(--accent-color);
     border-bottom: 1px dashed var(--border-color);
-    padding-bottom: 4px;
-    margin-bottom: 6px;
-    font-size: 0.9rem;
+    padding-bottom: 3px;
+    margin-bottom: 5px;
+    font-size: 0.85rem;
 }
 
 .receipt-item {
     display: flex;
     justify-content: space-between;
-    font-size: 0.8rem;
-    margin-bottom: 3px;
+    font-size: 0.75rem;
+    margin-bottom: 2px;
     color: #aaa;
 }
 
 .receipt-total {
     display: flex;
     justify-content: space-between;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     font-weight: bold;
     color: #fff;
     border-top: 1px solid var(--border-color);
-    padding-top: 5px;
-    margin-top: 5px;
+    padding-top: 4px;
+    margin-top: 4px;
 }
