@@ -115,6 +115,9 @@ function loadCSVData() {
 
         filteredMechList = mechDataList;
         renderMechTable();
+
+        // データの読み込み完了後に、本日付の種別出現確率TOP3を計算・表示する
+        renderTodayTypeTop3();
     })
     .catch(error => {
         const logBox = document.getElementById("logBox");
@@ -239,6 +242,67 @@ function getNtCellClass(ntValue) {
     return "";
 }
 
+// ▼ 日付（日）に応じて今日の出現機体範囲を絞り込み、種別TOP3と確率を計算・表示する関数
+function renderTodayTypeTop3() {
+    const typeCountContainer = document.getElementById("typeTop3Display"); 
+    if (!mechDataList.length) return;
+
+    // 1. 本日の「日（1〜31）」を自動取得する
+    const today = new Date();
+    const currentDay = today.getDate(); // 例: 14日なら 14
+
+    // 2. 日付に応じた機体ナンバーの範囲を決める（例: 1日なら1000〜1999、14日なら14000〜14999）
+    const minNo = currentDay * 1000;
+    const maxNo = minNo + 999;
+
+    let typeCounts = {};
+    let totalMentions = 0;
+    let targetMechCount = 0;
+
+    // 3. 機体一覧から本日の範囲に合致する機体を抽出し、「／」区切りの種別を分解してカウントする
+    mechDataList.forEach(mechRow => {
+        let mechNo = parseInt(String(mechRow[0]).replace(/,/g, '')) || 0; // 1列目：機体No.
+
+        if (mechNo >= minNo && mechNo <= maxNo) {
+            targetMechCount++;
+            let typeCol = mechRow[23]; // 24列目：種別
+            if (typeCol && typeCol !== "-") {
+                let splitTypes = typeCol.split("／");
+                splitTypes.forEach(t => {
+                    let cleanType = t.trim();
+                    if (cleanType) {
+                        typeCounts[cleanType] = (typeCounts[cleanType] || 0) + 1;
+                        totalMentions++;
+                    }
+                });
+            }
+        }
+    });
+
+    // 4. 出現回数が多い順にソートして上位3つを取得
+    let sortedTypes = Object.entries(typeCounts).sort((a, b) => b[1] - a[1]);
+    let top3 = sortedTypes.slice(0, 3);
+
+    // 5. HTML画面に結果を表示する
+    if (typeCountContainer) {
+        let html = `<div>`;
+        html += `<p style="margin: 0 0 10px 0; font-weight: bold; color: #69f0ae; font-size: 1.1em;">📅 本日（${currentDay}日）の出現対象 (${targetMechCount}機) 種別 TOP3</p>`;
+        
+        if (top3.length === 0) {
+            html += `<p style="margin: 0; color: #ff6b6b;">本日の対象範囲（No.${minNo}〜${maxNo}）に一致する機体データが見つかりませんでした。</p>`;
+        } else {
+            html += "<ul style='margin: 0; padding-left: 20px; line-height: 1.6;'>";
+            top3.forEach(([typeName, count], index) => {
+                let percentage = totalMentions > 0 ? ((count / totalMentions) * 100).toFixed(1) : 0;
+                html += `<li><strong>第${index + 1}位:</strong> ${typeName} （出現率: <strong style="color: #69f0ae;">${percentage}%</strong> / ${count}回）</li>`;
+            });
+            html += "</ul>";
+        }
+        html += `</div>`;
+        typeCountContainer.innerHTML = html;
+    }
+}
+
 // 5. 機体一覧テーブルのレンダリング（ページネーション対応）
 function renderMechTable() {
     const tbody = document.getElementById("fullTableBody");
@@ -266,7 +330,7 @@ function renderMechTable() {
     let tableHtml = "";
     pageData.forEach((mechRow, idx) => {
         let rowNo = startIdx + idx + 1;
-        let mechNo = mechRow[0] !== undefined ? mechRow[0] : "-"; // 1列目：機体No.
+        let mechNo = mechRow[0] !== undefined ? mechRow[0] : "-"; 
         let mechName = mechRow[1] !== undefined ? mechRow[1] : "-";
         let transform = mechRow[2] !== undefined ? mechRow[2] : "-";
         let hp = mechRow[3] !== undefined ? mechRow[3] : "-";
@@ -292,7 +356,7 @@ function renderMechTable() {
         let type = mechRow[23] !== undefined ? mechRow[23] : "-";
 
         let costCalc = calculateCumulativeCost(mechName);
-        let ntClass = getNtCellClass(nt); // 背景色クラスの判定
+        let ntClass = getNtCellClass(nt); 
 
         tableHtml += `
             <tr>
@@ -462,7 +526,7 @@ function searchRoute() {
         });
 
         if (mechInfo) {
-            let mechNo = mechInfo[0] !== undefined ? mechInfo[0] : "-"; // 1列目：機体No.
+            let mechNo = mechInfo[0] !== undefined ? mechInfo[0] : "-"; 
             let transform = mechInfo[2] !== undefined ? mechInfo[2] : "-";
             let hp = mechInfo[3] !== undefined ? mechInfo[3] : "-";
             let armor = mechInfo[4] !== undefined ? mechInfo[4] : "-";
@@ -492,7 +556,7 @@ function searchRoute() {
             totalFame += fameNum;
 
             let costCalc = calculateCumulativeCost(mechName);
-            let ntClass = getNtCellClass(nt); // 背景色クラスの判定
+            let ntClass = getNtCellClass(nt); 
 
             tableHtml += `
                 <tr>
