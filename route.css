@@ -1,65 +1,74 @@
-/* 全体の基本設定（ダークモード） */
 body {
-    background-color: #12151c;
-    color: #e0e0e0;
+    background-color: #0b0f19;
+    color: #c0d2ec;
     font-family: 'Helvetica Neue', Arial, sans-serif;
     margin: 0;
     padding: 0;
 }
 
 .main-container {
+    padding: 20px;
     max-width: 1400px;
-    margin: 20px auto;
-    padding: 0 20px;
+    margin: 0 auto;
 }
 
 h1 {
-    font-size: 1.8em;
-    color: #ffffff;
-    margin-bottom: 5px;
+    border-bottom: 2px solid #3a506b;
+    padding-bottom: 10px;
+    font-size: 22px;
+    letter-spacing: 1px;
+    display: inline-block;
+    background: #111a2e;
+    padding: 10px 20px;
+    border: 1px solid #2b4c7e;
+    margin-top: 20px;
 }
 
 h2 {
-    font-size: 1.4em;
-    color: #ffffff;
-    margin-top: 25px;
+    font-size: 1.1rem;
+    color: #8ab4f8;
 }
 
 p {
-    color: #a0a5b8;
+    font-size: 14px;
+    color: #8da4c4;
 }
 
-/* タブ切り替えボタン */
+/* ▼ タブ切り替えボタンのスタイル */
 .tab-buttons {
     display: flex;
-    gap: 10px;
-    margin: 20px 0 15px 0;
+    gap: 12px;
+    margin: 20px 0 25px 0;
+    border-bottom: 3px solid #2b4c7e;
+    padding-bottom: 0;
 }
 
 .tab-btn {
-    background-color: #1e222d;
-    color: #a0a5b8;
-    border: 1px solid #33394c;
-    padding: 10px 20px;
-    font-size: 1em;
-    border-radius: 6px;
+    background-color: #131c31;
+    color: #8da4c4;
+    border: 1px solid #2b4c7e;
+    border-bottom: none;
+    padding: 12px 24px;
     cursor: pointer;
-    transition: all 0.2s;
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: 6px 6px 0 0;
+    transition: 0.2s;
 }
 
 .tab-btn:hover {
-    background-color: #262c3a;
-    color: #ffffff;
+    color: #fff;
+    background-color: #1a2744;
 }
 
 .tab-btn.active {
-    background-color: #2b3447;
-    color: #69f0ae;
-    border-color: #69f0ae;
-    font-weight: bold;
+    background-color: #1a2c4e;
+    color: #64b5f6;
+    border-color: #64b5f6;
+    border-bottom: 3px solid #1a2c4e;
+    margin-bottom: -3px;
 }
 
-/* タブの中身の切り替え */
 .tab-content {
     display: none;
 }
@@ -68,150 +77,142 @@ p {
     display: block;
 }
 
-/* ログボックス ＆ 種別TOP3表示カードのデザイン共通化 */
-.log-box, #typeTop3Display > div {
-    background-color: #1e222d;
-    border: 1px solid #33394c;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-}
-
-.log-box {
-    font-family: monospace;
-    font-size: 0.95em;
-    line-height: 1.5;
-}
-
-/* 検索ボックス */
 .search-box {
-    background-color: #1e222d;
-    border: 1px solid #33394c;
+    background: #131c31;
+    border: 1px solid #2b4c7e;
     padding: 20px;
-    border-radius: 8px;
     margin-bottom: 20px;
+    border-radius: 4px;
 }
 
 .search-row {
     margin-bottom: 12px;
     display: flex;
-    flex-direction: column;
-    gap: 5px;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
 .search-row label {
+    width: 130px;
     font-weight: bold;
-    color: #ffffff;
+    color: #8ab4f8;
+    font-size: 14px;
 }
 
-.search-row input {
-    background-color: #12151c;
-    border: 1px solid #33394c;
-    color: #ffffff;
-    padding: 10px;
-    border-radius: 4px;
-    font-size: 1em;
+input[type="text"] {
+    background: #070b14;
+    border: 1px solid #3a506b;
+    color: #fff;
+    padding: 8px 12px;
+    font-size: 15px;
+    width: 280px;
 }
 
-.search-row input:focus {
-    border-color: #69f0ae;
-    outline: none;
-}
-
-#calc-btn {
-    background-color: #69f0ae;
-    color: #12151c;
-    border: none;
-    padding: 10px 20px;
-    font-weight: bold;
-    font-size: 1em;
-    border-radius: 4px;
+button {
+    background: #1e3a60;
+    color: #fff;
+    border: 1px solid #4a75ab;
+    padding: 10px 25px;
+    font-size: 15px;
     cursor: pointer;
-    transition: background 0.2s;
-}
-
-#calc-btn:hover {
-    background-color: #53d996;
-}
-
-/* 検索結果・ルート表示 */
-.route-display {
-    background-color: #191d28;
-    border-left: 4px solid #69f0ae;
-    padding: 15px;
-    font-size: 1.1em;
     font-weight: bold;
-    margin-bottom: 20px;
-    border-radius: 0 8px 8px 0;
+    margin-top: 5px;
 }
 
-/* テーブル周り */
+button:hover {
+    background: #284e80;
+}
+
+.log-box {
+    background: #1a1215;
+    border: 1px dashed #7e3a3a;
+    padding: 10px 15px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: #e8a0a0;
+    line-height: 1.5;
+}
+
+.route-display {
+    background: #111a2e;
+    border: 1px solid #2b4c7e;
+    padding: 15px;
+    margin-bottom: 20px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #64b5f6;
+}
+
 .table-scroll-container {
     overflow-x: auto;
-    max-height: 500px;
-    border: 1px solid #33394c;
-    border-radius: 8px;
-    margin-bottom: 20px;
+    max-height: 600px;
+    overflow-y: auto;
+    border: 1px solid #223454;
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
-    background-color: #181c25;
-    white-space: nowrap;
-    font-size: 0.9em;
+    background: #0d1424;
+    margin-top: 0;
+    font-size: 13px;
 }
 
 th, td {
-    padding: 10px 12px;
+    border: 1px solid #223454;
+    padding: 8px 4px;
     text-align: center;
-    border-bottom: 1px solid #262c3a;
 }
 
 th {
-    background-color: #1e222d;
-    color: #ffffff;
+    background: #14223d;
+    color: #8ab4f8;
+    font-size: 12px;
     position: sticky;
     top: 0;
     z-index: 10;
 }
 
+.cost-th {
+    background: #1a2c4e !important;
+    color: #ffca28 !important;
+}
+
 td.name-col {
     text-align: left;
+    padding-left: 8px;
 }
 
-/* NTセルの色分け */
-.nt-cell-blue {
-    background-color: rgba(33, 150, 243, 0.2);
-    color: #90caf9;
+.cost-col {
+    color: #ffca28;
+    font-weight: bold;
 }
 
-.nt-cell-red {
-    background-color: rgba(244, 67, 54, 0.2);
-    color: #ef9a9a;
-}
-
-/* 総合計コストエリア */
-.total-box {
-    background-color: #1e222d;
-    border: 1px solid #33394c;
+.placeholder-td {
     padding: 20px;
-    border-radius: 8px;
+    color: #8da4c4;
+}
+
+.total-box {
+    background: #131c31;
+    border: 1px solid #2b4c7e;
+    padding: 15px 20px;
+    margin-top: 20px;
 }
 
 .total-box h3 {
     margin-top: 0;
-    color: #69f0ae;
+    color: #64b5f6;
+    font-size: 16px;
 }
 
 .total-value {
-    font-size: 1.3em;
+    font-size: 18px;
     font-weight: bold;
-    color: #69f0ae;
+    color: #ffca28;
 }
 
-/* 一覧タブのヘッダー・カウント */
 .list-header-flex {
     display: flex;
     justify-content: space-between;
@@ -219,34 +220,41 @@ td.name-col {
     margin-bottom: 10px;
 }
 
-.count-display {
-    color: #a0a5b8;
-    font-weight: bold;
+.sub-title {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #8ab4f8;
 }
 
-/* ページネーション */
+.count-display {
+    font-size: 13px;
+    color: #8da4c4;
+}
+
 .pagination-box {
     display: flex;
     justify-content: center;
     align-items: center;
     gap: 15px;
-    margin-top: 15px;
+    margin: 20px 0;
 }
 
 .pagination-box button {
-    background-color: #1e222d;
-    color: #ffffff;
-    border: 1px solid #33394c;
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
+    padding: 6px 15px;
+    font-size: 14px;
 }
 
-.pagination-box button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+/* ==========================================
+   ▼ NT列の条件付き背景色用クラス（ダークテーマ対応）
+========================================== */
+.nt-cell-blue {
+    background-color: rgba(33, 150, 243, 0.25) !important; /* ダークに馴染む薄水色 */
+    color: #90caf9 !important;
+    font-weight: bold;
 }
 
-.pagination-box button:not(:disabled):hover {
-    background-color: #2b3447;
+.nt-cell-red {
+    background-color: rgba(244, 67, 54, 0.25) !important;  /* ダークに馴染む薄赤色 */
+    color: #ef9a9a !important;
+    font-weight: bold;
 }
