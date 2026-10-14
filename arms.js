@@ -13,7 +13,7 @@ const UPGRADE_CONFIG = {
     ammo: { name: "弾数", value: 1, baseCr: 2000000, unit: "発" },
     energy: { name: "省エネ", value: -1, baseCr: 800000, unit: "" },
     attacks: { name: "攻撃回数 (HIT)", value: 1, baseCr: 4000000, unit: "回" },
-    minRange: { name: "最低射程", value: -1, baseCr: 400000, unit: "", minLimit: 0 }, // 最小値を0に設定
+    minRange: { name: "最低射程", value: -1, baseCr: 400000, unit: "", minLimit: 0 },
     maxRange: { name: "最大射程", value: 1, baseCr: 2000000, unit: "" },
     weight: { name: "軽量化", value: -1, baseCr: 800000, unit: "" }
 };
@@ -77,14 +77,14 @@ function renderTable(type, csvData) {
     const headers = rows[0].split(',');
     const headEl = document.getElementById(`${type}-head`);
     if (headEl) {
-        headEl.innerHTML = headers.map(h => `<th>${h.trim().replace(/^["']|["']$/g, '')}</th>`).join('');
+        headEl.innerHTML = headers.map(h => `<th>${h.trim().replace(/^["']\vert{}["']$/g, '')}</th>`).join('');
     }
     
     const bodyEl = document.getElementById(`${type}-body`);
     if (bodyEl) {
         const body = rows.slice(1).map(row => {
             const cols = row.split(',');
-            return `<tr>${cols.map(c => `<td>${c.trim().replace(/^["']\vert{}["']$/g, '')}</td>`).join('')}</tr>`;
+            return `<tr>${cols.map(c => `<td>${c.trim().replace(/^["']|["']$/g, '')}</td>`).join('')}</tr>`;
         }).join('');
         bodyEl.innerHTML = body;
     }
@@ -498,105 +498,3 @@ function calculateSimulation() {
             </tr>
             <tr>
                 <td>最低射程</td>
-                <td>${baseMinRange}</td>
-                <td>${simData.minRange} <span class="diff-plus">(${simData.minRange - baseMinRange >= 0 ? '+' : ''}${simData.minRange - baseMinRange})</span></td>
-            </tr>
-            <tr>
-                <td>最大射程</td>
-                <td>${baseMaxRange}</td>
-                <td>${simData.maxRange} <span class="diff-plus">(${simData.maxRange - baseMaxRange >= 0 ? '+' : ''}${simData.maxRange - baseMaxRange})</span></td>
-            </tr>
-            <tr>
-                <td>重量 (軽量化)</td>
-                <td>${baseWeight}</td>
-                <td>${simData.weight} <span class="diff-plus">(${simData.weight - baseWeight >= 0 ? '+' : ''}${simData.weight - baseWeight})</span></td>
-            </tr>
-            <tr>
-                <td>HIT (攻撃回数)</td>
-                <td>${baseAttacks}</td>
-                <td>${simData.attacks} <span class="diff-plus">(${simData.attacks - baseAttacks >= 0 ? '+' : ''}${simData.attacks - baseAttacks})</span></td>
-            </tr>
-            <tr>
-                <td>週の維持費</td>
-                <td>-</td>
-                <td style="color:var(--accent-color);">${simCost.toLocaleString()} cr/週</td>
-            </tr>
-        `;
-    }
-
-    // --- 3. 明細と各項目の「次の段階のコスト」表示の更新 ---
-    let receiptHTML = '';
-    let totalCr = basePrice;
-    let totalFame = 0;
-
-    receiptHTML += `<div class="receipt-item"><span>ベース武器: ${baseName}</span><span>${basePrice.toLocaleString()} cr</span></div>`;
-
-    if (renameCheck && renameCheck.checked) {
-        totalCr += SPECIAL_CUSTOM_CONFIG.rename.cr;
-        totalFame += SPECIAL_CUSTOM_CONFIG.rename.fame;
-        receiptHTML += `<div class="receipt-item"><span>- 名称変更 (固定)</span><span>${SPECIAL_CUSTOM_CONFIG.rename.cr.toLocaleString()} cr</span></div>`;
-    }
-
-    for (const key in UPGRADE_CONFIG) {
-        const count = counts[key];
-        const costDisplayEl = document.getElementById(`cost_display_${key}`);
-        
-        if (count > 0) {
-            let itemTotalCost = 0;
-            for (let i = 1; i <= count; i++) {
-                let tierMultiplier = Math.ceil(i / 2);
-                let singleCost = Math.round(UPGRADE_CONFIG[key].baseCr * costMultiplier * tierMultiplier);
-                itemTotalCost += singleCost;
-            }
-            totalCr += itemTotalCost;
-            receiptHTML += `<div class="receipt-item"><span>- ${UPGRADE_CONFIG[key].name}強化 x ${count}</span><span>${itemTotalCost.toLocaleString()} cr</span></div>`;
-        } else if (count < 0) {
-            receiptHTML += `<div class="receipt-item"><span>- ${UPGRADE_CONFIG[key].name}ダウン x ${Math.abs(count)}</span><span>0 cr (無料)</span></div>`;
-        }
-
-        if (costDisplayEl) {
-            let nextStep = count >= 0 ? count + 1 : 1;
-            let tierMultiplier = Math.ceil(nextStep / 2);
-            let nextCost = Math.round(UPGRADE_CONFIG[key].baseCr * tierMultiplier);
-            
-            if (count < 0) {
-                costDisplayEl.innerText = "0 cr (無料)";
-                costDisplayEl.style.color = "#888";
-            } else {
-                costDisplayEl.innerText = nextCost.toLocaleString() + " cr";
-                costDisplayEl.style.color = "var(--accent-color)";
-            }
-        }
-    }
-
-    if (universalCheckElem && universalCheckElem.checked) {
-        totalCr += SPECIAL_CUSTOM_CONFIG.universal.cr;
-        totalFame += SPECIAL_CUSTOM_CONFIG.universal.fame;
-        receiptHTML += `<div class="receipt-item"><span>- ${SPECIAL_CUSTOM_CONFIG.universal.name} (固定)</span><span>${SPECIAL_CUSTOM_CONFIG.universal.cr.toLocaleString()} cr</span></div>`;
-    }
-
-    if (limitBreakCheckElem && limitBreakCheckElem.checked) {
-        totalCr += SPECIAL_CUSTOM_CONFIG.limitBreak.cr;
-        totalFame += SPECIAL_CUSTOM_CONFIG.limitBreak.fame;
-        receiptHTML += `<div class="receipt-item"><span>- ${SPECIAL_CUSTOM_CONFIG.limitBreak.name} (固定)</span><span>${SPECIAL_CUSTOM_CONFIG.limitBreak.cr.toLocaleString()} cr</span></div>`;
-    }
-
-    if (isElementChanged) {
-        totalCr += SPECIAL_CUSTOM_CONFIG.elementChange.cr;
-        totalFame += SPECIAL_CUSTOM_CONFIG.elementChange.fame;
-        receiptHTML += `<div class="receipt-item"><span>- ${SPECIAL_CUSTOM_CONFIG.elementChange.name} (${currentElement})</span><span>${SPECIAL_CUSTOM_CONFIG.elementChange.cr.toLocaleString()} cr</span></div>`;
-    }
-
-    const receiptItemsEl = document.getElementById('receiptItems');
-    const totalModCountEl = document.getElementById('totalModCount');
-    const totalCreditEl = document.getElementById('totalCredit');
-    const totalFameEl = document.getElementById('totalFame');
-
-    if (receiptItemsEl) receiptItemsEl.innerHTML = receiptHTML;
-    if (totalModCountEl) totalModCountEl.innerText = totalModCount + " 回";
-    if (totalCreditEl) totalCreditEl.innerText = totalCr.toLocaleString() + " cr";
-    if (totalFameEl) totalFameEl.innerText = totalFame.toLocaleString();
-}
-
-// ページ読み込み時にデータを取得開始
-loadData();
