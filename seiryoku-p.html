@@ -20,44 +20,108 @@
             font-family: 'Helvetica Neue', Arial, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
-            line-height: 1.6;
+            line-height: 1.7;
         }
 
         .container {
             width: 100%;
-            max-width: 1000px;
+            max-width: 900px;
             margin: 40px auto;
-            padding: 20px;
+            padding: 0 20px;
             box-sizing: border-box;
-            text-align: center;
         }
 
         .card {
             background-color: var(--card-bg);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            padding: 40px 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            padding: 40px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            margin-bottom: 30px;
+            text-align: left;
         }
 
+        /* 見出しスタイル */
         h2 {
-            font-size: 1.5rem;
+            font-size: 1.6rem;
             color: var(--accent-color);
             margin-top: 0;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
         }
 
+        h3 {
+            font-size: 1.25rem;
+            color: #ffffff;
+            margin-top: 30px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+        }
+
+        /* 段落・リスト表現 */
         p {
-            color: var(--sub-text);
-            margin-bottom: 30px;
+            color: var(--text-color);
+            margin-bottom: 16px;
             font-size: 0.95rem;
+        }
+
+        ol, ul {
+            padding-left: 20px;
+            margin-bottom: 20px;
+            color: var(--text-color);
+        }
+
+        li {
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        /* 強調メッセージボックス */
+        .info-box {
+            background-color: rgba(0, 212, 255, 0.08);
+            border-left: 4px solid var(--accent-color);
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 6px 6px 0;
+            font-size: 0.95rem;
+            color: #ffffff;
+        }
+
+        .info-box p {
+            margin: 0;
+            color: #ffffff;
+        }
+
+        /* 例示エリア（点線枠） */
+        .example-box {
+            background-color: rgba(0, 0, 0, 0.2);
+            border: 1px dashed #555;
+            padding: 15px 20px;
+            border-radius: 6px;
+            margin: 15px 0 20px 0;
+        }
+
+        .example-box ul {
+            margin-bottom: 0;
+        }
+
+        /* スプレッドシートボタンエリア */
+        .sheet-area {
+            text-align: center;
+            padding: 25px 20px;
+            background-color: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-top: 30px;
         }
 
         .sheet-btn {
             display: inline-block;
             background-color: #0f9d58; /* Googleスプレッドシート風のグリーン */
             color: #fff;
-            padding: 15px 30px;
+            padding: 15px 32px;
             font-size: 1.1rem;
             font-weight: bold;
             text-decoration: none;
@@ -71,6 +135,25 @@
             box-shadow: 0 6px 15px rgba(15, 157, 88, 0.5);
             transform: translateY(-2px);
         }
+
+        /* 注意書き・補足 */
+        .note-text {
+            font-size: 0.85rem;
+            color: var(--sub-text);
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        /* レスポンシブ対応（スマホ表示用） */
+        @media (max-width: 600px) {
+            .card {
+                padding: 25px 20px;
+            }
+            .sheet-btn {
+                width: 100%;
+                box-sizing: border-box;
+            }
+        }
     </style>
 </head>
 <body>
@@ -80,12 +163,51 @@
 
     <div class="container">
         <div class="card">
-            <h2>📊 勢力P管理スプレッドシート</h2>
-            <p>勢力Pの管理やイベントログの入力は、専用のGoogleスプレッドシートで行っています。<br>下のボタンよりスプレッドシートを開いてご確認ください。</p>
+            <h2>【 名声配布について 】</h2>
             
-            <a href="https://docs.google.com/spreadsheets/d/1Ueybp-sH48cHnEE-K6RRCASlIWwE1iyjHzUtUx4Qj3A/edit?gid=119354537#gid=119354537" target="_blank" class="sheet-btn">
-                📈 スプレッドシートを開く
-            </a>
+            <p>名声の配布には、以下の2種類があります。</p>
+            <ol>
+                <li><strong>ゲーム内イベントによる名声配布</strong></li>
+                <li><strong>個人の獲得勢力Pに応じた名声配布</strong></li>
+            </ol>
+
+            <h3>① 勢力Pによる名声還元配布</h3>
+            <ul>
+                <li>各メンバーが獲得した勢力Pに応じて、名声を還元配布します。</li>
+                <li>月末締め・翌月初配布を基本とします。</li>
+                <li>各自の獲得勢力Pの<strong style="color: var(--accent-color);">80％相当</strong>を名声として還元します。</li>
+                <li>残りの20％は運営費として確保し、ゲーム内イベントでの名声配布等に使用します。</li>
+            </ul>
+
+            <div class="info-box">
+                <p>💡 <strong>目的：</strong>勢力Pを多く獲得したメンバーへの還元と、活動へのモチベーション維持を目的としたものです。</p>
+            </div>
+
+            <h3>◆ 名声を貯めておく場合</h3>
+            <p>名声は、定期配布時にすぐ受け取らず、一時的に貯めておくことも可能です。</p>
+            <p>名声を多く保有すると寄付コストが上昇するため、すぐに名声を必要としない場合など、後からまとめて受け取りたい方は事前にお声掛けください。</p>
+            <p>貯めておいた名声は、原則として月初の定期配布時にまとめて引き出す運用とします。</p>
+
+            <div class="example-box">
+                <strong style="color: var(--accent-color);">【例】</strong>
+                <ul>
+                    <li>6月分の名声を貯めておく</li>
+                    <li>7月分の定期配布時に、6月分と7月分をまとめて受け取る</li>
+                </ul>
+            </div>
+
+            <h3>◆ 名声の管理について</h3>
+            <p>各メンバーの勢力Pおよび名声の配布・引き出し状況は、以下のスプレッドシートで管理しています。</p>
+
+            <!-- スプレッドシート確認ボタン -->
+            <div class="sheet-area">
+                <p style="margin-top: 0; font-weight: bold; color: #fff;">名声・勢力P管理シート</p>
+                <a href="https://docs.google.com/spreadsheets/d/1Ueybp-sH48cHnEE-K6RRCASlIWwE1iyjHzUtUx4Qj3A/edit?gid=119354537#gid=119354537" target="_blank" class="sheet-btn">
+                    📈 スプレッドシートを確認する
+                </a>
+                <p class="note-text">※名声の配布方法や運用について変更がある場合は、別途お知らせします。</p>
+            </div>
+
         </div>
     </div>
 
