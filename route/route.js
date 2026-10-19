@@ -10,7 +10,7 @@ const itemsPerPage = 100;
 // 1. 共通ヘッダー読み込み ＆ タブ切り替えの設定
 document.addEventListener('DOMContentLoaded', () => {
     // 共通ヘッダーの取得
-    fetch('header.html')
+    fetch('../header.html')
         .then(response => response.text())
         .then(data => {
             const headerContainer = document.getElementById('header-container');
