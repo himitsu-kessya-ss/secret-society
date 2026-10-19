@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Battle (戦闘結果アーカイブ) - 秘密結社の部屋</title>
-    <!-- 共通CSSファイルの読み込み -->
-    <link rel="stylesheet" href="upload.css">
+    <!-- 共通CSSファイルの読み込み（必要に応じてルート階層を参照） -->
+    <link rel="stylesheet" href="../upload.css">
     <style>
         /* ヘッダー専用のスタイル */
         header {
@@ -162,13 +162,31 @@
         </div>
     </div>
 
-    <!-- ヘッダーを読み込むためのスクリプト -->
+    <!-- ヘッダーを読み込むためのスクリプト（サブフォルダ対応版：../header.html を取得） -->
     <script>
-        fetch('header.html')
-            .then(response => response.text())
+        fetch('../header.html')
+            .then(response => {
+                if (!response.ok) throw new Error('ヘッダー読み込み失敗');
+                return response.text();
+            })
             .then(data => {
-                document.getElementById('header-container').innerHTML = data;
-            });
+                const container = document.getElementById('header-container');
+                if (container) {
+                    container.innerHTML = data;
+                    
+                    const pathParts = window.location.pathname.split('/').filter(Boolean);
+                    const currentFolder = pathParts[pathParts.length - 1] || '';
+
+                    const navLinks = document.querySelectorAll('.nav-links a');
+                    navLinks.forEach(link => {
+                        const href = link.getAttribute('href') || '';
+                        if (href.includes(`/${currentFolder}/`) || href.includes(`/${currentFolder}`)) {
+                            link.classList.add('active');
+                        }
+                    });
+                }
+            })
+            .catch(err => console.log("ヘッダー読み込みスキップ: ", err));
     </script>
 
     <!-- 1. データファイルを読み込む -->
