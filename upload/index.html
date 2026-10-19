@@ -153,21 +153,31 @@
         });
     </script>
 
-    <!-- 共通ヘッダー読み込み -->
+    <!-- 共通ヘッダー読み込み（サブフォルダ対応版：../header.html を取得します） -->
     <script>
-        fetch('header.html')
-            .then(response => response.text())
+        fetch('../header.html')
+            .then(response => {
+                if (!response.ok) throw new Error('ヘッダー読み込み失敗');
+                return response.text();
+            })
             .then(data => {
-                document.getElementById('header-container').innerHTML = data;
-                
-                const currentPath = window.location.pathname.split('/').pop();
-                const navLinks = document.querySelectorAll('.nav-links a');
-                navLinks.forEach(link => {
-                    if (link.getAttribute('href') === currentPath) {
-                        link.classList.add('active');
-                    }
-                });
-            });
+                const container = document.getElementById('header-container');
+                if (container) {
+                    container.innerHTML = data;
+                    
+                    const pathParts = window.location.pathname.split('/').filter(Boolean);
+                    const currentFolder = pathParts[pathParts.length - 1] || '';
+
+                    const navLinks = document.querySelectorAll('.nav-links a');
+                    navLinks.forEach(link => {
+                        const href = link.getAttribute('href') || '';
+                        if (href.includes(`/${currentFolder}/`) || href.includes(`/${currentFolder}`)) {
+                            link.classList.add('active');
+                        }
+                    });
+                }
+            })
+            .catch(err => console.log("ヘッダー読み込みスキップ: ", err));
     </script>
 
     <!-- メインのJavaScript -->
