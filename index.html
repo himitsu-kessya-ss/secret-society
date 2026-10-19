@@ -35,7 +35,7 @@
         <div class="container">
             <div class="grid">
 
-                <!-- 新規追加：Route Simulator（新・派生ルート検索）を先頭付近に配置 -->
+                <!-- Route Simulator -->
                 <a href="route.html" class="card">
                     <div class="card-img">
                         <img src="route.gif" alt="Route Simulator" class="gif-icon">
@@ -46,8 +46,8 @@
                     </div>
                 </a>
 
-                <!-- SS Upload -->
-                 <a href="upload.html" class="card">
+                <!-- SS Upload (★ upload/ フォルダの中を開くように更新) -->
+                 <a href="upload/" class="card">
                     <div class="card-img" style="background: #112233;">
                         <span style="font-size: 2.5rem;">📸</span>
                     </div>
@@ -79,7 +79,7 @@
                     </div>
                  </a>
 
-                <!-- Derivative Table（古い派生表は非表示に設定） -->
+                <!-- Derivative Table（非表示） -->
                  <a href="derivatives.html" class="card" style="display: none;">
                     <div class="card-img">
                         <img src="derivatives.gif" alt="Derivative Table" class="gif-icon">
@@ -195,10 +195,17 @@
 <!-- ヘッダーを読み込むためのスクリプト -->
 <script>
     fetch('header.html')
-        .then(response => response.text())
+        .then(response => {
+            if (!response.ok) throw new Error('ヘッダー読み込み失敗');
+            return response.text();
+        })
         .then(data => {
-            document.getElementById('header-container').innerHTML = data;
-        });
+            const container = document.getElementById('header-container');
+            if (container) {
+                container.innerHTML = data;
+            }
+        })
+        .catch(err => console.log("ヘッダー読み込みスキップ: ", err));
 </script>
 
 <!-- 専用のJavaScriptファイルを読み込み -->
