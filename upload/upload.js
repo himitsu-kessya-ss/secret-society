@@ -37,13 +37,40 @@ const STORAGE_KEY_AUTHOR = 'ss_upload_author';
 const STORAGE_KEY_DELETE_KEY = 'ss_upload_delete_key';
 
 let allPosts = [];
-let displayLimit = 10; // 初期表示件数
+let csvMasterUnitNames = new Set(); // CSVから取得した機体名マスター
+let displayLimit = 10;
 
-// --- ソート状態管理用の変数 ---
-let currentSortColumn = 'unitNo';  // デフォルトのソート列 (HTMLの data-sort と一致させる)
-let currentSortDirection = 'asc';  // デフォルト: 昇順 ('asc' または 'desc')
+// --- ソート状態管理 ---
+let currentSortColumn = 'unitNo';
+let currentSortDirection = 'asc';
 
-// --- 初期化：No.1 〜 No.9 のセレクトボックスにマスター辞書の選択肢を流し込む ---
+// --- CSVファイル（GL)機体一覧 - 機体一覧.csv）の自動読み込み ---
+async function loadCSVUnitMaster() {
+    try {
+        const response = await fetch('./GL)機体一覧 - 機体一覧.csv');
+        if (!response.ok) throw new Error('CSVファイルの取得に失敗しました。');
+        const csvText = await response.text();
+        
+        const lines = csvText.split(/\r?\n/);
+        csvMasterUnitNames.clear();
+
+        lines.forEach((line, index) => {
+            if (index === 0 || !line.trim()) return; // ヘッダー行と空行をスキップ
+            const cols = line.split(',');
+            if (cols.length >= 2) {
+                const unitName = cols[1].trim().replace(/^"|"$/g, ''); // 2列目（機体名）を取得
+                if (unitName) {
+                    csvMasterUnitNames.add(unitName);
+                }
+            }
+        });
+        console.log(`CSVから ${csvMasterUnitNames.size} 件の機体名をロードしました。`);
+    } catch (err) {
+        console.error('CSV読み込みエラー:', err);
+    }
+}
+
+// --- 初期化：No.1 〜 No.9 セレクトボックスの生成 ---
 function createAbilityOptionsHTML(selectedValue = '') {
     let html = '<option value="">-- 未選択 --</option>';
     MASTER_ABILITIES.forEach(ability => {
@@ -53,7 +80,6 @@ function createAbilityOptionsHTML(selectedValue = '') {
     return html;
 }
 
-// 選択状態に応じてプルダウンの背景色を切り替えるヘルパー
 function updateSelectBackground(selectEl) {
     if (selectEl.value) {
         selectEl.style.backgroundColor = '#3a2711';
@@ -79,7 +105,6 @@ function initAbilityDropdowns() {
     }
 }
 
-// --- 保存された投稿者名・削除キーの復元 ---
 function loadSavedCredentials() {
     const savedAuthor = localStorage.getItem(STORAGE_KEY_AUTHOR);
     const savedDeleteKey = localStorage.getItem(STORAGE_KEY_DELETE_KEY);
@@ -108,7 +133,6 @@ async function loadPosts() {
             allPosts.push({ id: docSnap.id, ...docSnap.data() });
         });
 
-        // ▼ タブの2段目に登録機体数を反映
         const countSpan = document.getElementById('total-unit-count');
         if (countSpan) {
             countSpan.textContent = allPosts.length;
@@ -116,8 +140,6 @@ async function loadPosts() {
 
         displayLimit = 10;
         renderPosts(allPosts);
-        
-        // テーブルを描画（ソートと検索フィルタを適用）
         applySortAndRenderTable();
 
     } catch (error) {
@@ -127,17 +149,14 @@ async function loadPosts() {
     }
 }
 
-// --- テーブルのソート・検索および描画処理 ---
 function applySortAndRenderTable() {
     const keyword = tableSearchInput ? tableSearchInput.value.toLowerCase().trim() : '';
 
-    // 検索フィルタリング
     let filtered = allPosts.filter(post => {
         const textToSearch = `${post.unitNumber || ''} ${post.unitName || ''} ${post.author || ''} ${post.postId || post.postNo || ''} ${(post.abilities || []).map(a => typeof a === 'string' ? a : a.text).join(' ')}`.toLowerCase();
         return textToSearch.includes(keyword);
     });
 
-    // ソート処理
     filtered.sort((a, b) => {
         let valA, valB;
 
@@ -180,7 +199,6 @@ function applySortAndRenderTable() {
     updateSortIcons();
 }
 
-// ヘッダーのソート矢印アイコンを更新
 function updateSortIcons() {
     document.querySelectorAll('#list-tab th[data-sort]').forEach(th => {
         const column = th.getAttribute('data-sort');
@@ -196,7 +214,6 @@ function updateSortIcons() {
     });
 }
 
-// 登録済み機体一覧テーブルの描画
 function renderRegisteredTable(posts) {
     tableBody.innerHTML = '';
 
@@ -241,7 +258,6 @@ function renderRegisteredTable(posts) {
     });
 }
 
-// --- テーブルヘッダーのクリックによるソートイベント設定 ---
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('#list-tab th[data-sort]').forEach(th => {
         th.style.cursor = 'pointer';
@@ -260,7 +276,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// --- 画像選択時にOCR解析を行い、自動でプルダウンに結果をセットする処理 ---
 imageFileInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -295,7 +310,6 @@ imageFileInput.addEventListener('change', async (e) => {
     }
 });
 
-// 投稿カードリストの描画（直近10件制限 ＋ もっと見るボタン対応）
 function renderPosts(postsToRender) {
     postList.innerHTML = '';
 
@@ -514,12 +528,10 @@ function renderPosts(postsToRender) {
     }
 }
 
-// 登録済みテーブルの検索入力イベント
 tableSearchInput.addEventListener('input', () => {
     applySortAndRenderTable();
 });
 
-// カードリストの検索入力イベント
 searchInput.addEventListener('input', (e) => {
     const keyword = e.target.value.toLowerCase().trim();
 
@@ -594,6 +606,87 @@ form.addEventListener('submit', async (e) => {
     }
 });
 
+// --- 手持ち機体テキストの未登録チェック処理（CSVマスタ ＋ Firebase登録済みデータの両方で判定） ---
+document.addEventListener('DOMContentLoaded', () => {
+    const checkBtn = document.getElementById('check-units-btn');
+    if (checkBtn) {
+        checkBtn.addEventListener('click', () => {
+            const rawText = document.getElementById('raw-units-input').value;
+            if (!rawText.trim()) {
+                alert('手持ち機体データを貼り付けてください。');
+                return;
+            }
+
+            // 1. CSVマスター辞書に存在するすべての機体名
+            // 2. Firebase（allPosts）にすでに登録されているすべての機体名
+            // これらをあわせた「すでに登録されている機体セット」を作成します
+            const registeredNames = new Set();
+            csvMasterUnitNames.forEach(name => registeredNames.add(name));
+            allPosts.forEach(p => {
+                if (p.unitName) registeredNames.add(p.unitName.trim());
+            });
+
+            const lines = rawText.split('\n');
+            const unregisteredSet = new Set();
+            const registeredSet = new Set();
+
+            lines.forEach(line => {
+                let trimmedLine = line.trim();
+                if (!trimmedLine || trimmedLine.startsWith('ユニット数')) return;
+
+                // 「✨」と「Ψ」を削除
+                let cleaned = trimmedLine.replace(/[✨Ψ]/g, '');
+
+                // 数値データ（HP/EN等）の直前までを抽出
+                let match = cleaned.match(/^(.+?)(?=\d+\/\d+|\d+$)/);
+                let unitName = '';
+
+                if (match) {
+                    unitName = match[1].trim();
+                } else {
+                    unitName = cleaned.split(/\s+/)[0].trim();
+                }
+
+                // 先頭の数値プレフィックス（行番号など）を除去
+                unitName = unitName.replace(/^\d+/, '').trim();
+
+                if (!unitName || unitName === '改装設計図') return;
+
+                // 登録済み判定
+                if (registeredNames.has(unitName)) {
+                    registeredSet.add(unitName);
+                } else {
+                    unregisteredSet.add(unitName);
+                }
+            });
+
+            // 結果の描画
+            renderCheckResults('unregistered-list', 'unregistered-count', Array.from(unregisteredSet), 'unregistered-badge-item', 'すべての機体が登録済みです！');
+            renderCheckResults('registered-check-list', 'registered-check-count', Array.from(registeredSet), 'registered-badge-item', '該当する機体はありません。');
+        });
+    }
+});
+
+function renderCheckResults(listId, countId, items, className, emptyMsg) {
+    const ul = document.getElementById(listId);
+    const countBadge = document.getElementById(countId);
+
+    ul.innerHTML = '';
+    countBadge.textContent = items.length + '件';
+
+    if (items.length === 0) {
+        ul.innerHTML = `<li style="padding: 12px; color: #777; text-align: center;">${emptyMsg}</li>`;
+        return;
+    }
+
+    items.forEach(item => {
+        const li = document.createElement('li');
+        li.textContent = item;
+        li.className = className;
+        ul.appendChild(li);
+    });
+}
+
 function escapeHTML(str) {
     if (!str) return '';
     return String(str).replace(/[&<>'"]/g, 
@@ -606,4 +699,5 @@ document.addEventListener('DOMContentLoaded', () => {
     initAbilityDropdowns();
     loadSavedCredentials();
     loadPosts();
+    loadCSVUnitMaster(); // CSVデータの事前読み込み実行
 });
