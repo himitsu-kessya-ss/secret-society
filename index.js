@@ -36,11 +36,13 @@ function showPage(pageId) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById(pageId).classList.add('active');
     
-    const header = document.getElementById('main-header');
+    // index.htmlのヘッダーコンテナ、または読み込まれたheader要素を取得
+    const headerContainer = document.getElementById('header-container');
+    const header = headerContainer ? headerContainer.querySelector('header') || headerContainer : document.getElementById('main-header');
     const secretCard = document.getElementById('secret-card');
 
     if (pageId === 'main-page') {
-        header.style.display = 'flex';
+        if (header) header.style.display = 'flex';
         
         setTimeout(() => {
             if (secretCard) {
@@ -53,7 +55,7 @@ function showPage(pageId) {
         }, 10000);
 
     } else {
-        header.style.display = 'none';
+        if (header) header.style.display = 'none';
         if (secretCard) {
             secretCard.style.display = 'none';
             secretCard.style.opacity = '0';
