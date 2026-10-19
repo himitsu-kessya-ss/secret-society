@@ -1,5 +1,5 @@
-const MECH_CSV = "route/GL)機体一覧 - 機体一覧.csv";
-const ROUTE_CSV = "route/GL)機体派生ルート_261018 - 派生ルート.csv";
+const MECH_CSV = "./GL)機体一覧 - 機体一覧.csv";
+const ROUTE_CSV = "./GL)機体派生ルート_261018 - 派生ルート.csv";
 
 let mechDataList = []; 
 let routeData = [];    
