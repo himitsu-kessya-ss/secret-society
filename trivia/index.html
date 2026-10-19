@@ -115,41 +115,50 @@
     <div id="content-display" class="info-box">読み込み中...</div>
 </div>
 
-<!-- 共通ヘッダーを読み込んで現在地をアクティブにする処理 -->
+<!-- 共通ヘッダーを読み込んで現在地をアクティブにする処理（サブフォルダ対応版：../header.html を取得） -->
 <script>
-    fetch('header.html')
-        .then(response => response.text())
+    fetch('../header.html')
+        .then(response => {
+            if (!response.ok) throw new Error('ヘッダー読み込み失敗');
+            return response.text();
+        })
         .then(data => {
-            document.getElementById('header-container').innerHTML = data;
-            
-            // 現在開いているページを自動判定してナビに active クラスをつける
-            const currentPath = window.location.pathname.split('/').pop();
-            const navLinks = document.querySelectorAll('.nav-links a');
-            navLinks.forEach(link => {
-                if (link.getAttribute('href') === currentPath) {
-                    link.classList.add('active');
-                }
-            });
-        });
+            const container = document.getElementById('header-container');
+            if (container) {
+                container.innerHTML = data;
+                
+                const pathParts = window.location.pathname.split('/').filter(Boolean);
+                const currentFolder = pathParts[pathParts.length - 1] || '';
+
+                const navLinks = document.querySelectorAll('.nav-links a');
+                navLinks.forEach(link => {
+                    const href = link.getAttribute('href') || '';
+                    if (href.includes(`/${currentFolder}/`) || href.includes(`/${currentFolder}`)) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+        })
+        .catch(err => console.log("ヘッダー読み込みスキップ: ", err));
 </script>
 
 <script>
 $(document).ready(function () {
-    // ファイルの参照先を「trivia/」フォルダ内に変更
+    // 同じフォルダ内（trivia/）にあるテキストファイルを指定
     const triviaFiles = [
-        { name: "遊び方", file: "trivia/trivia_HowToPlay.txt" },
-        { name: "Q&A", file: "trivia/trivia_qa_official.txt" },
-        { name: "キャラステータス", file: "trivia/trivia_CharStatus.txt" },
-        { name: "機体ステータス", file: "trivia/trivia_mechaStatus.txt" },
-        { name: "改造・熟練度", file: "trivia/trivia_customLV.txt" },
-        { name: "スキル", file: "trivia/trivia_skill.txt" },
-        { name: "特性", file: "trivia/trivia_tokusei.txt" },
-        { name: "地形", file: "trivia/trivia_battlefield.txt" },
-        { name: "戦闘ダメージ", file: "trivia/trivia_battleDmg.txt" },
-        { name: "索敵", file: "trivia/trivia_sakuteki.txt" },
-        { name: "気力", file: "trivia/trivia_kiryoku.txt" },
-        { name: "掃討盤", file: "trivia/trivia_soutouban.txt" },
-        { name: "豆知識", file: "trivia/trivia_tips.txt" }
+        { name: "遊び方", file: "trivia_HowToPlay.txt" },
+        { name: "Q&A", file: "trivia_qa_official.txt" },
+        { name: "キャラステータス", file: "trivia_CharStatus.txt" },
+        { name: "機体ステータス", file: "trivia_mechaStatus.txt" },
+        { name: "改造・熟練度", file: "trivia_customLV.txt" },
+        { name: "スキル", file: "trivia_skill.txt" },
+        { name: "特性", file: "trivia_tokusei.txt" },
+        { name: "地形", file: "trivia_battlefield.txt" },
+        { name: "戦闘ダメージ", file: "trivia_battleDmg.txt" },
+        { name: "索敵", file: "trivia_sakuteki.txt" },
+        { name: "気力", file: "trivia_kiryoku.txt" },
+        { name: "掃討盤", file: "trivia_soutouban.txt" },
+        { name: "豆知識", file: "trivia_tips.txt" }
     ];
 
     const $content =$('#content-display');
@@ -187,7 +196,7 @@ $(document).ready(function () {
     }
 
     function displayContent(filePath, text) {
-        // 「trivia/trivia_tips.txt」のときだけ行ごとに分割してカード風レイアウトにする
+        // 「trivia_tips.txt」のときだけ行ごとに分割してカード風レイアウトにする
         if (filePath.endsWith("trivia_tips.txt")) {
             const lines = text.split('\n').filter(line => line.trim() !== '');
             const htmlLines = lines.map((line) => {
