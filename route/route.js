@@ -9,27 +9,6 @@ const itemsPerPage = 100;
 
 // 1. 共通ヘッダー読み込み ＆ タブ切り替えの設定
 document.addEventListener('DOMContentLoaded', () => {
-    // 共通ヘッダーの取得
-    fetch('../header.html')
-        .then(response => response.text())
-        .then(data => {
-            const headerContainer = document.getElementById('header-container');
-            if (headerContainer) {
-                headerContainer.innerHTML = data;
-                
-                const currentPath = window.location.pathname.split('/').pop() || 'route.html';
-                const navLinks = document.querySelectorAll('.nav-links a');
-                navLinks.forEach(link => {
-                    const href = link.getAttribute('href');
-                    if (href === currentPath) {
-                        link.classList.add('active');
-                    }
-                });
-            }
-        })
-        .catch(error => {
-            console.error('ヘッダーの読み込みに失敗しました:', error);
-        });
 
     // タブ切り替え処理
     const tabButtons = document.querySelectorAll('.tab-btn');
