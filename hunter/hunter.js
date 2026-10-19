@@ -299,8 +299,8 @@ $(document).ready(function () {
     }
 
     function loadAndRankUnits(min, max) {
-        const MECH_CSV = "./GL)機体一覧 - 機体一覧.csv";
-        const ROUTE_CSV = "./GL)機体派生ルート_261018 - 派生ルート.csv";
+        const MECH_CSV = "../route/GL)機体一覧 - 機体一覧.csv";
+        const ROUTE_CSV = "../route/GL)機体派生ルート_261018 - 派生ルート.csv";
 
         if (globalMechDataList.length > 0 && globalRouteData.length > 0) {
             processRanking(min, max);
