@@ -45,7 +45,6 @@ let currentSortDirection = 'asc';
 // --- CSVファイル（機体一覧.csv）の自動読み込み（パス調整版） ---
 async function loadCSVUnitMaster() {
     try {
-        // ルート階層または同階層にあるCSVファイルを柔軟に探索
         const possiblePaths = ['./GL)機体一覧 - 機体一覧.csv', '../GL)機体一覧 - 機体一覧.csv', '機体一覧.csv'];
         let response = null;
         
@@ -622,7 +621,7 @@ form.addEventListener('submit', async (e) => {
     }
 });
 
-// --- 手持ち機体テキストの未登録チェック処理（CSVマスタ ＋ Firebase登録済みデータの両方で判定） ---
+// --- 手持ち機体テキストの未登録チェック処理（高精度クレンジング版） ---
 document.addEventListener('DOMContentLoaded', () => {
     const checkBtn = document.getElementById('check-units-btn');
     if (checkBtn) {
@@ -634,7 +633,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const registeredNames = new Set();
-            csvMasterUnitNames.forEach(name => registeredNames.add(name));
+            csvMasterUnitNames.forEach(name => registeredNames.add(name.trim()));
             allPosts.forEach(p => {
                 if (p.unitName) registeredNames.add(p.unitName.trim());
             });
@@ -647,21 +646,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 let trimmedLine = line.trim();
                 if (!trimmedLine || trimmedLine.startsWith('ユニット数')) return;
 
-                // 「✨」と「Ψ」を削除
+                // 1. 特殊記号（「✨」「Ψ」など）の除去
                 let cleaned = trimmedLine.replace(/[✨Ψ]/g, '');
 
-                // 数値データ（HP/EN等）の直前までを抽出
-                let match = cleaned.match(/^(.+?)(?=\d+\/\d+|\d+$)/);
+                // 2. 「 展示中」のステータス接尾辞をカット
+                cleaned = cleaned.replace(/\s+(展示中).*$/, '');
+
+                // 3. 数値ステータス（例: 120/120 や 500 などの末尾数値）の直前までを機体名として抽出
+                let match = cleaned.match(/^(.+?)(?=\s+\d+\/\d+|\s+\d+$)/);
                 let unitName = '';
 
                 if (match) {
                     unitName = match[1].trim();
                 } else {
-                    unitName = cleaned.split(/\s+/)[0].trim();
+                    unitName = cleaned.trim();
                 }
 
-                // 先頭の数値プレフィックス（行番号など）を除去
-                unitName = unitName.replace(/^\d+/, '').trim();
+                // 4. 「1. ガンダム」や「01 ガンダム」など、明らかな行番号プレフィックス（数字＋ドット/スペース）のみを除去
+                // ※「96式艦戦」や「2015タイ仕様...」のように数字と文字が連続している場合は削らない
+                unitName = unitName.replace(/^\d+[\.\s\t]+/, '').trim();
 
                 if (!unitName || unitName === '改装設計図') return;
 
