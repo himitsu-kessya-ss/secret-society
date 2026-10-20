@@ -26,9 +26,13 @@
                 <span class="tab-title">📋 登録済機体一覧</span>
                 <span class="tab-subtitle">（登録数: <span id="total-unit-count">0</span>件）</span>
             </button>
+            <button class="tab-btn" data-target="check-tab">
+                <span class="tab-title">🔍 未登録機体チェック</span>
+                <span class="tab-subtitle">（手持ちコピペ判定）</span>
+            </button>
         </div>
 
-        <!-- ▼ 投稿タブのコンテンツ -->
+        <!-- ▼ 1. 投稿タブのコンテンツ -->
         <div id="post-tab" class="tab-content active">
             <!-- 投稿者向けの使い方説明エリア -->
             <div class="guide-card">
@@ -102,7 +106,7 @@
             <div id="post-list" class="post-list"></div>
         </div>
 
-        <!-- ▼ 登録済機体一覧タブのコンテンツ -->
+        <!-- ▼ 2. 登録済機体一覧タブのコンテンツ -->
         <div id="list-tab" class="tab-content">
             <div class="registered-units-area">
                 <div class="table-header-area">
@@ -127,6 +131,44 @@
                             </tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ▼ 3. 未登録機体チェックタブのコンテンツ（追加） -->
+        <div id="check-tab" class="tab-content">
+            <div class="upload-form-card">
+                <h2 style="color: var(--accent-color, #00d4ff); margin-top: 0; font-size: 1.2rem;">🔍 手持ち機体の未登録チェック</h2>
+                <p style="font-size: 0.9rem; color: var(--sub-text, #aaa); line-height: 1.5;">
+                    ゲーム内の手持ち機体リスト（テキスト）をそのまま下の枠に貼り付け、「未登録をチェックする」ボタンを押してください。<br>
+                    ※「✨」や「Ψ」の記号、ステータス数値等は自動で除外され、登録済みデータと照合されます。
+                </p>
+                <textarea id="raw-units-input" placeholder="ここにゲーム内の手持ち機体テキストを貼り付けてください..." style="width: 100%; height: 160px; padding: 12px; box-sizing: border-box; background: #1a1c1e; border: 1px solid #444; border-radius: 6px; color: #fff; font-family: monospace; font-size: 0.9rem; resize: vertical; margin-bottom: 15px;"></textarea>
+                <button type="button" id="check-units-btn" class="submit-btn">未登録をチェックする</button>
+            </div>
+
+            <!-- チェック結果表示エリア -->
+            <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 20px;">
+                <!-- 未登録機体 -->
+                <div style="flex: 1; min-width: 280px; background: var(--card-bg, #25282c); border: 1px solid #444; border-radius: 8px; padding: 20px;">
+                    <h3 style="margin-top: 0; display: flex; justify-content: space-between; align-items: center; font-size: 1.1rem; color: #ff4d4d;">
+                        <span>⚠️ 未登録の機体</span>
+                        <span id="unregistered-count" style="background: #ff4d4d; color: #fff; font-size: 0.8rem; padding: 2px 10px; border-radius: 12px;">0件</span>
+                    </h3>
+                    <ul id="unregistered-list" style="list-style: none; padding: 0; margin: 0; max-height: 350px; overflow-y: auto; border: 1px solid #333; border-radius: 4px; background: #1a1c1e;">
+                        <li style="padding: 10px; color: #777; text-align: center;">まだチェックされていません</li>
+                    </ul>
+                </div>
+
+                <!-- 登録済み機体 -->
+                <div style="flex: 1; min-width: 280px; background: var(--card-bg, #25282c); border: 1px solid #444; border-radius: 8px; padding: 20px;">
+                    <h3 style="margin-top: 0; display: flex; justify-content: space-between; align-items: center; font-size: 1.1rem; color: #00d4ff;">
+                        <span>✅ 登録済みの機体</span>
+                        <span id="registered-check-count" style="background: #00d4ff; color: #1a1c1e; font-size: 0.8rem; padding: 2px 10px; border-radius: 12px; font-weight: bold;">0件</span>
+                    </h3>
+                    <ul id="registered-check-list" style="list-style: none; padding: 0; margin: 0; max-height: 350px; overflow-y: auto; border: 1px solid #333; border-radius: 4px; background: #1a1c1e;">
+                        <li style="padding: 10px; color: #777; text-align: center;">まだチェックされていません</li>
+                    </ul>
                 </div>
             </div>
         </div>
