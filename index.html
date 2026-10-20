@@ -202,7 +202,9 @@
         .then(data => {
             const container = document.getElementById('header-container');
             if (container) {
-                container.innerHTML = data;
+                // トップページ（ルート直下）から読み込むときは、header内の ../ を除去して正しいパスにする
+                const correctedData = data.replaceAll('../', '');
+                container.innerHTML = correctedData;
             }
         })
         .catch(err => console.log("ヘッダー読み込みスキップ: ", err));
