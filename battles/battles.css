@@ -1,0 +1,222 @@
+/* ==========================================
+   ▼ 全体ベーススタイル
+========================================== */
+body {
+    background-color: #0b0f19;
+    color: #c0d2ec;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.main-container, .container {
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* ==========================================
+   ▼ タイトル・テキスト設定
+========================================== */
+h1, .page-title {
+    border-bottom: 2px solid #3a506b;
+    font-size: 22px;
+    letter-spacing: 1px;
+    display: inline-block;
+    background: #111a2e;
+    padding: 10px 20px;
+    border: 1px solid #2b4c7e;
+    margin-top: 20px;
+    color: #c0d2ec;
+}
+
+h2, .section-title {
+    font-size: 1.1rem;
+    color: #8ab4f8;
+}
+
+p {
+    font-size: 14px;
+    color: #8da4c4;
+}
+
+/* ==========================================
+   ▼ 共通ヘッダー表示用スタイル
+========================================== */
+header {
+    background-color: #0d1424;
+    height: 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    border-bottom: 2px solid #2b4c7e;
+    padding: 0 15px;
+    box-sizing: border-box;
+}
+
+.logo-link {
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: #64b5f6;
+    white-space: nowrap;
+}
+
+.nav-links {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+.nav-links::-webkit-scrollbar { 
+    display: none; 
+}
+
+.nav-item-custom {
+    color: #8da4c4; 
+    text-decoration: none; 
+    font-size: 0.85rem; 
+    padding: 6px 10px; 
+    border-radius: 4px; 
+    border: 1px solid transparent;
+    transition: 0.2s;
+}
+
+.nav-item-custom:hover, 
+.nav-item-custom.active { 
+    background: #1a2c4e; 
+    border-color: #64b5f6;
+    color: #64b5f6;
+}
+
+/* ==========================================
+   ▼ ガイドカード / 検索ボックス / ログ表示
+========================================== */
+.guide-card, .search-box {
+    background: #131c31;
+    border: 1px solid #2b4c7e;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+}
+
+.guide-title {
+    margin-top: 0;
+    color: #8ab4f8;
+    font-size: 1.05rem;
+}
+
+.guide-list {
+    margin: 0;
+    padding-left: 20px;
+    color: #8da4c4;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+#loading-msg {
+    text-align: center;
+    color: #8da4c4;
+    padding: 20px;
+}
+
+/* ==========================================
+   ▼ 戦闘結果・イベントカードスタイル
+========================================== */
+.event-section {
+    margin-bottom: 25px;
+}
+
+.event-card {
+    background: #111a2e;
+    border: 1px solid #2b4c7e;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    overflow: hidden;
+    transition: 0.2s;
+}
+
+.event-header {
+    background: #14223d;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    border-left: 4px solid #64b5f6;
+}
+
+.event-title {
+    font-size: 1.1rem;
+    color: #8ab4f8;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.event-body {
+    padding: 15px 20px;
+    border-top: 1px solid #223454;
+    background: #0d1424;
+}
+
+.sub-battle-item {
+    background: #131c31;
+    border: 1px solid #2b4c7e;
+    border-radius: 6px;
+    padding: 12px 15px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    transition: 0.2s;
+}
+
+.sub-battle-item:hover {
+    border-color: #64b5f6;
+    background: #1a2c4e;
+}
+
+.sub-battle-info {
+    flex: 1;
+}
+
+.sub-battle-title {
+    font-weight: bold;
+    color: #ffca28;
+    margin-bottom: 4px;
+    font-size: 0.95rem;
+}
+
+.sub-battle-desc {
+    font-size: 0.85rem;
+    color: #8da4c4;
+}
+
+/* ボタン各種 */
+button, .view-btn {
+    background: #1e3a60;
+    color: #fff;
+    border: 1px solid #4a75ab;
+    padding: 8px 18px;
+    font-size: 14px;
+    cursor: pointer;
+    font-weight: bold;
+    border-radius: 4px;
+    text-decoration: none;
+    transition: 0.2s;
+    display: inline-block;
+    white-space: nowrap;
+}
+
+button:hover, .view-btn:hover {
+    background: #284e80;
+    border-color: #64b5f6;
+    color: #fff;
+}
