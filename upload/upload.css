@@ -489,7 +489,7 @@ tr:hover {
     padding: 20px;
 }
 
-/* ▼ 未登録チェックタブ用スタイル（新規追加） */
+/* ▼ 未登録チェックタブ用スタイル */
 #unregistered-list, #registered-check-list {
     list-style: none;
     padding: 0;
@@ -522,3 +522,109 @@ tr:hover {
 .registered-badge-item {
     color: #a0a0a0;
 }
+
+/* ▼ 投稿ランキング（Special Thanks）専用スタイル */
+.top3-container {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    align-items: flex-end;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+}
+
+.top3-card {
+    background: var(--card-bg);
+    border: 2px solid #444;
+    border-radius: 12px;
+    padding: 20px 15px;
+    text-align: center;
+    flex: 1;
+    min-width: 180px;
+    max-width: 240px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    position: relative;
+    transition: transform 0.2s;
+}
+
+.top3-card:hover {
+    transform: translateY(-5px);
+}
+
+/* 1位（ゴールド） */
+.top3-card.rank-1 {
+    border-color: #ffd700;
+    background: linear-gradient(180deg, rgba(255,215,0,0.15) 0%, var(--card-bg) 100%);
+    order: 2; /* 中央に配置 */
+}
+/* 2位（シルバー） */
+.top3-card.rank-2 {
+    border-color: #c0c0c0;
+    background: linear-gradient(180deg, rgba(192,192,192,0.15) 0%, var(--card-bg) 100%);
+    order: 1; /* 左に配置 */
+}
+/* 3位（ブロンズ） */
+.top3-card.rank-3 {
+    border-color: #cd7f32;
+    background: linear-gradient(180deg, rgba(205,127,50,0.15) 0%, var(--card-bg) 100%);
+    order: 3; /* 右に配置 */
+}
+
+.crown-icon {
+    font-size: 2.2rem;
+    margin-bottom: 5px;
+}
+
+.top3-rank-num {
+    font-size: 0.85rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+}
+
+.top3-card.rank-1 .top3-rank-num { color: #ffd700; }
+.top3-card.rank-2 .top3-rank-num { color: #c0c0c0; }
+.top3-card.rank-3 .top3-rank-num { color: #cd7f32; }
+
+.top3-name {
+    font-size: 1.15rem;
+    font-weight: bold;
+    color: #fff;
+    margin-bottom: 10px;
+    word-break: break-all;
+}
+
+.top3-count {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: var(--accent-color);
+}
+.top3-count-unit {
+    font-size: 0.8rem;
+    color: var(--sub-text);
+    margin-left: 2px;
+}
+
+.ranking-table-card {
+    background: var(--card-bg);
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.rank-badge {
+    display: inline-block;
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+    text-align: center;
+    border-radius: 50%;
+    background: #333;
+    color: #aaa;
+    font-weight: bold;
+    font-size: 0.85rem;
+}
+.rank-badge.rank-1-badge { background: #ffd700; color: #000; }
+.rank-badge.rank-2-badge { background: #c0c0c0; color: #000; }
+.rank-badge.rank-3-badge { background: #cd7f32; color: #fff; }
