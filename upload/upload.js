@@ -88,7 +88,7 @@ function loadSavedCredentials() {
     }
 }
 
-// 投稿一覧データの読み込み
+// 投稿一覧データの読み込み＆ランキング集計
 async function loadPosts() {
     try {
         postList.innerHTML = '';
@@ -112,12 +112,75 @@ async function loadPosts() {
         displayLimit = 10;
         renderPosts(allPosts);
         applySortAndRenderTable();
+        renderRanking(allPosts); // ランキング描画の実行
 
     } catch (error) {
         console.error("読み込みエラー:", error);
         loadingMsg.textContent = 'データの読み込みに失敗しました。画面を再読み込みしてください。';
         tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--danger-color);">データの読み込みに失敗しました。</td></tr>';
     }
+}
+
+// --- 投稿ランキング（Special Thanks）集計・表示処理 ---
+function renderRanking(posts) {
+    const top3Container = document.getElementById('top3-ranking-container');
+    const rankingTableBody = document.getElementById('ranking-table-body');
+    if (!top3Container || !rankingTableBody) return;
+
+    // 投稿者（author）ごとにカウント集計
+    const authorCounts = {};
+    posts.forEach(post => {
+        const author = (post.author || '名無しパイロット').trim();
+        authorCounts[author] = (authorCounts[author] || 0) + 1;
+    });
+
+    // カウント順にソート（配列に変換）
+    const sortedRanking = Object.keys(authorCounts).map(author => {
+        return { author, count: authorCounts[author] };
+    }).sort((a, b) => b.count - a.count);
+
+    top3Container.innerHTML = '';
+    rankingTableBody.innerHTML = '';
+
+    if (sortedRanking.length === 0) {
+        rankingTableBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--sub-text);">投稿データがまだありません。</td></tr>';
+        return;
+    }
+
+    // 1. トップ3の表彰カード描画
+    const crowns = ['👑', '🥈', '🥉'];
+    const rankTitles = ['1st Place', '2nd Place', '3rd Place'];
+
+    for (let i = 0; i < Math.min(3, sortedRanking.length); i++) {
+        const item = sortedRanking[i];
+        const rankNum = i + 1;
+        const card = document.createElement('div');
+        card.className = `top3-card rank-${rankNum}`;
+        card.innerHTML = `
+            <div class="crown-icon">${crowns[i]}</div>
+            <div class="top3-rank-num">${rankTitles[i]}</div>
+            <div class="top3-name">${escapeHTML(item.author)}</div>
+            <div class="top3-count">${item.count}<span class="top3-count-unit">件</span></div>
+        `;
+        top3Container.appendChild(card);
+    }
+
+    // 2. 全体ランキングテーブルの描画
+    sortedRanking.forEach((item, index) => {
+        const rankNum = index + 1;
+        let badgeClass = 'rank-badge';
+        if (rankNum === 1) badgeClass += ' rank-1-badge';
+        if (rankNum === 2) badgeClass += ' rank-2-badge';
+        if (rankNum === 3) badgeClass += ' rank-3-badge';
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td style="text-align: center;"><span class="${badgeClass}">${rankNum}</span></td>
+            <td><strong>${escapeHTML(item.author)}</strong></td>
+            <td style="text-align: right; color: var(--accent-color); font-weight: bold; font-size: 1.05rem;">${item.count} 件</td>
+        `;
+        rankingTableBody.appendChild(tr);
+    });
 }
 
 function applySortAndRenderTable() {
@@ -608,8 +671,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 1. 特殊記号（「✨」「Ψ」など）の除去
                 let cleaned = trimmedLine.replace(/[✨Ψ]/g, '');
 
-                // 2. 「 展示中」「 出撃中」などのステータス接尾辞をカット
-                cleaned = cleaned.replace(/\s+(展示中|出撃中|防衛中|修復中).*$/, '');
+                // 2. 「 展示中」などのステータス接尾辞をカット
+                cleaned = cleaned.replace(/\s+展示中.*$/, '');
 
                 // 3. 数値ステータス（例: 120/120 や 500 などの末尾数値）の直前までを機体名として抽出
                 let match = cleaned.match(/^(.+?)(?=\s+\d+\/\d+|\s+\d+$)/);
