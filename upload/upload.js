@@ -35,55 +35,11 @@ const STORAGE_KEY_AUTHOR = 'ss_upload_author';
 const STORAGE_KEY_DELETE_KEY = 'ss_upload_delete_key';
 
 let allPosts = [];
-let csvMasterUnitNames = new Set(); // CSVから取得した機体名マスター
 let displayLimit = 10;
 
 // --- ソート状態管理 ---
 let currentSortColumn = 'unitNo';
 let currentSortDirection = 'asc';
-
-// --- CSVファイル（機体一覧.csv）の自動読み込み（パス調整版） ---
-async function loadCSVUnitMaster() {
-    try {
-        const possiblePaths = ['./GL)機体一覧 - 機体一覧.csv', '../GL)機体一覧 - 機体一覧.csv', '機体一覧.csv'];
-        let response = null;
-        
-        for (const path of possiblePaths) {
-            try {
-                const res = await fetch(path);
-                if (res.ok) {
-                    response = res;
-                    break;
-                }
-            } catch (e) {
-                // 次のパスを試す
-            }
-        }
-
-        if (!response) {
-            console.warn('CSVファイルが見つかりませんでした。Firebaseデータのみで判定します。');
-            return;
-        }
-
-        const csvText = await response.text();
-        const lines = csvText.split(/\r?\n/);
-        csvMasterUnitNames.clear();
-
-        lines.forEach((line, index) => {
-            if (index === 0 || !line.trim()) return; // ヘッダー行と空行をスキップ
-            const cols = line.split(',');
-            if (cols.length >= 2) {
-                const unitName = cols[1].trim().replace(/^"|"$/g, ''); // 2列目（機体名）を取得
-                if (unitName) {
-                    csvMasterUnitNames.add(unitName);
-                }
-            }
-        });
-        console.log(`CSVから ${csvMasterUnitNames.size} 件の機体名をロードしました。`);
-    } catch (err) {
-        console.error('CSV読み込みエラー:', err);
-    }
-}
 
 // --- 初期化：No.1 〜 No.9 セレクトボックスの生成 ---
 function createAbilityOptionsHTML(selectedValue = '') {
@@ -621,7 +577,7 @@ form.addEventListener('submit', async (e) => {
     }
 });
 
-// --- 手持ち機体テキストの未登録チェック処理（高精度クレンジング版） ---
+// --- 手持ち機体テキストの未登録チェック処理（ユーザー投稿データとの比較版） ---
 document.addEventListener('DOMContentLoaded', () => {
     const checkBtn = document.getElementById('check-units-btn');
     if (checkBtn) {
@@ -632,10 +588,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const registeredNames = new Set();
-            csvMasterUnitNames.forEach(name => registeredNames.add(name.trim()));
+            // Firebaseの全投稿（allPosts）から投稿済み機体名（小文字化＆トリム）のSetを作成
+            const userRegisteredNamesMap = new Map();
             allPosts.forEach(p => {
-                if (p.unitName) registeredNames.add(p.unitName.trim());
+                if (p.unitName) {
+                    const cleanName = p.unitName.trim();
+                    userRegisteredNamesMap.set(cleanName.toLowerCase(), cleanName);
+                }
             });
 
             const lines = rawText.split('\n');
@@ -649,8 +608,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 1. 特殊記号（「✨」「Ψ」など）の除去
                 let cleaned = trimmedLine.replace(/[✨Ψ]/g, '');
 
-                // 2. 「 展示中」のステータス接尾辞をカット
-                cleaned = cleaned.replace(/\s+(展示中).*$/, '');
+                // 2. 「 展示中」「 出撃中」などのステータス接尾辞をカット
+                cleaned = cleaned.replace(/\s+(展示中|出撃中|防衛中|修復中).*$/, '');
 
                 // 3. 数値ステータス（例: 120/120 や 500 などの末尾数値）の直前までを機体名として抽出
                 let match = cleaned.match(/^(.+?)(?=\s+\d+\/\d+|\s+\d+$)/);
@@ -662,15 +621,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     unitName = cleaned.trim();
                 }
 
-                // 4. 「1. ガンダム」や「01 ガンダム」など、明らかな行番号プレフィックス（数字＋ドット/スペース）のみを除去
-                // ※「96式艦戦」や「2015タイ仕様...」のように数字と文字が連続している場合は削らない
+                // 4. 行番号（「1. ガンダム」や「01 ガンダム」など）を除去
                 unitName = unitName.replace(/^\d+[\.\s\t]+/, '').trim();
 
                 if (!unitName || unitName === '改装設計図') return;
 
-                // 登録済み判定
-                if (registeredNames.has(unitName)) {
-                    registeredSet.add(unitName);
+                // 5. ユーザー投稿データに存在するか比較判定
+                const lowerUnitName = unitName.toLowerCase();
+                if (userRegisteredNamesMap.has(lowerUnitName)) {
+                    // 正式表記（登録時の名称）で結果に追加
+                    registeredSet.add(userRegisteredNamesMap.get(lowerUnitName));
                 } else {
                     unregisteredSet.add(unitName);
                 }
@@ -715,5 +675,4 @@ document.addEventListener('DOMContentLoaded', () => {
     initAbilityDropdowns();
     loadSavedCredentials();
     loadPosts();
-    loadCSVUnitMaster(); // CSVデータの事前読み込み実行
 });
