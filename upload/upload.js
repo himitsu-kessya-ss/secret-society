@@ -1,5 +1,3 @@
-// upload.js
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getFirestore, collection, getDocs, query, orderBy, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
@@ -44,13 +42,31 @@ let displayLimit = 10;
 let currentSortColumn = 'unitNo';
 let currentSortDirection = 'asc';
 
-// --- CSVファイル（GL)機体一覧 - 機体一覧.csv）の自動読み込み ---
+// --- CSVファイル（機体一覧.csv）の自動読み込み（パス調整版） ---
 async function loadCSVUnitMaster() {
     try {
-        const response = await fetch('./GL)機体一覧 - 機体一覧.csv');
-        if (!response.ok) throw new Error('CSVファイルの取得に失敗しました。');
-        const csvText = await response.text();
+        // ルート階層または同階層にあるCSVファイルを柔軟に探索
+        const possiblePaths = ['./GL)機体一覧 - 機体一覧.csv', '../GL)機体一覧 - 機体一覧.csv', '機体一覧.csv'];
+        let response = null;
         
+        for (const path of possiblePaths) {
+            try {
+                const res = await fetch(path);
+                if (res.ok) {
+                    response = res;
+                    break;
+                }
+            } catch (e) {
+                // 次のパスを試す
+            }
+        }
+
+        if (!response) {
+            console.warn('CSVファイルが見つかりませんでした。Firebaseデータのみで判定します。');
+            return;
+        }
+
+        const csvText = await response.text();
         const lines = csvText.split(/\r?\n/);
         csvMasterUnitNames.clear();
 
@@ -617,9 +633,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // 1. CSVマスター辞書に存在するすべての機体名
-            // 2. Firebase（allPosts）にすでに登録されているすべての機体名
-            // これらをあわせた「すでに登録されている機体セット」を作成します
             const registeredNames = new Set();
             csvMasterUnitNames.forEach(name => registeredNames.add(name));
             allPosts.forEach(p => {
