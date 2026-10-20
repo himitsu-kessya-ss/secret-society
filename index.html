@@ -1,63 +1,196 @@
-<header>
-    <!-- 左側のロゴ：押すとトップページに戻ります -->
-    <a href="/secret-society/" class="logo-link">秘密結社の部屋</a>
-    
-    <!-- 右側のナビゲーションメニュー -->
-    <nav class="nav-links">
-        <a href="/secret-society/route/" class="nav-item-custom">Route</a>
-        <a href="/secret-society/arms/" class="nav-item-custom">Arms</a>
-        <a href="/secret-society/hangar/" class="nav-item-custom" style="display: none;">Hangar</a>
-        <a href="/secret-society/seiryoku-p/" class="nav-item-custom">Seiryoku-P</a>
-        <a href="/secret-society/upload/" class="nav-item-custom">Upload</a>
-        <a href="/secret-society/battles/" class="nav-item-custom">Battle</a>
-        <a href="/secret-society/novels/" class="nav-item-custom">Novels</a>
-        <a href="/secret-society/hunter/" class="nav-item-custom">Hunter</a>
-        <a href="/secret-society/trivia/" class="nav-item-custom">Trivia</a>
-        <a href="/secret-society/emoji/" class="nav-item-custom">Emoji</a>
-        <a href="#" class="nav-item-custom">Link</a>
-    </nav>
-</header>
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>秘密結社の部屋</title>
+    <!-- 専用のCSSファイルを読み込み -->
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
 
-<style>
-    /* ヘッダー専用のスタイル（完全独立管理） */
-    header {
-        background-color: rgba(0, 0, 0, 0.95);
-        height: 60px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        position: sticky;
-        top: 0;
-        z-index: 1000;
-        border-bottom: 2px solid #00d4ff;
-        padding: 0 15px;
-        box-sizing: border-box;
-    }
-    .logo-link {
-        text-decoration: none;
-        font-weight: bold;
-        font-size: 1.1rem;
-        color: #00d4ff;
-        white-space: nowrap;
-    }
-    .nav-links {
-        display: flex;
-        gap: 10px;
-        overflow-x: auto;
-        white-space: nowrap;
-    }
-    .nav-links::-webkit-scrollbar { display: none; }
-    .nav-item-custom {
-        color: #e0e0e0; 
-        text-decoration: none; 
-        font-size: 0.85rem; 
-        padding: 6px 10px; 
-        border-radius: 4px; 
-        border: 1px solid transparent;
-        transition: 0.2s;
-    }
-    .nav-item-custom:hover, .nav-item-custom.active { 
-        background: rgba(0, 212, 255, 0.2); 
-        border-color: #00d4ff; 
-    }
-</style>
+    <!-- ヘッダー読み込み用プレースホルダー -->
+    <div id="header-container"></div>
+
+    <div id="top-page" class="page active">
+        <h1 class="title-large">秘密結社の部屋</h1>
+        
+        <div class="login-box">
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <div class="input-group">
+                    <label for="username">ID</label>
+                    <input type="text" id="username" placeholder="IDを入力" required autocomplete="off">
+                </div>
+                <div class="input-group">
+                    <label for="password">PW</label>
+                    <input type="password" id="password" placeholder="パスワードを入力" required>
+                </div>
+                <button type="submit" class="enter-btn">認証</button>
+                <div id="error-msg" class="error-message">IDまたはパスワードが正しくありません</div>
+            </form>
+        </div>
+    </div>
+
+    <div id="main-page" class="page">
+        <div class="container">
+            <div class="grid">
+
+                <!-- Route Simulator -->
+                <a href="/secret-society/route/" class="card">
+                    <div class="card-img">
+                        <img src="/secret-society/route/route.gif" alt="Route Simulator" class="gif-icon">
+                    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">Route Simulator</h3>
+                        <p class="card-desc">機体派生ルート検索・総コスト計算</p>
+                    </div>
+                </a>
+
+                <!-- SS Upload -->
+                <a href="/secret-society/upload/" class="card">
+                    <div class="card-img">
+                        <img src="/secret-society/upload/upload.gif" alt="SS Upload" class="gif-icon">
+                    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">SS Upload</h3>
+                        <p class="card-desc">特殊能力スクショ投稿・閲覧掲示板</p>
+                    </div>
+                </a>
+
+                <!-- Seiryoku P -->
+                <a href="/secret-society/seiryoku-p/" class="card">
+                    <div class="card-img" style="background: #112233;">
+                        <span style="font-size: 2.5rem;">👑</span>
+                    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">Seiryoku P</h3>
+                        <p class="card-desc">勢力ポイント・名声還元管理シート</p>
+                    </div>
+                </a>
+
+                <!-- Arms depot -->
+                <a href="/secret-society/arms/" class="card">
+                    <div class="card-img">
+                        <img src="/secret-society/arms/arms.gif" alt="Arms depot" class="gif-icon">
+                    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">Arms depot</h3>
+                        <p class="card-desc">武器・装備データと武器庫システム</p>
+                    </div>
+                </a>
+
+                <!-- Hangar（非表示） -->
+                <a href="/secret-society/hangar/" class="card" style="display: none;">
+                    <div class="card-img">
+                        <img src="/secret-society/hangar/hangar.gif" alt="Hangar" class="gif-icon">
+                    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">Hangar</h3>
+                        <p class="card-desc">勢力メンバー専用ハンガーデッキ</p>
+                    </div>
+                </a>
+
+                <!-- Battle Data -->
+                <a href="/secret-society/battles/" class="card">
+                    <div class="card-img">
+                        <img src="/secret-society/battles/battles.gif" alt="Battle Data" class="gif-icon">
+                    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">Battle Data</h3>
+                        <p class="card-desc">大会結果</p>
+                    </div>
+                </a>
+
+                <!-- Novels -->
+                <a href="/secret-society/novels/" class="card">
+                    <div class="card-img">
+                        <img src="/secret-society/novels/novels.gif" alt="Novels" class="gif-icon">
+                    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">Novels</h3>
+                        <p class="card-desc">戦闘記録の小説アーカイブ</p>
+                    </div>
+                </a>
+
+                <!-- Hunter Chance -->
+                <a href="/secret-society/hunter/" class="card">
+                    <div class="card-img">
+                        <img src="/secret-society/hunter/hunter.gif" alt="Hunter Chance" class="gif-icon">
+                    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">Hunter Chance</h3>
+                        <p class="card-desc">システム攻略情報</p>
+                    </div>
+                </a>
+
+                <!-- Trivia -->
+                <a href="/secret-society/trivia/" class="card">
+                    <div class="card-img">
+                        <img src="/secret-society/trivia/trivia.gif" alt="Trivia" class="gif-icon">
+                    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">Trivia</h3>
+                        <p class="card-desc">スキル・地形豆知識</p>
+                    </div>
+                </a>
+
+                <!-- Emoji -->
+                <a href="/secret-society/emoji/" class="card">
+                    <div class="card-img">
+                        <img src="/secret-society/emoji/emoji.gif" alt="Emoji" class="gif-icon">
+                    </div>    
+                    <div class="card-content">
+                        <h3 class="card-title">Emoji</h3>
+                        <p class="card-desc">html絵文字タグ一覧</p>
+                    </div>
+                </a>
+
+                <!-- Link (工事中) -->
+                <a href="javascript:void(0)" class="card under-const">
+                    <div class="card-img">
+                        <img src="/secret-society/link/link.gif" alt="Link" class="gif-icon">
+                    </div>    
+                    <div class="card-content">
+                        <h3 class="card-title">Link (工事中)</h3>
+                        <p class="card-desc">外部リンク集</p>
+                   </div>
+                </a>
+
+                <!-- 隠しページ -->
+                <a href="/secret-society/secret.html" id="secret-card" class="card" style="display: none; opacity: 0; transform: translateY(20px); transition: opacity 2s ease, transform 2s ease;">
+                    <div class="card-img">
+                        <img src="/secret-society/secret/secret.gif" alt="Secret Room" class="gif-icon">
+                    </div>
+                    <div class="card-content">
+                        <h3 class="card-title">Secret Room</h3>
+                        <p class="card-desc" style="color: #00ff00; font-family: monospace;">>迚ｩ鄂ｮ縺吮飭...侵入成功&gt;&gt;&gt;ACCESS GRANTED</p>
+                    </div>
+                </a>
+
+            </div>
+        </div>
+    </div>
+
+<!-- ヘッダーを読み込むためのスクリプト -->
+<script>
+    fetch('/secret-society/header.html')
+        .then(response => {
+            if (!response.ok) throw new Error('ヘッダー読み込み失敗');
+            return response.text();
+        })
+        .then(data => {
+            const container = document.getElementById('header-container');
+            if (container) {
+                container.innerHTML = data;
+            }
+        })
+        .catch(err => console.log("ヘッダー読み込みスキップ: ", err));
+</script>
+
+<!-- 専用のJavaScriptファイルを読み込み -->
+<script src="index.js"></script>
+
+<script data-goatcounter="https://bobs-base.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>
