@@ -30,6 +30,10 @@
                 <span class="tab-title">🔍 未登録機体チェック</span>
                 <span class="tab-subtitle">（手持ちコピペ判定）</span>
             </button>
+            <button class="tab-btn" data-target="ranking-tab">
+                <span class="tab-title">🏆 投稿ランキング</span>
+                <span class="tab-subtitle">（Special Thanks）</span>
+            </button>
         </div>
 
         <!-- ▼ 1. 投稿タブのコンテンツ -->
@@ -135,7 +139,7 @@
             </div>
         </div>
 
-        <!-- ▼ 3. 未登録機体チェックタブのコンテンツ（追加） -->
+        <!-- ▼ 3. 未登録機体チェックタブのコンテンツ -->
         <div id="check-tab" class="tab-content">
             <div class="upload-form-card">
                 <h2 style="color: var(--accent-color, #00d4ff); margin-top: 0; font-size: 1.2rem;">🔍 手持ち機体の未登録チェック</h2>
@@ -172,6 +176,44 @@
                 </div>
             </div>
         </div>
+
+        <!-- ▼ 4. 投稿ランキング（Special Thanks）タブのコンテンツ (新規追加) -->
+        <div id="ranking-tab" class="tab-content">
+            <div class="guide-card" style="background: rgba(255, 215, 0, 0.05); border-color: rgba(255, 215, 0, 0.3); border-left-color: #ffd700;">
+                <h2 class="guide-title" style="color: #ffd700;">💖 Special Thanks (投稿貢献者ランキング)</h2>
+                <p style="margin: 0; font-size: 0.9rem; color: #e0e0e0;">
+                    いつもスクショ投稿や情報提供にご協力いただきありがとうございます！<br>
+                    SSを投稿してデータ作成に貢献してくださったメンバーの皆様の一覧です。
+                </p>
+            </div>
+
+            <!-- トップ3表彰台エリア -->
+            <div id="top3-ranking-container" class="top3-container">
+                <!-- JSで動的生成されます -->
+            </div>
+
+            <!-- 4位以降のランキングテーブル -->
+            <div class="ranking-table-card">
+                <h3 style="margin-top: 0; color: var(--accent-color); font-size: 1.05rem;">📊 全メンバー投稿数ランキング</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 80px; text-align: center;">順位</th>
+                                <th>パイロット名 (投稿者)</th>
+                                <th style="width: 140px; text-align: right;">総投稿数</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ranking-table-body">
+                            <tr>
+                                <td colspan="3" style="text-align: center; color: var(--sub-text);">ランキングを集計中...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- タブ切り替え制御スクリプト -->
