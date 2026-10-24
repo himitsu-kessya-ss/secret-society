@@ -34,12 +34,16 @@ const DEFAULT_PLAYERS = ["Oro🍊min", "Halbert", "Yggdrasill", "スパイク", 
 
 let events = [];
 
+// ページ読み込み時の処理
 window.onload = async function() {
-    await loadMechaCsv();
-    await loadEventsFromServer(); 
-
-    // 最初に必ずイベント一覧を表示（リロード時は一覧からスタート）
+    // 【重要】過去に開いていた状態の自動復元処理（state）を完全に廃止し、
+    // ページを開いたときは必ず「作戦イベント一覧（メインページ）」からスタートするように固定します。
+    localStorage.removeItem('secret_society_briefing_state_v3');
     showMainPage();
+
+    // 機体CSVとスプレッドシートのデータを読み込む
+    await loadMechaCsv();
+    await loadEventsFromServer(false); 
 
     // 5秒おきにスプレッドシートから最新データを自動取得して同期
     setInterval(async () => {
@@ -70,9 +74,13 @@ async function loadEventsFromServer(isBackground = false) {
         initDefaultEvents();
     }
 
+    // メインページ（一覧）を表示中の場合のみ、最新のイベント一覧カードを再描画する
     if (!isBackground) {
-        renderEventList();
+        if (!currentEventId) {
+            renderEventList();
+        }
     } else {
+        // バックグラウンド同期時：現在シートを開いている場合は統計情報だけ更新
         if (currentEventId) {
             const ev = events.find(ev => ev.id === currentEventId);
             if (ev) calculateStats();
@@ -608,8 +616,6 @@ function calculateStats() {
 }
 
 function renderSummaryCards() {
-    const ev = events.events ? ev.events : events.find(e => e.id === currentEventId);
-    // 安全にイベントデータを取得
     const evData = events.find(e => e.id === currentEventId);
     if (!evData) return;
 
