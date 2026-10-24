@@ -38,6 +38,9 @@ window.onload = async function() {
     await loadMechaCsv();
     await loadEventsFromServer(); 
 
+    // 最初に必ずイベント一覧を表示（リロード時は一覧からスタート）
+    showMainPage();
+
     // 5秒おきにスプレッドシートから最新データを自動取得して同期
     setInterval(async () => {
         if (GAS_URL) {
@@ -50,7 +53,7 @@ window.onload = async function() {
 async function loadEventsFromServer(isBackground = false) {
     if (!GAS_URL) {
         initDefaultEvents();
-        renderCurrentView();
+        if (!isBackground) renderEventList();
         return;
     }
 
@@ -68,7 +71,7 @@ async function loadEventsFromServer(isBackground = false) {
     }
 
     if (!isBackground) {
-        renderCurrentView();
+        renderEventList();
     } else {
         if (currentEventId) {
             const ev = events.find(ev => ev.id === currentEventId);
@@ -99,30 +102,6 @@ function initDefaultEvents() {
     ];
     initDefaultEventData(events[0]);
     saveEventsToServer();
-}
-
-function renderCurrentView() {
-    const savedState = localStorage.getItem('secret_society_briefing_state_v3');
-    if (savedState) {
-        try {
-            const state = JSON.parse(savedState);
-            if (state.eventId) {
-                const targetEv = events.find(ev => ev.id === state.eventId);
-                if (targetEv) {
-                    currentEventId = targetEv.id;
-                    currentTab = state.tab || 'plan';
-                    loadEventSheet(targetEv, false);
-                    switchTab(currentTab, false);
-                    return;
-                }
-            }
-        } catch(e) {}
-    }
-    renderEventList();
-}
-
-function saveStateToStorage() {
-    localStorage.setItem('secret_society_briefing_state_v3', JSON.stringify({ eventId: currentEventId, tab: currentTab }));
 }
 
 async function loadMechaCsv() {
@@ -180,6 +159,7 @@ function initDefaultEventData(ev) {
 
 function renderEventList() {
     const listEl = document.getElementById('event-list');
+    if (!listEl) return;
     listEl.innerHTML = '';
     events.forEach(ev => {
         const card = document.createElement('div');
@@ -198,7 +178,6 @@ function showMainPage() {
     document.getElementById('page-event-sheet').classList.add('hidden');
     document.getElementById('btn-back-main').classList.add('hidden');
     currentEventId = null;
-    saveStateToStorage();
     renderEventList();
 }
 
@@ -261,30 +240,29 @@ function submitAuthEvent() {
 
     if (ev && (inputPw === ev.pass || inputPw === 'p@ssw0rd')) {
         closeModal();
-        loadEventSheet(ev, true);
+        loadEventSheet(ev);
     } else {
         alert('パスワードが正しくありません。');
     }
 }
 
-function loadEventSheet(ev, saveState = true) {
+function loadEventSheet(ev) {
     currentEventId = ev.id;
-    if (saveState) saveStateToStorage();
 
     document.getElementById('page-briefing-room').classList.add('hidden');
     document.getElementById('page-event-sheet').classList.remove('hidden');
-    document.getElementById('btn-back-main').classList.add('hidden');
+    document.getElementById('btn-back-main').classList.remove('hidden');
 
     document.getElementById('sheet-event-title').innerText = ev.title;
     document.getElementById('sheet-event-desc').innerText = `イベントID: ${ev.id} | スプレッドシート同期中`;
 
     renderMemberTable(ev);
     renderTacticsTable(ev);
+    switchTab('plan');
 }
 
-function switchTab(tabName, saveState = true) {
+function switchTab(tabName) {
     currentTab = tabName;
-    if (saveState) saveStateToStorage();
 
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
@@ -630,11 +608,15 @@ function calculateStats() {
 }
 
 function renderSummaryCards() {
-    const ev = events.find(e => e.id === currentEventId);
+    const ev = events.events ? ev.events : events.find(e => e.id === currentEventId);
+    // 安全にイベントデータを取得
+    const evData = events.find(e => e.id === currentEventId);
+    if (!evData) return;
+
     const container = document.getElementById('summary-cards');
     container.innerHTML = '';
 
-    const activeRows = ev.tactics.filter(r => r.reg);
+    const activeRows = evData.tactics.filter(r => r.reg);
     if (activeRows.length === 0) {
         container.innerHTML = '<p class="sub-title">登録にチェックが入っている機体がありません。</p>';
         return;
