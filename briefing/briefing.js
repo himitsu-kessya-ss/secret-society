@@ -1,4 +1,8 @@
+// ★取得されたウェブアプリのURLをここに設定しました
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxJFwDlx71xhfSF3mp6cSK46zog3cSM7kr_3tkGocyQJpnfbzQ8dDPWSjfxG5C7kr_3tkGocyQJpnfbzQ8dDPWSjfxG5C7lcdejA/exec';
+
 let currentEventId = null;
+let currentTab = 'plan';
 let MECHA_DB = {}; 
 let mechaListArray = []; 
 let editingRowIndex = null; 
@@ -22,44 +26,70 @@ const TRAIT_MASTER = [
     "威圧", "鍛錬", "一徹", "威風", "堅実", "明朗", "繊細", "高尚", "闘争"
 ];
 
+const STRATEGY_PRE_MASTER = ["移動を意識する", "足止め", "移動しない"];
+const STRATEGY_POST_MASTER = ["攻撃重視", "回避重視", "撹乱重視", "操縦重視"];
+
 const TACTICS_MASTER = ["NS", "AS", "DS", "SS", "NA", "AA", "DA", "SA", "ND", "AD", "DD", "SD", "LA", "LD", "LS"];
 const DEFAULT_PLAYERS = ["Oro🍊min", "Halbert", "Yggdrasill", "スパイク", "キッド", "ボブ", "リーア", "ハチワレ", "ナイト"];
 
 let events = [];
-const STORAGE_KEY = 'secret_society_briefing_events_v2';
 
 window.onload = async function() {
     await loadMechaCsv();
-    loadEventsFromStorage();
-    renderEventList();
+    await loadEventsFromServer(); 
 
-    // 複数タブ（別画面）でのリアルタイム自動同期リスナー
-    window.addEventListener('storage', (e) => {
-        if (e.key === STORAGE_KEY) {
-            loadEventsFromStorage();
-            if (currentEventId) {
-                const ev = events.find(ev => ev.id === currentEventId);
-                if (ev) {
-                    renderMemberTable(ev);
-                    renderTacticsTable(ev);
-                }
-            } else {
-                renderEventList();
-            }
+    // 5秒おきにスプレッドシートから最新データを自動取得して同期
+    setInterval(async () => {
+        if (GAS_URL) {
+            await loadEventsFromServer(true); 
         }
-    });
+    }, 5000);
 };
 
-function loadEventsFromStorage() {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-        try {
-            events = JSON.parse(saved);
-        } catch(e) {
+// スプレッドシート（GAS）からデータを読み込む
+async function loadEventsFromServer(isBackground = false) {
+    if (!GAS_URL) {
+        initDefaultEvents();
+        renderCurrentView();
+        return;
+    }
+
+    try {
+        const response = await fetch(GAS_URL);
+        const data = await response.json();
+        if (data && data.events && data.events.length > 0) {
+            events = data.events;
+        } else {
             initDefaultEvents();
         }
-    } else {
+    } catch (e) {
+        console.warn("サーバーからのデータ取得に失敗しました。ローカルデータを使用します。", e);
         initDefaultEvents();
+    }
+
+    if (!isBackground) {
+        renderCurrentView();
+    } else {
+        if (currentEventId) {
+            const ev = events.find(ev => ev.id === currentEventId);
+            if (ev) calculateStats();
+        }
+    }
+}
+
+// スプレッドシート（GAS）へデータを保存する
+async function saveEventsToServer() {
+    if (!GAS_URL) return;
+
+    try {
+        await fetch(GAS_URL, {
+            method: 'POST',
+            mode: 'no-cors', 
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ events: events })
+        });
+    } catch (e) {
+        console.error("サーバーへの保存に失敗しました", e);
     }
 }
 
@@ -68,11 +98,31 @@ function initDefaultEvents() {
         { id: 'ev1', title: '26.10 勢力戦', pass: '1234', members: {}, tactics: [] }
     ];
     initDefaultEventData(events[0]);
-    saveEventsToStorage();
+    saveEventsToServer();
 }
 
-function saveEventsToStorage() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
+function renderCurrentView() {
+    const savedState = localStorage.getItem('secret_society_briefing_state_v3');
+    if (savedState) {
+        try {
+            const state = JSON.parse(savedState);
+            if (state.eventId) {
+                const targetEv = events.find(ev => ev.id === state.eventId);
+                if (targetEv) {
+                    currentEventId = targetEv.id;
+                    currentTab = state.tab || 'plan';
+                    loadEventSheet(targetEv, false);
+                    switchTab(currentTab, false);
+                    return;
+                }
+            }
+        } catch(e) {}
+    }
+    renderEventList();
+}
+
+function saveStateToStorage() {
+    localStorage.setItem('secret_society_briefing_state_v3', JSON.stringify({ eventId: currentEventId, tab: currentTab }));
 }
 
 async function loadMechaCsv() {
@@ -119,10 +169,10 @@ function initDefaultEventData(ev) {
     ev.members["Halbert"] = { exp: 265, rank: "先任曹長" };
 
     ev.tactics = [
-        { reg: true, tactic: "DA", actualCost: 38, turn: 10, player: "Oro🍊min", mecha: "ガンダム", hp: 501, weapon: "★フルバースト", minR: 20, maxR: 70, equip: "プロペラントタンク", str: "移動しない攻撃", 
+        { reg: true, tactic: "DA", actualCost: 38, turn: 10, player: "Oro🍊min", mecha: "ガンダム", hp: 501, weapon: "★フルバースト", minR: 20, maxR: 70, equip: "プロペラントタンク", strPre: "移動しない", strPost: "攻撃重視", 
           t1: "集中", l1: 10, t2: "機転", l2: 10, t3: "", l3: 0, t4: "", l4: 0, t5: "", l5: 0, 
           c1:0, c2:0, c3:0, c4:0, c5:0, c6:0, c7:0, c8:0, r1:0, r2:0, r3:0 },
-        { reg: true, tactic: "DA", actualCost: 72, turn: 1, player: "Yggdrasill", mecha: "ガリルナガン", hp: 696, weapon: "アキシオン・アッシャー", minR: 50, maxR: 90, equip: "プロペラントタンク", str: "足止め攻撃", 
+        { reg: true, tactic: "DA", actualCost: 72, turn: 1, player: "Yggdrasill", mecha: "ガリルナガン", hp: 696, weapon: "アキシオン・アッシャー", minR: 50, maxR: 90, equip: "プロペラントタンク", strPre: "足止め", strPost: "回避重視", 
           t1: "集中", l1: 10, t2: "繊細", l2: 10, t3: "偵察", l3: 7, t4: "", l4: 0, t5: "", l5: 0, 
           c1:0, c2:0, c3:0, c4:0, c5:0, c6:0, c7:0, c8:0, r1:0, r2:0, r3:0 }
     ];
@@ -148,6 +198,7 @@ function showMainPage() {
     document.getElementById('page-event-sheet').classList.add('hidden');
     document.getElementById('btn-back-main').classList.add('hidden');
     currentEventId = null;
+    saveStateToStorage();
     renderEventList();
 }
 
@@ -189,7 +240,7 @@ function submitCreateEvent() {
     };
     initDefaultEventData(newEv);
     events.push(newEv);
-    saveEventsToStorage();
+    saveEventsToServer();
     renderEventList();
     closeModal();
     alert('新規イベントを起票しました！');
@@ -210,26 +261,31 @@ function submitAuthEvent() {
 
     if (ev && (inputPw === ev.pass || inputPw === 'p@ssw0rd')) {
         closeModal();
-        loadEventSheet(ev);
+        loadEventSheet(ev, true);
     } else {
         alert('パスワードが正しくありません。');
     }
 }
 
-function loadEventSheet(ev) {
+function loadEventSheet(ev, saveState = true) {
+    currentEventId = ev.id;
+    if (saveState) saveStateToStorage();
+
     document.getElementById('page-briefing-room').classList.add('hidden');
     document.getElementById('page-event-sheet').classList.remove('hidden');
-    document.getElementById('btn-back-main').classList.remove('hidden');
+    document.getElementById('btn-back-main').classList.add('hidden');
 
     document.getElementById('sheet-event-title').innerText = ev.title;
-    document.getElementById('sheet-event-desc').innerText = `イベントID: ${ev.id} | 作戦共有中 (自動保存＆リアルタイム同期有効)`;
+    document.getElementById('sheet-event-desc').innerText = `イベントID: ${ev.id} | スプレッドシート同期中`;
 
     renderMemberTable(ev);
     renderTacticsTable(ev);
-    switchTab('plan');
 }
 
-function switchTab(tabName) {
+function switchTab(tabName, saveState = true) {
+    currentTab = tabName;
+    if (saveState) saveStateToStorage();
+
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     document.querySelectorAll('.tab-content').forEach(content => content.classList.add('hidden'));
 
@@ -246,7 +302,6 @@ function switchTab(tabName) {
     }
 }
 
-// メンバー管理
 function renderMemberTable(ev) {
     const tbody = document.getElementById('tbody-members');
     tbody.innerHTML = '';
@@ -258,7 +313,7 @@ function renderMemberTable(ev) {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td><input type="text" value="${pName}" onchange="renameMember('${pName}', this.value)" style="width:120px;"></td>
-            <td><input type="number" value="${m.exp}" onchange="ev.members['${pName}'].exp = Number(this.value); saveEventsToStorage(); calculateStats();"></td>
+            <td><input type="number" value="${m.exp}" onchange="ev.members['${pName}'].exp = Number(this.value); saveEventsToServer(); calculateStats();"></td>
             <td>
                 <select onchange="updateMemberRank('${pName}', this.value)" style="width:130px;">
                     ${Object.keys(RANK_MASTER).map(r => `<option value="${r}" ${r === m.rank ? 'selected' : ''}>${r}</option>`).join('')}
@@ -279,7 +334,7 @@ function addMemberRow() {
         newName = `新規メンバー(${count++})`;
     }
     ev.members[newName] = { exp: 100, rank: "一等兵" };
-    saveEventsToStorage();
+    saveEventsToServer();
     renderMemberTable(ev);
 }
 
@@ -293,7 +348,7 @@ function renameMember(oldName, newName) {
     ev.members[newName] = ev.members[oldName];
     delete ev.members[oldName];
     ev.tactics.forEach(t => { if(t.player === oldName) t.player = newName; });
-    saveEventsToStorage();
+    saveEventsToServer();
     renderMemberTable(ev);
     renderTacticsTable(ev);
 }
@@ -301,7 +356,7 @@ function renameMember(oldName, newName) {
 function deleteMember(pName) {
     const ev = events.find(e => e.id === currentEventId);
     delete ev.members[pName];
-    saveEventsToStorage();
+    saveEventsToServer();
     renderMemberTable(ev);
     renderTacticsTable(ev);
 }
@@ -309,12 +364,11 @@ function deleteMember(pName) {
 function updateMemberRank(pName, newRank) {
     const ev = events.find(e => e.id === currentEventId);
     ev.members[pName].rank = newRank;
-    saveEventsToStorage();
+    saveEventsToServer();
     renderMemberTable(ev);
     renderTacticsTable(ev);
 }
 
-// 作戦テーブル描画
 function renderTacticsTable(ev) {
     const tbody = document.getElementById('tbody-tactics');
     tbody.innerHTML = '';
@@ -330,11 +384,12 @@ function renderTacticsTable(ev) {
 function addTacticsRow() {
     const ev = events.find(e => e.id === currentEventId);
     ev.tactics.push({
-        reg: false, tactic: "AA", actualCost: 0, turn: 1, player: "", mecha: "", hp: 0, weapon: "", minR: 0, maxR: 20, equip: "", str: "", 
+        reg: false, tactic: "AA", actualCost: 0, turn: 1, player: "", mecha: "", hp: 0, weapon: "", minR: 0, maxR: 20, equip: "", 
+        strPre: "移動を意識する", strPost: "攻撃重視", 
         t1: "", l1: 0, t2: "", l2: 0, t3: "", l3: 0, t4: "", l4: 0, t5: "", l5: 0, 
         c1:0, c2:0, c3:0, c4:0, c5:0, c6:0, c7:0, c8:0, r1:0, r2:0, r3:0
     });
-    saveEventsToStorage();
+    saveEventsToServer();
     renderTacticsTable(ev);
 }
 
@@ -348,7 +403,6 @@ function createTacticsTr(row, no, ev) {
     const dbCost = row.mecha ? mechaData.cost : '#N/A';
     const dbHp = row.mecha ? mechaData.hp : '#N/A';
 
-    // 役割別カラークラス
     let tacticClass = "";
     if (row.tactic) {
         const lastChar = row.tactic.slice(-1).toUpperCase();
@@ -366,27 +420,27 @@ function createTacticsTr(row, no, ev) {
 
     const lvSelectHtml = (selectedLv, lvKey) => `
         <select class="trait-lv-select" onchange="updateTraitLv(${no-1}, '${lvKey}', this.value)">
-            ${[...Array(11)].map((_, i) => `<option value="${i}" ${Number(selectedLv) === i ? 'selected' : ''}>Lv${i}</option>`).join('')}
+            ${[...Array(11)].map((_, i) => `<option value="${i}" ${Number(selectedLv) === i ? 'selected' : ''}>${i === 0 ? '0' : i}</option>`).join('')}
         </select>
     `;
 
     tr.innerHTML = `
-        <td><input type="checkbox" ${row.reg ? 'checked' : ''} onchange="row.reg = this.checked; saveEventsToStorage(); calculateStats();"></td>
+        <td><input type="checkbox" ${row.reg ? 'checked' : ''} onchange="row.reg = this.checked; saveEventsToServer(); calculateStats();"></td>
         <td>${no}</td>
         <td>
             <select class="${tacticClass}" onchange="changeTactic(this, ${no-1})">
                 ${TACTICS_MASTER.map(t => `<option value="${t}" ${t === row.tactic ? 'selected' : ''}>${t}</option>`).join('')}
             </select>
         </td>
-        <td><input type="number" value="${row.turn}" style="width:50px;" onchange="row.turn = Number(this.value); saveEventsToStorage();"></td>
+        <td><input type="number" value="${row.turn}" style="width:50px;" oninput="row.turn = Number(this.value); saveEventsToServer();"></td>
         <td>
-            <select onchange="row.player = this.value; saveEventsToStorage(); renderTacticsTable(ev);" style="width:120px;">
+            <select onchange="row.player = this.value; saveEventsToServer(); renderTacticsTable(ev);" style="width:120px;">
                 <option value="">選択</option>
                 ${Object.keys(ev.members).map(p => `<option value="${p}" ${p === row.player ? 'selected' : ''}>${p}</option>`).join('')}
             </select>
         </td>
         <td style="color:var(--accent); font-weight:bold;">${calcCost || '#N/A'}</td>
-        <td><input type="number" value="${row.actualCost !== undefined ? row.actualCost : calcCost}" style="width:65px;" onchange="row.actualCost = Number(this.value); saveEventsToStorage(); calculateStats();"></td>
+        <td><input type="number" value="${row.actualCost !== undefined ? row.actualCost : calcCost}" style="width:65px;" oninput="row.actualCost = Number(this.value); saveEventsToServer(); calculateStats();"></td>
         <td>
             <button class="btn btn-secondary" style="padding: 4px 8px; font-size:0.8rem; width:100%; text-align:left; overflow:hidden; text-overflow:ellipsis;" onclick="openMechaSearchModal(${no-1})">
                 ${row.mecha || '機体を検索...'}
@@ -394,40 +448,48 @@ function createTacticsTr(row, no, ev) {
         </td>
         <td>${dbCost}</td>
         <td>${dbHp}</td>
-        <td><input type="number" value="${row.hp || (mechaData.hp || 0)}" style="width:65px;" onchange="row.hp = Number(this.value); saveEventsToStorage(); calculateStats();"></td>
-        <td><input type="text" value="${row.weapon}" onchange="row.weapon = this.value; saveEventsToStorage();" style="width:130px;"></td>
+        <td><input type="number" value="${row.hp || (mechaData.hp || 0)}" style="width:65px;" oninput="row.hp = Number(this.value); saveEventsToServer(); calculateStats();"></td>
+        <td><input type="text" class="weapon-input" value="${row.weapon}" oninput="row.weapon = this.value; saveEventsToServer();"></td>
         
-        <!-- 最低・最大射程 -->
-        <td><input type="number" min="0" max="99" value="${row.minR}" style="width:50px;" oninput="updateRangeBar(this, ${no-1}, 'min')" onchange="row.minR = Number(this.value); saveEventsToStorage();"></td>
-        <td><input type="number" min="0" max="99" value="${row.maxR}" style="width:50px;" oninput="updateRangeBar(this, ${no-1}, 'max')" onchange="row.maxR = Number(this.value); saveEventsToStorage();"></td>
+        <td><input type="number" min="0" max="99" value="${row.minR}" style="width:50px;" oninput="updateRangeBar(this, ${no-1}, 'min')"></td>
+        <td><input type="number" min="0" max="99" value="${row.maxR}" style="width:50px;" oninput="updateRangeBar(this, ${no-1}, 'max')"></td>
         <td>
             <div class="range-bar-container" id="range-bar-${no-1}">
                 <div class="range-bar-fill" style="left: ${Math.min(100, Math.max(0, row.minR))}%; width: ${Math.max(0, Math.min(100 - row.minR, row.maxR - row.minR))}%;"></div>
             </div>
         </td>
 
-        <td><input type="text" value="${row.equip}" onchange="row.equip = this.value; saveEventsToStorage();" style="width:110px;"></td>
-        <td><input type="text" value="${row.str}" onchange="row.str = this.value; saveEventsToStorage();" style="width:110px;"></td>
+        <td><input type="text" class="equip-input" value="${row.equip}" oninput="row.equip = this.value; saveEventsToServer();"></td>
         
+        <td>
+            <select class="strategy-select" onchange="row.strPre = this.value; saveEventsToServer();">
+                ${STRATEGY_PRE_MASTER.map(s => `<option value="${s}" ${s === row.strPre ? 'selected' : ''}>${s}</option>`).join('')}
+            </select>
+        </td>
+        <td>
+            <select class="strategy-select" onchange="row.strPost = this.value; saveEventsToServer();">
+                ${STRATEGY_POST_MASTER.map(s => `<option value="${s}" ${s === row.strPost ? 'selected' : ''}>${s}</option>`).join('')}
+            </select>
+        </td>
+
         <td>${traitSelectHtml(row.t1, 1)} ${lvSelectHtml(row.l1, 'l1')}</td>
         <td>${traitSelectHtml(row.t2, 2)} ${lvSelectHtml(row.l2, 'l2')}</td>
         <td>${traitSelectHtml(row.t3, 3)} ${lvSelectHtml(row.l3, 'l3')}</td>
         <td>${traitSelectHtml(row.t4, 4)} ${lvSelectHtml(row.l4, 'l4')}</td>
         <td>${traitSelectHtml(row.t5, 5)} ${lvSelectHtml(row.l5, 'l5')}</td>
 
-        ${[...Array(8)].map((_, i) => `<td><input type="number" value="${row['c'+(i+1)] || 0}" style="width:38px;" onchange="row.c${i+1} = Number(this.value); saveEventsToStorage(); calculateStats();"></td>`).join('')}
-        ${[...Array(3)].map((_, i) => `<td><input type="number" value="${row['r'+(i+1)] || 0}" style="width:38px;" onchange="row.r${i+1} = Number(this.value); saveEventsToStorage(); calculateStats();"></td>`).join('')}
+        ${[...Array(8)].map((_, i) => `<td><input type="number" value="${row['c'+(i+1)] || 0}" style="width:38px;" oninput="row.c${i+1} = Number(this.value); saveEventsToServer(); calculateStats();"></td>`).join('')}
+        ${[...Array(3)].map((_, i) => `<td><input type="number" value="${row['r'+(i+1)] || 0}" style="width:38px;" oninput="row.r${i+1} = Number(this.value); saveEventsToServer(); calculateStats();"></td>`).join('')}
     `;
 
     return tr;
 }
 
-// 団体戦術変更時、フォーカスを失わずに即座に背景色を切り替える
 function changeTactic(selectEl, rowIndex) {
     const ev = events.find(e => e.id === currentEventId);
     const val = selectEl.value;
     ev.tactics[rowIndex].tactic = val;
-    saveEventsToStorage();
+    saveEventsToServer();
 
     selectEl.className = "";
     const lastChar = val.slice(-1).toUpperCase();
@@ -445,6 +507,8 @@ function updateRangeBar(inputEl, rowIndex, type) {
     
     if (type === 'min') row.minR = Number(inputEl.value);
     if (type === 'max') row.maxR = Number(inputEl.value);
+    
+    saveEventsToServer();
 
     const barFill = tr.querySelector('.range-bar-fill');
     if (barFill) {
@@ -463,13 +527,13 @@ function updateTrait(rowIndex, traitNum, newVal) {
     if (traitNum === 3) row.t3 = newVal;
     if (traitNum === 4) row.t4 = newVal;
     if (traitNum === 5) row.t5 = newVal;
-    saveEventsToStorage();
+    saveEventsToServer();
 }
 
 function updateTraitLv(rowIndex, lvKey, val) {
     const ev = events.find(e => e.id === currentEventId);
     ev.tactics[rowIndex][lvKey] = Number(val);
-    saveEventsToStorage();
+    saveEventsToServer();
 }
 
 function openMechaSearchModal(rowIndex) {
@@ -510,18 +574,16 @@ function selectMecha(m) {
         const row = ev.tactics[editingRowIndex];
         row.mecha = m.name;
         row.hp = m.hp;
-        // 機体選択時に実コストの初期値も自動でDBコストにする
         const playerRank = ev.members[row.player] ? ev.members[row.player].rank : null;
         const addCost = playerRank ? (RANK_MASTER[playerRank] || 0) : 0;
         row.actualCost = m.cost + addCost;
 
-        saveEventsToStorage();
+        saveEventsToServer();
         renderTacticsTable(ev);
     }
     closeModal();
 }
 
-// 統計データ計算 ＆ フッター集計行の描画
 function calculateStats() {
     const ev = events.find(e => e.id === currentEventId);
     if (!ev) return;
@@ -558,7 +620,6 @@ function calculateStats() {
     document.getElementById('stat-total-hp').innerText = totalHp.toLocaleString();
     document.getElementById('stat-cost').innerText = totalCalcCost.toLocaleString();
 
-    // テーブルフッター（合計行）
     const tfoot = document.getElementById('tfoot-tactics');
     tfoot.innerHTML = `
         <tr>
@@ -567,7 +628,7 @@ function calculateStats() {
             <td>${totalActualCost.toLocaleString()}</td>
             <td colspan="3"></td>
             <td>${totalHp.toLocaleString()}</td>
-            <td colspan="11"></td>
+            <td colspan="13"></td>
             ${[...Array(8)].map((_, i) => `<td>${sumCols['c'+(i+1)].toLocaleString()}</td>`).join('')}
             ${[...Array(3)].map((_, i) => `<td>${sumCols['r'+(i+1)].toLocaleString()}</td>`).join('')}
         </tr>
@@ -589,11 +650,11 @@ function renderSummaryCards() {
         const card = document.createElement('div');
         card.className = 'summary-item-card';
         const traitsStr = [
-            r.t1 ? `${r.t1}(Lv${r.l1})` : '',
-            r.t2 ? `${r.t2}(Lv${r.l2})` : '',
-            r.t3 ? `${r.t3}(Lv${r.l3})` : '',
-            r.t4 ? `${r.t4}(Lv${r.l4})` : '',
-            r.t5 ? `${r.t5}(Lv${r.l5})` : ''
+            r.t1 ? `${r.t1}(${r.l1})` : '',
+            r.t2 ? `${r.t2}(${r.l2})` : '',
+            r.t3 ? `${r.t3}(${r.l3})` : '',
+            r.t4 ? `${r.t4}(${r.l4})` : '',
+            r.t5 ? `${r.t5}(${r.l5})` : ''
         ].filter(Boolean).join(', ');
 
         card.innerHTML = `
@@ -605,7 +666,7 @@ function renderSummaryCards() {
             <div><strong>武装:</strong> ${r.weapon || '-'} (射程: ${r.minR}〜${r.maxR})</div>
             <div><strong>装備:</strong> ${r.equip || '-'}</div>
             <div style="margin-top:8px; color:var(--text-muted); font-size:0.8rem;">
-                個人戦術: ${r.str || '-'}<br>
+                個人戦術: ${r.strPre || '-'} / ${r.strPost || '-'}<br>
                 特性: ${traitsStr || '-'}
             </div>
         `;
