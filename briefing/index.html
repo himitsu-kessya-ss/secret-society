@@ -319,7 +319,7 @@
     <div id="modal-create" class="modal hidden">
         <h3>新規イベント起票</h3>
         <p class="sub-title">管理者パスワードを入力してください。</p>
-        <input type="password" id="input-admin-pw" placeholder="管理者PW (p@ssw0rd)">
+        <input type="password" id="input-admin-pw" placeholder="管理者パスワード">
         <input type="text" id="input-event-title" placeholder="イベント名 (例: 10月勢力戦)">
         <input type="password" id="input-event-pw" placeholder="入室用パスワード設定">
         <div style="display: flex; gap: 10px; justify-content: flex-end;">
@@ -379,20 +379,17 @@
 
     // 初期化
     window.onload = function() {
-        // イベント1のサンプルデータ構築
         initDefaultEventData(events[0]);
         renderEventList();
     };
 
     function initDefaultEventData(ev) {
-        // デフォルトメンバー設定
         DEFAULT_PLAYERS.forEach((p, idx) => {
             ev.members[p] = { exp: 150 + idx * 10, rank: "曹長" };
         });
         ev.members["Oro🍊min"] = { exp: 294, rank: "特務准尉" };
         ev.members["Halbert"] = { exp: 265, rank: "先任曹長" };
 
-        // デフォルト作戦行
         ev.tactics = [
             { reg: true, tactic: "DA", turn: 10, player: "Oro🍊min", mecha: "ガンダム", weapon: "★フルバースト", minR: 20, maxR: 70, equip: "プロペラントタンク", str: "移動しない攻撃", t1: "集中10", t2: "機転10" },
             { reg: true, tactic: "DA", turn: 1, player: "Yggdrasill", mecha: "ガリルナガン", weapon: "アキシオン・アッシャー", minR: 50, maxR: 90, equip: "プロペラントタンク", str: "足止め攻撃", t1: "集中10", t2: "繊細10" }
@@ -434,6 +431,9 @@
     }
 
     function openCreateModal() {
+        document.getElementById('input-admin-pw').value = '';
+        document.getElementById('input-event-title').value = '';
+        document.getElementById('input-event-pw').value = '';
         document.getElementById('modal-overlay').classList.remove('hidden');
         document.getElementById('modal-create').classList.remove('hidden');
     }
@@ -548,7 +548,7 @@
         const ev = events.find(e => e.id === currentEventId);
         ev.members[pName].rank = newRank;
         renderMemberTable(ev);
-        renderTacticsTable(ev); // 作戦の加算コストも更新
+        renderTacticsTable(ev);
     }
 
     // TAB 1: 作戦立案メイン テーブル描画
@@ -575,7 +575,6 @@
     function createTacticsTr(row, no, ev) {
         const tr = document.createElement('tr');
 
-        // 階級コスト＆機体コスト連携
         const playerRank = ev.members[row.player] ? ev.members[row.player].rank : null;
         const addCost = playerRank ? (RANK_MASTER[playerRank] || 0) : 0;
         const mechaData = MECHA_DB[row.mecha] || { hp: 0, cost: 0 };
