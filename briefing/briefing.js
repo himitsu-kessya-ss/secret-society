@@ -32,6 +32,22 @@ window.onload = async function() {
     await loadMechaCsv();
     loadEventsFromStorage();
     renderEventList();
+
+    // 複数タブ（別画面）でのリアルタイム自動同期リスナー
+    window.addEventListener('storage', (e) => {
+        if (e.key === STORAGE_KEY) {
+            loadEventsFromStorage();
+            if (currentEventId) {
+                const ev = events.find(ev => ev.id === currentEventId);
+                if (ev) {
+                    renderMemberTable(ev);
+                    renderTacticsTable(ev);
+                }
+            } else {
+                renderEventList();
+            }
+        }
+    });
 };
 
 function loadEventsFromStorage() {
@@ -59,7 +75,6 @@ function saveEventsToStorage() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
 }
 
-// CSV読み込み関数 (1列目: 機体No., 2列目: 機体名, 4列目: HP, 18列目: コスト)
 async function loadMechaCsv() {
     try {
         const response = await fetch('GL)機体一覧 - 機体一覧.csv');
@@ -75,10 +90,10 @@ async function loadMechaCsv() {
             const cols = line.split(',').map(col => col.replace(/^"|"$/g, '').trim());
 
             if (cols.length >= 18) {
-                const mechaNo = cols[0];   // 1列目：機体No.
-                const mechaName = cols[1]; // 2列目：機体名
-                const hpVal = Number(cols[3]) || 0;     // 4列目：HP
-                const costVal = Number(cols[17]) || 0;  // 18列目：コスト
+                const mechaNo = cols[0];   
+                const mechaName = cols[1]; 
+                const hpVal = Number(cols[3]) || 0;     
+                const costVal = Number(cols[17]) || 0;  
 
                 if (mechaName) {
                     MECHA_DB[mechaName] = { hp: hpVal, cost: costVal, no: mechaNo };
@@ -86,9 +101,7 @@ async function loadMechaCsv() {
                 }
             }
         });
-        console.log("機体CSV読み込み完了（1列目No.対応）:", mechaListArray.length + "件");
     } catch (err) {
-        console.warn("CSV読み込みエラー。フォールバック使用", err);
         MECHA_DB = {
             "ガンダム": { hp: 384, cost: 38, no: "1" },
             "バンシィ": { hp: 576, cost: 64, no: "2" },
@@ -106,10 +119,10 @@ function initDefaultEventData(ev) {
     ev.members["Halbert"] = { exp: 265, rank: "先任曹長" };
 
     ev.tactics = [
-        { reg: true, tactic: "DA", turn: 10, player: "Oro🍊min", mecha: "ガンダム", hp: 501, weapon: "★フルバースト", minR: 20, maxR: 70, equip: "プロペラントタンク", str: "移動しない攻撃", 
+        { reg: true, tactic: "DA", actualCost: 38, turn: 10, player: "Oro🍊min", mecha: "ガンダム", hp: 501, weapon: "★フルバースト", minR: 20, maxR: 70, equip: "プロペラントタンク", str: "移動しない攻撃", 
           t1: "集中", l1: 10, t2: "機転", l2: 10, t3: "", l3: 0, t4: "", l4: 0, t5: "", l5: 0, 
           c1:0, c2:0, c3:0, c4:0, c5:0, c6:0, c7:0, c8:0, r1:0, r2:0, r3:0 },
-        { reg: true, tactic: "DA", turn: 1, player: "Yggdrasill", mecha: "ガリルナガン", hp: 696, weapon: "アキシオン・アッシャー", minR: 50, maxR: 90, equip: "プロペラントタンク", str: "足止め攻撃", 
+        { reg: true, tactic: "DA", actualCost: 72, turn: 1, player: "Yggdrasill", mecha: "ガリルナガン", hp: 696, weapon: "アキシオン・アッシャー", minR: 50, maxR: 90, equip: "プロペラントタンク", str: "足止め攻撃", 
           t1: "集中", l1: 10, t2: "繊細", l2: 10, t3: "偵察", l3: 7, t4: "", l4: 0, t5: "", l5: 0, 
           c1:0, c2:0, c3:0, c4:0, c5:0, c6:0, c7:0, c8:0, r1:0, r2:0, r3:0 }
     ];
@@ -209,7 +222,7 @@ function loadEventSheet(ev) {
     document.getElementById('btn-back-main').classList.remove('hidden');
 
     document.getElementById('sheet-event-title').innerText = ev.title;
-    document.getElementById('sheet-event-desc').innerText = `イベントID: ${ev.id} | 作戦共有中 (自動保存有効)`;
+    document.getElementById('sheet-event-desc').innerText = `イベントID: ${ev.id} | 作戦共有中 (自動保存＆リアルタイム同期有効)`;
 
     renderMemberTable(ev);
     renderTacticsTable(ev);
@@ -317,7 +330,7 @@ function renderTacticsTable(ev) {
 function addTacticsRow() {
     const ev = events.find(e => e.id === currentEventId);
     ev.tactics.push({
-        reg: false, tactic: "AA", turn: 1, player: "", mecha: "", hp: 0, weapon: "", minR: 0, maxR: 20, equip: "", str: "", 
+        reg: false, tactic: "AA", actualCost: 0, turn: 1, player: "", mecha: "", hp: 0, weapon: "", minR: 0, maxR: 20, equip: "", str: "", 
         t1: "", l1: 0, t2: "", l2: 0, t3: "", l3: 0, t4: "", l4: 0, t5: "", l5: 0, 
         c1:0, c2:0, c3:0, c4:0, c5:0, c6:0, c7:0, c8:0, r1:0, r2:0, r3:0
     });
@@ -335,6 +348,7 @@ function createTacticsTr(row, no, ev) {
     const dbCost = row.mecha ? mechaData.cost : '#N/A';
     const dbHp = row.mecha ? mechaData.hp : '#N/A';
 
+    // 役割別カラークラス
     let tacticClass = "";
     if (row.tactic) {
         const lastChar = row.tactic.slice(-1).toUpperCase();
@@ -360,7 +374,7 @@ function createTacticsTr(row, no, ev) {
         <td><input type="checkbox" ${row.reg ? 'checked' : ''} onchange="row.reg = this.checked; saveEventsToStorage(); calculateStats();"></td>
         <td>${no}</td>
         <td>
-            <select class="${tacticClass}" onchange="row.tactic = this.value; saveEventsToStorage(); renderTacticsTable(ev);">
+            <select class="${tacticClass}" onchange="changeTactic(this, ${no-1})">
                 ${TACTICS_MASTER.map(t => `<option value="${t}" ${t === row.tactic ? 'selected' : ''}>${t}</option>`).join('')}
             </select>
         </td>
@@ -372,6 +386,7 @@ function createTacticsTr(row, no, ev) {
             </select>
         </td>
         <td style="color:var(--accent); font-weight:bold;">${calcCost || '#N/A'}</td>
+        <td><input type="number" value="${row.actualCost !== undefined ? row.actualCost : calcCost}" style="width:65px;" onchange="row.actualCost = Number(this.value); saveEventsToStorage(); calculateStats();"></td>
         <td>
             <button class="btn btn-secondary" style="padding: 4px 8px; font-size:0.8rem; width:100%; text-align:left; overflow:hidden; text-overflow:ellipsis;" onclick="openMechaSearchModal(${no-1})">
                 ${row.mecha || '機体を検索...'}
@@ -382,7 +397,7 @@ function createTacticsTr(row, no, ev) {
         <td><input type="number" value="${row.hp || (mechaData.hp || 0)}" style="width:65px;" onchange="row.hp = Number(this.value); saveEventsToStorage(); calculateStats();"></td>
         <td><input type="text" value="${row.weapon}" onchange="row.weapon = this.value; saveEventsToStorage();" style="width:130px;"></td>
         
-        <!-- 最低・最大射程（インプット時に即座にバーを描画更新） -->
+        <!-- 最低・最大射程 -->
         <td><input type="number" min="0" max="99" value="${row.minR}" style="width:50px;" oninput="updateRangeBar(this, ${no-1}, 'min')" onchange="row.minR = Number(this.value); saveEventsToStorage();"></td>
         <td><input type="number" min="0" max="99" value="${row.maxR}" style="width:50px;" oninput="updateRangeBar(this, ${no-1}, 'max')" onchange="row.maxR = Number(this.value); saveEventsToStorage();"></td>
         <td>
@@ -394,14 +409,12 @@ function createTacticsTr(row, no, ev) {
         <td><input type="text" value="${row.equip}" onchange="row.equip = this.value; saveEventsToStorage();" style="width:110px;"></td>
         <td><input type="text" value="${row.str}" onchange="row.str = this.value; saveEventsToStorage();" style="width:110px;"></td>
         
-        <!-- 特性1〜5 と LV -->
         <td>${traitSelectHtml(row.t1, 1)} ${lvSelectHtml(row.l1, 'l1')}</td>
         <td>${traitSelectHtml(row.t2, 2)} ${lvSelectHtml(row.l2, 'l2')}</td>
         <td>${traitSelectHtml(row.t3, 3)} ${lvSelectHtml(row.l3, 'l3')}</td>
         <td>${traitSelectHtml(row.t4, 4)} ${lvSelectHtml(row.l4, 'l4')}</td>
         <td>${traitSelectHtml(row.t5, 5)} ${lvSelectHtml(row.l5, 'l5')}</td>
 
-        <!-- 補〜耐ヒ (c1〜c8, r1〜r3) -->
         ${[...Array(8)].map((_, i) => `<td><input type="number" value="${row['c'+(i+1)] || 0}" style="width:38px;" onchange="row.c${i+1} = Number(this.value); saveEventsToStorage(); calculateStats();"></td>`).join('')}
         ${[...Array(3)].map((_, i) => `<td><input type="number" value="${row['r'+(i+1)] || 0}" style="width:38px;" onchange="row.r${i+1} = Number(this.value); saveEventsToStorage(); calculateStats();"></td>`).join('')}
     `;
@@ -409,7 +422,22 @@ function createTacticsTr(row, no, ev) {
     return tr;
 }
 
-// 射程バーのリアルタイム反映処理
+// 団体戦術変更時、フォーカスを失わずに即座に背景色を切り替える
+function changeTactic(selectEl, rowIndex) {
+    const ev = events.find(e => e.id === currentEventId);
+    const val = selectEl.value;
+    ev.tactics[rowIndex].tactic = val;
+    saveEventsToStorage();
+
+    selectEl.className = "";
+    const lastChar = val.slice(-1).toUpperCase();
+    if (lastChar === 'A') selectEl.classList.add('tactic-a');
+    else if (lastChar === 'D') selectEl.classList.add('tactic-d');
+    else if (lastChar === 'S') selectEl.classList.add('tactic-s');
+
+    calculateStats();
+}
+
 function updateRangeBar(inputEl, rowIndex, type) {
     const ev = events.find(e => e.id === currentEventId);
     const row = ev.tactics[rowIndex];
@@ -427,7 +455,6 @@ function updateRangeBar(inputEl, rowIndex, type) {
     }
 }
 
-// 特性変更ハンドラ
 function updateTrait(rowIndex, traitNum, newVal) {
     const ev = events.find(e => e.id === currentEventId);
     const row = ev.tactics[rowIndex];
@@ -445,7 +472,6 @@ function updateTraitLv(rowIndex, lvKey, val) {
     saveEventsToStorage();
 }
 
-// 機体検索モーダル関連 (1列目の機体No. または 機体名であいまい検索)
 function openMechaSearchModal(rowIndex) {
     editingRowIndex = rowIndex;
     document.getElementById('input-mecha-query').value = '';
@@ -484,6 +510,11 @@ function selectMecha(m) {
         const row = ev.tactics[editingRowIndex];
         row.mecha = m.name;
         row.hp = m.hp;
+        // 機体選択時に実コストの初期値も自動でDBコストにする
+        const playerRank = ev.members[row.player] ? ev.members[row.player].rank : null;
+        const addCost = playerRank ? (RANK_MASTER[playerRank] || 0) : 0;
+        row.actualCost = m.cost + addCost;
+
         saveEventsToStorage();
         renderTacticsTable(ev);
     }
@@ -495,7 +526,7 @@ function calculateStats() {
     const ev = events.find(e => e.id === currentEventId);
     if (!ev) return;
 
-    let count = 0, checkedHp = 0, totalHp = 0, totalCost = 0;
+    let count = 0, checkedHp = 0, totalHp = 0, totalCalcCost = 0, totalActualCost = 0;
     
     let sumCols = {};
     for(let i=1; i<=8; i++) sumCols['c'+i] = 0;
@@ -505,13 +536,17 @@ function calculateStats() {
         const hpVal = Number(r.hp || 0);
         totalHp += hpVal;
 
+        const mechaData = MECHA_DB[r.mecha] || { cost: 0 };
+        const playerRank = ev.members[r.player] ? ev.members[r.player].rank : null;
+        const addCost = playerRank ? (RANK_MASTER[playerRank] || 0) : 0;
+        const calcC = (r.mecha ? mechaData.cost : 0) + addCost;
+        const actualC = r.actualCost !== undefined ? Number(r.actualCost) : calcC;
+
         if (r.reg) {
             count++;
             checkedHp += hpVal;
-            const mechaData = MECHA_DB[r.mecha] || { cost: 0 };
-            const playerRank = ev.members[r.player] ? ev.members[r.player].rank : null;
-            const addCost = playerRank ? (RANK_MASTER[playerRank] || 0) : 0;
-            totalCost += (r.mecha ? mechaData.cost : 0) + addCost;
+            totalCalcCost += calcC;
+            totalActualCost += actualC;
         }
 
         for(let i=1; i<=8; i++) sumCols['c'+i] += Number(r['c'+i] || 0);
@@ -521,12 +556,16 @@ function calculateStats() {
     document.getElementById('stat-count').innerText = count;
     document.getElementById('stat-hp').innerText = checkedHp.toLocaleString();
     document.getElementById('stat-total-hp').innerText = totalHp.toLocaleString();
-    document.getElementById('stat-cost').innerText = totalCost.toLocaleString();
+    document.getElementById('stat-cost').innerText = totalCalcCost.toLocaleString();
 
+    // テーブルフッター（合計行）
     const tfoot = document.getElementById('tfoot-tactics');
     tfoot.innerHTML = `
         <tr>
-            <td colspan="9" style="text-align: right; padding-right: 15px;">合計値：</td>
+            <td colspan="5" style="text-align: right; padding-right: 15px;">合計値：</td>
+            <td>${totalCalcCost.toLocaleString()}</td>
+            <td>${totalActualCost.toLocaleString()}</td>
+            <td colspan="3"></td>
             <td>${totalHp.toLocaleString()}</td>
             <td colspan="11"></td>
             ${[...Array(8)].map((_, i) => `<td>${sumCols['c'+(i+1)].toLocaleString()}</td>`).join('')}
@@ -562,7 +601,7 @@ function renderSummaryCards() {
                 <span>${r.player || '未設定'} (${r.tactic})</span>
                 <span>登場 T: ${r.turn}</span>
             </div>
-            <div><strong>機体:</strong> ${r.mecha || '-'} (HP: ${r.hp})</div>
+            <div><strong>機体:</strong> ${r.mecha || '-'} (実HP: ${r.hp})</div>
             <div><strong>武装:</strong> ${r.weapon || '-'} (射程: ${r.minR}〜${r.maxR})</div>
             <div><strong>装備:</strong> ${r.equip || '-'}</div>
             <div style="margin-top:8px; color:var(--text-muted); font-size:0.8rem;">
