@@ -26,12 +26,22 @@ const battleEvents = [
         ]
     },
     {
-        eventName: "過去の大会・その他のイベント",
+        eventName: "関係者限定団体戦（2026年10月24日開催）",
         battles: [
             {
-                roundName: "サンプル大会（例：春の陣）",
-                url: "#",
-                description: "大会のサマリや詳細へのリンク"
+                roundName: "大会概要",
+                url: "battles/関係者限定団体戦261024/summary.html",
+                description: "レギュなど大会概要"
+            },
+            {
+                roundName: "大会結果まとめ",
+                url: "battles/関係者限定団体戦261024/summary.html",
+                description: "勝敗やスコアなどの結果データ"
+            },
+            {
+                roundName: "戦闘ログ (1〜100ターン)",
+                url: "battles/関係者限定団体戦261024/1-100.html",
+                description: "戦闘詳細"
             }
         ]
     }
