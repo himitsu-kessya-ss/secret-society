@@ -24,11 +24,9 @@
             padding: 20px;
         }
 
-        /* 共通コンテナ */
-        .container { max-width: 1400px; margin: 0 auto; }
+        .container { max-width: 100%; margin: 0 auto; }
         .hidden { display: none !important; }
 
-        /* ヘッダー */
         header {
             display: flex;
             justify-content: space-between;
@@ -40,7 +38,6 @@
         h1 { color: var(--accent); font-size: 1.8rem; letter-spacing: 2px; }
         .sub-title { color: var(--text-muted); font-size: 0.85rem; }
 
-        /* ボタンデザイン */
         .btn {
             background-color: var(--bg-card);
             color: var(--accent);
@@ -56,6 +53,15 @@
             color: var(--bg-main);
             box-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
         }
+        .btn-danger {
+            border-color: #ff4d4d;
+            color: #ff4d4d;
+        }
+        .btn-danger:hover {
+            background-color: #ff4d4d;
+            color: #fff;
+            box-shadow: 0 0 10px rgba(255, 77, 77, 0.5);
+        }
         .btn-secondary {
             border-color: var(--border);
             color: var(--text-muted);
@@ -65,7 +71,6 @@
             color: #fff;
         }
 
-        /* カード・コンテナ */
         .card {
             background-color: var(--bg-card);
             border: 1px solid var(--border);
@@ -74,7 +79,6 @@
             margin-bottom: 20px;
         }
 
-        /* イベントリスト (Briefing Room) */
         .event-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -95,7 +99,6 @@
             border-color: var(--accent);
         }
 
-        /* タブ切替 (作戦メイン vs 要点サマリー) */
         .tab-nav {
             display: flex;
             gap: 10px;
@@ -116,18 +119,18 @@
             border-color: var(--accent);
         }
 
-        /* テーブル設定 */
         .table-responsive { overflow-x: auto; }
         table {
             width: 100%;
             border-collapse: collapse;
             font-size: 0.85rem;
-            min-width: 1200px;
+            min-width: 1600px;
         }
         th, td {
             border: 1px solid var(--border);
             padding: 6px 8px;
             text-align: center;
+            white-space: nowrap;
         }
         th { background-color: #0d1522; color: var(--accent); font-weight: 600; }
         input, select {
@@ -138,15 +141,14 @@
             padding: 5px;
             border-radius: 3px;
         }
-        input[type="checkbox"] { width: auto; transform: scale(1.2); }
+        input[type="checkbox"] { width: auto; transform: scale(1.2); cursor: pointer; }
 
-        /* 射程レンジ用スパークラインバー */
         .range-bar-container {
-            width: 100px;
-            height: 12px;
+            width: 90px;
+            height: 10px;
             background: #0d1522;
             border: 1px solid var(--border);
-            border-radius: 6px;
+            border-radius: 5px;
             position: relative;
             margin: 0 auto;
             overflow: hidden;
@@ -155,10 +157,9 @@
             position: absolute;
             height: 100%;
             background: linear-gradient(90deg, var(--accent), var(--accent-green));
-            border-radius: 6px;
+            border-radius: 5px;
         }
 
-        /* 要点サマリーカード */
         .summary-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -180,7 +181,6 @@
             margin-bottom: 10px;
         }
 
-        /* モーダル (PW入力・起票) */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -210,30 +210,22 @@
         <button id="btn-back-main" class="btn btn-secondary hidden" onclick="showMainPage()">← ブリーフィングルームへ戻る</button>
     </header>
 
-    <!-- ========================================== -->
-    <!-- ① メインページ: BRIEFING ROOM (イベント一覧) -->
-    <!-- ========================================== -->
+    <!-- ① メインページ (イベント一覧) -->
     <div id="page-briefing-room">
         <div class="card" style="display: flex; justify-content: space-between; align-items: center;">
             <h2>作戦イベント一覧</h2>
             <button class="btn" onclick="openCreateModal()">＋ 新規イベント起票（管理者）</button>
         </div>
-
-        <div class="event-grid" id="event-list">
-            <!-- 動的にイベントカードが追加されます -->
-        </div>
+        <div class="event-grid" id="event-list"></div>
     </div>
 
-    <!-- ========================================== -->
-    <!-- ② 配下ページ: イベント別 作戦シート -->
-    <!-- ========================================== -->
+    <!-- ② 配下ページ (イベント別作戦シート) -->
     <div id="page-event-sheet" class="hidden">
         <div class="card">
             <h2 id="sheet-event-title" style="color: var(--accent); margin-bottom: 5px;">-</h2>
             <p id="sheet-event-desc" class="sub-title">-</p>
         </div>
 
-        <!-- タブナビゲーション -->
         <div class="tab-nav">
             <button class="tab-btn active" onclick="switchTab('plan')">⚔️ 作戦立案（メイン）</button>
             <button class="tab-btn" onclick="switchTab('member')">👤 参加メンバー・階級設定</button>
@@ -243,8 +235,8 @@
         <!-- TAB 1: 作戦立案メイン -->
         <div id="tab-plan" class="tab-content">
             <div class="card" style="margin-bottom: 15px; display: flex; gap: 20px; align-items: center;">
-                <div>登録数: <span id="stat-count" style="color:var(--accent); font-weight:bold;">0</span> / 9</div>
-                <div>合計HP: <span id="stat-hp" style="color:var(--accent-green); font-weight:bold;">0</span></div>
+                <div>登録機体数: <span id="stat-count" style="color:var(--accent); font-weight:bold;">0</span></div>
+                <div>合計 HP: <span id="stat-hp" style="color:var(--accent-green); font-weight:bold;">0</span></div>
                 <div>合計コスト: <span id="stat-cost" style="color:var(--accent-warn); font-weight:bold;">0</span></div>
             </div>
 
@@ -253,34 +245,50 @@
                     <thead>
                         <tr>
                             <th>登録</th>
-                            <th>No</th>
+                            <th>No.</th>
                             <th>団体戦術</th>
                             <th>ターン</th>
                             <th>プレイヤー名</th>
-                            <th>機体名</th>
                             <th>目安コスト</th>
+                            <th>機体名</th>
+                            <th>DBコスト</th>
+                            <th>DB HP</th>
                             <th>HP</th>
                             <th>武器</th>
-                            <th>射程（視覚化）</th>
+                            <th>最低射程</th>
+                            <th>最大射程</th>
+                            <th>射程範囲</th>
                             <th>装備</th>
                             <th>個人戦術</th>
                             <th>特性1</th>
                             <th>特性2</th>
+                            <th>特性3</th>
+                            <th>特性4</th>
+                            <th>特性5</th>
+                            <th>補</th>
+                            <th>解</th>
+                            <th>回</th>
+                            <th>麻</th>
+                            <th>E回</th>
+                            <th>ミ</th>
+                            <th>爆</th>
+                            <th>時</th>
+                            <th>耐実</th>
+                            <th>耐ビ</th>
+                            <th>耐ヒ</th>
                         </tr>
                     </thead>
-                    <tbody id="tbody-tactics">
-                        <!-- 動的に作戦行が追加されます -->
-                    </tbody>
+                    <tbody id="tbody-tactics"></tbody>
                 </table>
-                <button class="btn" style="margin-top: 15px;" onclick="addTacticsRow()">＋ メンバー枠を追加</button>
+                <button class="btn" style="margin-top: 15px;" onclick="addTacticsRow()">＋ 作戦行を追加</button>
             </div>
         </div>
 
         <!-- TAB 2: 参加メンバー・階級設定 -->
         <div id="tab-member" class="tab-content hidden">
             <div class="card">
-                <h3>このイベント時点のプレイヤー情報</h3>
-                <p class="sub-title" style="margin-bottom: 15px;">ここで設定した階級に基づき加算コストが自動更新されます。</p>
+                <h3>参加メンバー・階級管理</h3>
+                <p class="sub-title" style="margin-bottom: 15px;">メンバーの追加、削除、およびイベント時点の階級変更が行えます。</p>
                 <div class="table-responsive">
                     <table style="min-width: 600px; max-width: 800px;">
                         <thead>
@@ -289,38 +297,33 @@
                                 <th>熟練度</th>
                                 <th>階級</th>
                                 <th>加算コスト</th>
+                                <th>操作</th>
                             </tr>
                         </thead>
-                        <tbody id="tbody-members">
-                            <!-- メンバー階級設定行 -->
-                        </tbody>
+                        <tbody id="tbody-members"></tbody>
                     </table>
                 </div>
+                <button class="btn" style="margin-top: 15px;" onclick="addMemberRow()">＋ メンバーを追加</button>
             </div>
         </div>
 
-        <!-- TAB 3: 作戦要点サマリー -->
+        <!-- TAB 3: 要点サマリー -->
         <div id="tab-summary" class="tab-content hidden">
             <div class="card">
-                <h3 style="margin-bottom: 15px;">🎯 登録メンバーの作戦要点</h3>
-                <div class="summary-grid" id="summary-cards">
-                    <!-- 要点カードが動的に生成されます -->
-                </div>
+                <h3 style="margin-bottom: 15px;">🎯 登録メンバーの作戦要点サマリー</h3>
+                <div class="summary-grid" id="summary-cards"></div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- ========================================== -->
-<!-- モーダルダイアログ (PW入力 / イベント起票) -->
-<!-- ========================================== -->
+<!-- モーダルダイアログ -->
 <div id="modal-overlay" class="modal-overlay hidden">
-    <!-- 管理者起票モーダル -->
     <div id="modal-create" class="modal hidden">
         <h3>新規イベント起票</h3>
         <p class="sub-title">管理者パスワードを入力してください。</p>
         <input type="password" id="input-admin-pw" placeholder="管理者パスワード">
-        <input type="text" id="input-event-title" placeholder="イベント名 (例: 10月勢力戦)">
+        <input type="text" id="input-event-title" placeholder="イベント名 (例: 11月勢力戦)">
         <input type="password" id="input-event-pw" placeholder="入室用パスワード設定">
         <div style="display: flex; gap: 10px; justify-content: flex-end;">
             <button class="btn btn-secondary" onclick="closeModal()">キャンセル</button>
@@ -328,7 +331,6 @@
         </div>
     </div>
 
-    <!-- 入室PWモーダル -->
     <div id="modal-auth" class="modal hidden">
         <h3 id="auth-event-title">イベント入室</h3>
         <p class="sub-title">開示された入室パスワードを入力してください。</p>
@@ -341,20 +343,16 @@
 </div>
 
 <script>
-    // ----------------------------------------------------
-    // マスタデータ（スプレッドシートより抽出）
-    // ----------------------------------------------------
     const RANK_MASTER = {
         "民間人": 0, "志願兵": 1, "二等兵": 2, "一等兵": 3, "上等兵": 4, "兵長": 5,
         "上級兵長": 6, "伍長": 7, "上級伍長": 8, "軍曹": 9, "上級軍曹": 10, "先任軍曹": 11,
         "曹長": 12, "上級曹長": 13, "先任曹長": 14, "准尉": 15, "上級准尉": 16, "特務准尉": 17,
         "少尉": 18, "中尉": 19, "上級中尉": 20, "大尉": 21, "特務大尉": 22, "戦術大尉": 23,
-        "少佐": 24, "作戦少佐": 25, "特殊作戦少佐": 26, "中佐": 27, "特務中佐": 28, "大佐": 29, "準将": 30
+        "少佐": 24, "作戦少佐": 25, "特殊作戦少佐": 26, "中佐": 27, "特務中佐": 28, "大佐": 29, "准将": 30
     };
 
     const TACTICS_MASTER = ["NS", "AS", "DS", "SS", "NA", "AA", "DA", "SA", "ND", "AD", "DD", "SD", "LA", "LD", "LS"];
 
-    // 機体データベース（サンプル抽出）
     const MECHA_DB = {
         "ガンダム": { hp: 384, cost: 38 },
         "バンシィ": { hp: 576, cost: 64 },
@@ -366,18 +364,12 @@
         "バルバタウロス": { hp: 1038, cost: 85 }
     };
 
-    // ----------------------------------------------------
-    // アプリケーション状態管理
-    // ----------------------------------------------------
     let events = [
         { id: 'ev1', title: '26.10 勢力戦', pass: '1234', members: {}, tactics: [] }
     ];
     let currentEventId = null;
-
-    // デフォルトの初期プレイヤーリスト
     const DEFAULT_PLAYERS = ["Oro🍊min", "Halbert", "Yggdrasill", "スパイク", "キッド", "ボブ", "リーア", "ハチワレ", "ナイト"];
 
-    // 初期化
     window.onload = function() {
         initDefaultEventData(events[0]);
         renderEventList();
@@ -391,14 +383,11 @@
         ev.members["Halbert"] = { exp: 265, rank: "先任曹長" };
 
         ev.tactics = [
-            { reg: true, tactic: "DA", turn: 10, player: "Oro🍊min", mecha: "ガンダム", weapon: "★フルバースト", minR: 20, maxR: 70, equip: "プロペラントタンク", str: "移動しない攻撃", t1: "集中10", t2: "機転10" },
-            { reg: true, tactic: "DA", turn: 1, player: "Yggdrasill", mecha: "ガリルナガン", weapon: "アキシオン・アッシャー", minR: 50, maxR: 90, equip: "プロペラントタンク", str: "足止め攻撃", t1: "集中10", t2: "繊細10" }
+            { reg: true, tactic: "DA", turn: 10, player: "Oro🍊min", mecha: "ガンダム", hp: 501, weapon: "★フルバースト", minR: 20, maxR: 70, equip: "プロペラントタンク", str: "移動しない攻撃", t1: "集中10", t2: "機転10", t3:"", t4:"", t5:"", c1:0, c2:0, c3:0, c4:0, c5:0, c6:0, c7:0, c8:0, r1:0, r2:0, r3:0 },
+            { reg: true, tactic: "DA", turn: 1, player: "Yggdrasill", mecha: "ガリルナガン", hp: 696, weapon: "アキシオン・アッシャー", minR: 50, maxR: 90, equip: "プロペラントタンク", str: "足止め攻撃", t1: "集中10", t2: "繊細10", t3:"偵察7", t4:"", t5:"", c1:0, c2:0, c3:0, c4:0, c5:0, c6:0, c7:0, c8:0, r1:0, r2:0, r3:0 }
         ];
     }
 
-    // ----------------------------------------------------
-    // メインページ（ブリーフィングルーム）制御
-    // ----------------------------------------------------
     function renderEventList() {
         const listEl = document.getElementById('event-list');
         listEl.innerHTML = '';
@@ -421,9 +410,6 @@
         currentEventId = null;
     }
 
-    // ----------------------------------------------------
-    // モーダル・認証処理
-    // ----------------------------------------------------
     function closeModal() {
         document.getElementById('modal-overlay').classList.add('hidden');
         document.getElementById('modal-create').classList.add('hidden');
@@ -487,9 +473,6 @@
         }
     }
 
-    // ----------------------------------------------------
-    // イベントシート画面 処理
-    // ----------------------------------------------------
     function loadEventSheet(ev) {
         document.getElementById('page-briefing-room').classList.add('hidden');
         document.getElementById('page-event-sheet').classList.remove('hidden');
@@ -520,7 +503,6 @@
         }
     }
 
-    // TAB 2: メンバー階級設定 テーブル描画
     function renderMemberTable(ev) {
         const tbody = document.getElementById('tbody-members');
         tbody.innerHTML = '';
@@ -531,7 +513,7 @@
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><strong>${pName}</strong></td>
+                <td><input type="text" value="${pName}" onchange="renameMember('${pName}', this.value)"></td>
                 <td><input type="number" value="${m.exp}" onchange="ev.members['${pName}'].exp = this.value"></td>
                 <td>
                     <select onchange="updateMemberRank('${pName}', this.value)">
@@ -539,9 +521,41 @@
                     </select>
                 </td>
                 <td style="color:var(--accent); font-weight:bold;">+${rankCost}</td>
+                <td><button class="btn btn-danger" style="padding: 2px 8px; font-size:0.75rem;" onclick="deleteMember('${pName}')">削除</button></td>
             `;
             tbody.appendChild(tr);
         });
+    }
+
+    function addMemberRow() {
+        const ev = events.find(e => e.id === currentEventId);
+        let newName = "新規メンバー";
+        let count = 1;
+        while(ev.members[newName]) {
+            newName = `新規メンバー(${count++})`;
+        }
+        ev.members[newName] = { exp: 100, rank: "一等兵" };
+        renderMemberTable(ev);
+    }
+
+    function renameMember(oldName, newName) {
+        const ev = events.find(e => e.id === currentEventId);
+        if(!newName || ev.members[newName]) {
+            alert('無効な名前か、既に存在する名前です。');
+            renderMemberTable(ev);
+            return;
+        }
+        ev.members[newName] = ev.members[oldName];
+        delete ev.members[oldName];
+        // 既存の作戦データ側のプレイヤー名も追従
+        ev.tactics.forEach(t => { if(t.player === oldName) t.player = newName; });
+        renderMemberTable(ev);
+    }
+
+    function deleteMember(pName) {
+        const ev = events.find(e => e.id === currentEventId);
+        delete ev.members[pName];
+        renderMemberTable(ev);
     }
 
     function updateMemberRank(pName, newRank) {
@@ -551,7 +565,6 @@
         renderTacticsTable(ev);
     }
 
-    // TAB 1: 作戦立案メイン テーブル描画
     function renderTacticsTable(ev) {
         const tbody = document.getElementById('tbody-tactics');
         tbody.innerHTML = '';
@@ -567,115 +580,4 @@
     function addTacticsRow() {
         const ev = events.find(e => e.id === currentEventId);
         ev.tactics.push({
-            reg: false, tactic: "AA", turn: 1, player: "", mecha: "", weapon: "", minR: 0, maxR: 20, equip: "", str: "", t1: "", t2: ""
-        });
-        renderTacticsTable(ev);
-    }
-
-    function createTacticsTr(row, no, ev) {
-        const tr = document.createElement('tr');
-
-        const playerRank = ev.members[row.player] ? ev.members[row.player].rank : null;
-        const addCost = playerRank ? (RANK_MASTER[playerRank] || 0) : 0;
-        const mechaData = MECHA_DB[row.mecha] || { hp: 0, cost: 0 };
-        const totalCost = (row.mecha ? mechaData.cost : 0) + addCost;
-
-        tr.innerHTML = `
-            <td><input type="checkbox" ${row.reg ? 'checked' : ''} onchange="row.reg = this.checked; calculateStats();"></td>
-            <td>${no}</td>
-            <td>
-                <select onchange="row.tactic = this.value">
-                    ${TACTICS_MASTER.map(t => `<option value="${t}" ${t === row.tactic ? 'selected' : ''}>${t}</option>`).join('')}
-                </select>
-            </td>
-            <td><input type="number" value="${row.turn}" style="width:45px;" onchange="row.turn = this.value"></td>
-            <td>
-                <select onchange="row.player = this.value; renderTacticsTable(ev);">
-                    <option value="">選択</option>
-                    ${Object.keys(ev.members).map(p => `<option value="${p}" ${p === row.player ? 'selected' : ''}>${p}</option>`).join('')}
-                </select>
-            </td>
-            <td>
-                <select onchange="row.mecha = this.value; renderTacticsTable(ev);">
-                    <option value="">選択</option>
-                    ${Object.keys(MECHA_DB).map(m => `<option value="${m}" ${m === row.mecha ? 'selected' : ''}>${m}</option>`).join('')}
-                </select>
-            </td>
-            <td style="color:var(--accent); font-weight:bold;">${totalCost || '-'}</td>
-            <td><input type="number" value="${row.mecha ? mechaData.hp : 0}" style="width:60px;"></td>
-            <td><input type="text" value="${row.weapon}" onchange="row.weapon = this.value"></td>
-            <td>
-                <div style="display:flex; gap:2px; align-items:center;">
-                    <input type="number" value="${row.minR}" style="width:35px;" onchange="row.minR = Number(this.value); renderTacticsTable(ev);">
-                    <span>-</span>
-                    <input type="number" value="${row.maxR}" style="width:35px;" onchange="row.maxR = Number(this.value); renderTacticsTable(ev);">
-                </div>
-                <div class="range-bar-container" style="margin-top:3px;">
-                    <div class="range-bar-fill" style="left: ${row.minR}%; width: ${Math.max(0, row.maxR - row.minR)}%;"></div>
-                </div>
-            </td>
-            <td><input type="text" value="${row.equip}" onchange="row.equip = this.value"></td>
-            <td><input type="text" value="${row.str}" onchange="row.str = this.value"></td>
-            <td><input type="text" value="${row.t1}" onchange="row.t1 = this.value"></td>
-            <td><input type="text" value="${row.t2}" onchange="row.t2 = this.value"></td>
-        `;
-
-        return tr;
-    }
-
-    function calculateStats() {
-        const ev = events.find(e => e.id === currentEventId);
-        if (!ev) return;
-
-        let count = 0, totalHp = 0, totalCost = 0;
-
-        ev.tactics.forEach(r => {
-            if (r.reg) {
-                count++;
-                const mechaData = MECHA_DB[r.mecha] || { hp: 0, cost: 0 };
-                const playerRank = ev.members[r.player] ? ev.members[r.player].rank : null;
-                const addCost = playerRank ? (RANK_MASTER[playerRank] || 0) : 0;
-
-                totalHp += mechaData.hp;
-                totalCost += (r.mecha ? mechaData.cost : 0) + addCost;
-            }
-        });
-
-        document.getElementById('stat-count').innerText = count;
-        document.getElementById('stat-hp').innerText = totalHp.toLocaleString();
-        document.getElementById('stat-cost').innerText = totalCost.toLocaleString();
-    }
-
-    // TAB 3: 要点サマリーカード描画
-    function renderSummaryCards() {
-        const ev = events.find(e => e.id === currentEventId);
-        const container = document.getElementById('summary-cards');
-        container.innerHTML = '';
-
-        const activeRows = ev.tactics.filter(r => r.reg);
-        if (activeRows.length === 0) {
-            container.innerHTML = '<p class="sub-title">登録にチェックが入っている機体がありません。</p>';
-            return;
-        }
-
-        activeRows.forEach(r => {
-            const card = document.createElement('div');
-            card.className = 'summary-item-card';
-            card.innerHTML = `
-                <div class="summary-header">
-                    <span>${r.player || '未設定'} (${r.tactic})</span>
-                    <span>T: ${r.turn}</span>
-                </div>
-                <div><strong>機体:</strong> ${r.mecha || '-'}</div>
-                <div><strong>武装:</strong> ${r.weapon || '-'} (射程: ${r.minR}〜${r.maxR})</div>
-                <div><strong>装備:</strong> ${r.equip || '-'}</div>
-                <div style="margin-top:8px; color:var(--text-muted); font-size:0.8rem;">
-                    個人戦術: ${r.str || '-'} / 特性: ${r.t1 || '-'}, ${r.t2 || '-'}
-                </div>
-            `;
-            container.appendChild(card);
-        });
-    }
-</script>
-</body>
-</html>
+            reg: false, tactic: "AA", turn: 1, player: "", mecha: "", hp: 0, weapon: "", minR: 0, maxR: 2
