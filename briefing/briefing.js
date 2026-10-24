@@ -28,12 +28,8 @@ async function loadMechaCsv() {
         lines.forEach((line) => {
             if (!line.trim()) return;
 
-            // CSVの行をカンマで分割 (ダブルクォーテーションを削除)
             const cols = line.split(',').map(col => col.replace(/^"|"$/g, '').trim());
 
-            // 2列目 (インデックス1): 機体名
-            // 4列目 (インデックス3): HP
-            // 18列目 (インデックス17): コスト
             if (cols.length >= 18) {
                 const mechaName = cols[1];
                 const hpVal = Number(cols[3]) || 0;
@@ -50,7 +46,6 @@ async function loadMechaCsv() {
         console.log("機体CSVの読み込み完了 (HP:4列目 / コスト:18列目):", MECHA_DB);
     } catch (err) {
         console.warn("CSVの読み込みに失敗したため、フォールバック用データを使用します。", err);
-        // 万が一読み込めなかった場合の予備データ
         MECHA_DB = {
             "ガンダム": { hp: 384, cost: 38 },
             "バンシィ": { hp: 576, cost: 64 }
@@ -148,7 +143,8 @@ function submitAuthEvent() {
     const inputPw = document.getElementById('input-auth-pw').value;
     const ev = events.find(e => e.id === currentEventId);
 
-    if (ev && inputPw === ev.pass) {
+    // ★修正点：イベント固有のパスワード一致 ＋ または 管理者PW "p@ssw0rd" なら入室許可
+    if (ev && (inputPw === ev.pass || inputPw === 'p@ssw0rd')) {
         closeModal();
         loadEventSheet(ev);
     } else {
