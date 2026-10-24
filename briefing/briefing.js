@@ -59,6 +59,7 @@ function saveEventsToStorage() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
 }
 
+// CSV読み込み関数 (1列目: 機体No., 2列目: 機体名, 4列目: HP, 18列目: コスト)
 async function loadMechaCsv() {
     try {
         const response = await fetch('GL)機体一覧 - 機体一覧.csv');
@@ -69,27 +70,29 @@ async function loadMechaCsv() {
         MECHA_DB = {};
         mechaListArray = [];
 
-        lines.forEach((line, idx) => {
+        lines.forEach((line) => {
             if (!line.trim()) return;
             const cols = line.split(',').map(col => col.replace(/^"|"$/g, '').trim());
 
             if (cols.length >= 18) {
-                const rowNo = idx + 1;
-                const mechaName = cols[1];
-                const hpVal = Number(cols[3]) || 0;
-                const costVal = Number(cols[17]) || 0;
+                const mechaNo = cols[0];   // 1列目：機体No.
+                const mechaName = cols[1]; // 2列目：機体名
+                const hpVal = Number(cols[3]) || 0;     // 4列目：HP
+                const costVal = Number(cols[17]) || 0;  // 18列目：コスト
 
                 if (mechaName) {
-                    MECHA_DB[mechaName] = { hp: hpVal, cost: costVal, rowNo: rowNo };
-                    mechaListArray.push({ name: mechaName, hp: hpVal, cost: costVal, rowNo: rowNo });
+                    MECHA_DB[mechaName] = { hp: hpVal, cost: costVal, no: mechaNo };
+                    mechaListArray.push({ name: mechaName, hp: hpVal, cost: costVal, no: mechaNo });
                 }
             }
         });
+        console.log("機体CSV読み込み完了（1列目No.対応）:", mechaListArray.length + "件");
     } catch (err) {
+        console.warn("CSV読み込みエラー。フォールバック使用", err);
         MECHA_DB = {
-            "ガンダム": { hp: 384, cost: 38, rowNo: 1 },
-            "バンシィ": { hp: 576, cost: 64, rowNo: 2 },
-            "ガリルナガン": { hp: 700, cost: 72, rowNo: 3 }
+            "ガンダム": { hp: 384, cost: 38, no: "1" },
+            "バンシィ": { hp: 576, cost: 64, no: "2" },
+            "ガリルナガン": { hp: 700, cost: 72, no: "3" }
         };
         mechaListArray = Object.keys(MECHA_DB).map(k => ({ name: k, ...MECHA_DB[k] }));
     }
@@ -442,7 +445,7 @@ function updateTraitLv(rowIndex, lvKey, val) {
     saveEventsToStorage();
 }
 
-// 機体検索モーダル関連
+// 機体検索モーダル関連 (1列目の機体No. または 機体名であいまい検索)
 function openMechaSearchModal(rowIndex) {
     editingRowIndex = rowIndex;
     document.getElementById('input-mecha-query').value = '';
@@ -454,7 +457,7 @@ function openMechaSearchModal(rowIndex) {
 function filterMechaList() {
     const query = document.getElementById('input-mecha-query').value.toLowerCase();
     const filtered = mechaListArray.filter(m => 
-        m.name.toLowerCase().includes(query) || String(m.rowNo).includes(query)
+        m.name.toLowerCase().includes(query) || String(m.no).toLowerCase().includes(query)
     );
     renderMechaSearchResults(filtered);
 }
@@ -469,7 +472,7 @@ function renderMechaSearchResults(list) {
     list.forEach(m => {
         const item = document.createElement('div');
         item.className = 'mecha-search-item';
-        item.innerHTML = `<span>[No.${m.rowNo}] <strong>${m.name}</strong></span> <span style="color:var(--accent);">HP: ${m.hp} / コスト: ${m.cost}</span>`;
+        item.innerHTML = `<span>[No.${m.no}] <strong>${m.name}</strong></span> <span style="color:var(--accent);">HP: ${m.hp} / コスト: ${m.cost}</span>`;
         item.onclick = () => selectMecha(m);
         container.appendChild(item);
     });
@@ -494,7 +497,6 @@ function calculateStats() {
 
     let count = 0, checkedHp = 0, totalHp = 0, totalCost = 0;
     
-    // c1〜c8, r1〜r3 の合計用オブジェクト
     let sumCols = {};
     for(let i=1; i<=8; i++) sumCols['c'+i] = 0;
     for(let i=1; i<=3; i++) sumCols['r'+i] = 0;
@@ -512,18 +514,15 @@ function calculateStats() {
             totalCost += (r.mecha ? mechaData.cost : 0) + addCost;
         }
 
-        // 補〜耐ヒの各数値も合算
         for(let i=1; i<=8; i++) sumCols['c'+i] += Number(r['c'+i] || 0);
         for(let i=1; i<=3; i++) sumCols['r'+i] += Number(r['r'+i] || 0);
     });
 
-    // 上部スタッツ表示更新
     document.getElementById('stat-count').innerText = count;
     document.getElementById('stat-hp').innerText = checkedHp.toLocaleString();
     document.getElementById('stat-total-hp').innerText = totalHp.toLocaleString();
     document.getElementById('stat-cost').innerText = totalCost.toLocaleString();
 
-    // テーブル最下部のフッター（合計行）描画
     const tfoot = document.getElementById('tfoot-tactics');
     tfoot.innerHTML = `
         <tr>
