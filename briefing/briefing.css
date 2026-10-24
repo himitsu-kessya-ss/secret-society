@@ -146,7 +146,7 @@ table {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.85rem;
-    min-width: 2100px;
+    min-width: 2300px;
 }
 th, td {
     border: 1px solid var(--border);
@@ -173,17 +173,19 @@ input, select {
 input[type="text"] { width: 140px; }
 input[type="number"] { width: 60px; }
 select { width: 110px; }
-.trait-select { width: 100px; }
-.trait-lv-select { width: 55px; }
+
+.weapon-input { width: 170px !important; }
+.equip-input { width: 150px !important; }
+.strategy-select { width: 115px; }
+.trait-select { width: 75px; }
+.trait-lv-select { width: 50px; }
 
 input[type="checkbox"] { width: auto; transform: scale(1.2); cursor: pointer; }
 
-/* 団体戦術の役割別カラー（選ばれている状態） */
 .tactic-a { background-color: rgba(255, 77, 77, 0.35) !important; color: #ff9999; font-weight: bold; }
 .tactic-d { background-color: rgba(0, 136, 255, 0.35) !important; color: #99ccff; font-weight: bold; }
 .tactic-s { background-color: rgba(0, 255, 136, 0.35) !important; color: #99ffcc; font-weight: bold; }
 
-/* プルダウンを開いたとき（リストの中身）の背景を白・文字を黒にして見やすくする設定 */
 select.tactic-a option,
 select.tactic-d option,
 select.tactic-s option,
