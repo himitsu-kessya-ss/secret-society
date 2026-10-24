@@ -42,9 +42,9 @@
         <div id="tab-plan" class="tab-content">
             <div class="card" style="margin-bottom: 15px; display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
                 <div>登録機体数: <span id="stat-count" style="color:var(--accent); font-weight:bold;">0</span></div>
-                <div>登録機体 合計 HP: <span id="stat-hp" style="color:var(--accent-green); font-weight:bold;">0</span></div>
-                <div>総合計 HP（想定値）: <span id="stat-total-hp" style="color:var(--text-muted); font-weight:bold;">0</span></div>
-                <div>合計コスト: <span id="stat-cost" style="color:var(--accent-warn); font-weight:bold;">0</span></div>
+                <div>登録機体 合計 実HP: <span id="stat-hp" style="color:var(--accent-green); font-weight:bold;">0</span></div>
+                <div>総合計 実HP（想定値）: <span id="stat-total-hp" style="color:var(--text-muted); font-weight:bold;">0</span></div>
+                <div>合計目安コスト: <span id="stat-cost" style="color:var(--accent-warn); font-weight:bold;">0</span></div>
             </div>
 
             <div class="table-responsive card">
@@ -57,10 +57,11 @@
                             <th>登場ターン</th>
                             <th>プレイヤー名</th>
                             <th>目安コスト</th>
+                            <th>実コスト</th>
                             <th>機体名</th>
                             <th>DBコスト</th>
                             <th>DB HP</th>
-                            <th>HP</th>
+                            <th>実HP</th>
                             <th>武器</th>
                             <th>最低射程</th>
                             <th>最大射程</th>
@@ -86,7 +87,6 @@
                         </tr>
                     </thead>
                     <tbody id="tbody-tactics"></tbody>
-                    <!-- 集計行（フッター） -->
                     <tfoot id="tfoot-tactics"></tfoot>
                 </table>
                 <button class="btn" style="margin-top: 15px;" onclick="addTacticsRow()">＋ 作戦行を追加</button>
@@ -128,7 +128,6 @@
 
 <!-- モーダルダイアログ群 -->
 <div id="modal-overlay" class="modal-overlay hidden">
-    <!-- 新規イベント起票モーダル -->
     <div id="modal-create" class="modal hidden">
         <h3>新規イベント起票</h3>
         <p class="sub-title">管理者パスワードを入力してください。</p>
@@ -141,7 +140,6 @@
         </div>
     </div>
 
-    <!-- イベント入室モーダル -->
     <div id="modal-auth" class="modal hidden">
         <h3 id="auth-event-title">イベント入室</h3>
         <p class="sub-title">開示された入室パスワードを入力してください。</p>
@@ -152,10 +150,9 @@
         </div>
     </div>
 
-    <!-- 機体検索モーダル -->
     <div id="modal-mecha-search" class="modal hidden" style="width: 500px; max-width: 90%;">
         <h3>機体検索</h3>
-        <p class="sub-title">機体名（あいまい検索）またはナンバーで検索できます。</p>
+        <p class="sub-title">機体No. または 機体名（あいまい検索）で検索できます。</p>
         <input type="text" id="input-mecha-query" placeholder="検索キーワードを入力..." oninput="filterMechaList()" style="margin: 10px 0;">
         <div id="mecha-search-results" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 15px;"></div>
         <div style="display: flex; justify-content: flex-end;">
