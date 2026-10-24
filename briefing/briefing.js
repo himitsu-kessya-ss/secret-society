@@ -1,9 +1,62 @@
 let currentEventId = null;
 
-window.onload = function() {
+// グローバルで機体データベースを保持
+let MECHA_DB = {};
+
+// アプリ起動時の処理
+window.onload = async function() {
+    // 1. CSVファイルから機体データを非同期で読み込む
+    await loadMechaCsv();
+
+    // 2. イベントデータの初期化と画面描画
     initDefaultEventData(events[0]);
     renderEventList();
 };
+
+// CSV読み込み関数 (2列目: 機体名, 4列目: HP, 18列目: コスト)
+async function loadMechaCsv() {
+    try {
+        const response = await fetch('GL)機体一覧 - 機体一覧.csv');
+        if (!response.ok) {
+            throw new Error('CSVファイルの読み込みに失敗しました');
+        }
+        const csvText = await response.text();
+        const lines = csvText.split('\n');
+
+        MECHA_DB = {}; // 初期化
+
+        lines.forEach((line) => {
+            if (!line.trim()) return;
+
+            // CSVの行をカンマで分割 (ダブルクォーテーションを削除)
+            const cols = line.split(',').map(col => col.replace(/^"|"$/g, '').trim());
+
+            // 2列目 (インデックス1): 機体名
+            // 4列目 (インデックス3): HP
+            // 18列目 (インデックス17): コスト
+            if (cols.length >= 18) {
+                const mechaName = cols[1];
+                const hpVal = Number(cols[3]) || 0;
+                const costVal = Number(cols[17]) || 0;
+
+                if (mechaName) {
+                    MECHA_DB[mechaName] = { 
+                        hp: hpVal, 
+                        cost: costVal 
+                    };
+                }
+            }
+        });
+        console.log("機体CSVの読み込み完了 (HP:4列目 / コスト:18列目):", MECHA_DB);
+    } catch (err) {
+        console.warn("CSVの読み込みに失敗したため、フォールバック用データを使用します。", err);
+        // 万が一読み込めなかった場合の予備データ
+        MECHA_DB = {
+            "ガンダム": { hp: 384, cost: 38 },
+            "バンシィ": { hp: 576, cost: 64 }
+        };
+    }
+}
 
 function initDefaultEventData(ev) {
     DEFAULT_PLAYERS.forEach((p, idx) => {
