@@ -1,5 +1,5 @@
 // ★取得されたウェブアプリのURLをここに設定しました
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxJFwDlx71xhfSF3mp6cSK46zog3cSM7kr_3tkGocyQJpnfbzQ8dDPWSjfxG5C7kr_3tkGocyQJpnfbzQ8dDPWSjfxG5C7lcdejA/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxyfKHNEjeqeTRriYCldKBEjvD4f684QulQzYae_D0mxDWG6Sm7YE7ahPEOO6EQv7ZGJw/exec';
 
 let currentEventId = null;
 let currentTab = 'plan';
