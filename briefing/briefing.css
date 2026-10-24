@@ -146,7 +146,7 @@ table {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.85rem;
-    min-width: 1600px;
+    min-width: 2000px;
 }
 th, td {
     border: 1px solid var(--border);
@@ -156,14 +156,26 @@ th, td {
 }
 th { background-color: #0d1522; color: var(--accent); font-weight: 600; }
 input, select {
-    width: 100%;
     background: #0d1522;
     border: 1px solid var(--border);
     color: #fff;
     padding: 5px;
     border-radius: 3px;
+    font-size: 0.85rem;
 }
+/* 各項目の入力幅を十分に確保 */
+input[type="text"] { width: 140px; }
+input[type="number"] { width: 60px; }
+select { width: 110px; }
+.trait-select { width: 100px; }
+.trait-lv-select { width: 55px; }
+
 input[type="checkbox"] { width: auto; transform: scale(1.2); cursor: pointer; }
+
+/* 団体戦術の役割別背景色 */
+.tactic-a { background-color: rgba(255, 77, 77, 0.25) !important; color: #ff9999; font-weight: bold; }
+.tactic-d { background-color: rgba(0, 136, 255, 0.25) !important; color: #99ccff; font-weight: bold; }
+.tactic-s { background-color: rgba(0, 255, 136, 0.25) !important; color: #99ffcc; font-weight: bold; }
 
 .range-bar-container {
     width: 90px;
@@ -215,6 +227,18 @@ input[type="checkbox"] { width: auto; transform: scale(1.2); cursor: pointer; }
     border: 1px solid var(--accent);
     padding: 25px;
     border-radius: 8px;
-    width: 350px;
+    width: 400px;
 }
-.modal input { margin: 15px 0; }
+.modal input { margin: 10px 0; width: 100%; }
+
+.mecha-search-item {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    justify-content: space-between;
+}
+.mecha-search-item:hover {
+    background: rgba(0, 240, 255, 0.15);
+}
