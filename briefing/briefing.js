@@ -1,5 +1,5 @@
-// ★取得されたウェブアプリのURLをここに設定しました
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxyfKHNEjeqeTRriYCldKBEjvD4f684QulQzYae_D0mxDWG6Sm7YE7ahPEOO6EQv7ZGJw/exec';
+// ★スプレッドシートから発行された「ウェブアプリのURL」
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxJFwDlx71xhfSF3mp6cSK46zog3cSM7kr_3tkGocyQJpnfbzQ8dDPWSjfxG5C7lcdejA/exec';
 
 let currentEventId = null;
 let currentTab = 'plan';
@@ -312,8 +312,8 @@ function renderMemberTable(ev) {
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td><input type="text" value="${pName}" onchange="renameMember('${pName}', this.value)" style="width:120px;"></td>
-            <td><input type="number" value="${m.exp}" onchange="ev.members['${pName}'].exp = Number(this.value); saveEventsToServer(); calculateStats();"></td>
+            <td><input type="text" value="${pName}" oninput="renameMember('${pName}', this.value)" style="width:120px;"></td>
+            <td><input type="number" value="${m.exp}" oninput="ev.members['${pName}'].exp = Number(this.value); saveEventsToServer(); calculateStats();"></td>
             <td>
                 <select onchange="updateMemberRank('${pName}', this.value)" style="width:130px;">
                     ${Object.keys(RANK_MASTER).map(r => `<option value="${r}" ${r === m.rank ? 'selected' : ''}>${r}</option>`).join('')}
@@ -340,17 +340,11 @@ function addMemberRow() {
 
 function renameMember(oldName, newName) {
     const ev = events.find(e => e.id === currentEventId);
-    if(!newName || ev.members[newName]) {
-        alert('無効な名前か、既に存在する名前です。');
-        renderMemberTable(ev);
-        return;
-    }
+    if(!newName || ev.members[newName]) return;
     ev.members[newName] = ev.members[oldName];
     delete ev.members[oldName];
     ev.tactics.forEach(t => { if(t.player === oldName) t.player = newName; });
     saveEventsToServer();
-    renderMemberTable(ev);
-    renderTacticsTable(ev);
 }
 
 function deleteMember(pName) {
