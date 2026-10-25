@@ -569,7 +569,6 @@ function createTacticsTr(row, no, ev) {
         <td>${traitSelectHtml(row.t4, 4)} ${lvSelectHtml(row.l4, 'l4', 4)}</td>
         <td>${traitSelectHtml(row.t5, 5)} ${lvSelectHtml(row.l5, 'l5', 5)}</td>
 
-        <!-- 補〜耐ヒ列 (チェックボックス化) -->
         ${[...Array(8)].map((_, i) => `<td><input type="checkbox" class="row-c${i+1}-checkbox" ${row['c'+(i+1)] ? 'checked' : ''} onchange="collectRowDataFromDOM(${no-1}, events.find(e=>e.id===currentEventId)); calculateStats();"></td>`).join('')}
         ${[...Array(3)].map((_, i) => `<td><input type="checkbox" class="row-r${i+1}-checkbox" ${row['r'+(i+1)] ? 'checked' : ''} onchange="collectRowDataFromDOM(${no-1}, events.find(e=>e.id===currentEventId)); calculateStats();"></td>`).join('')}
     `;
@@ -663,6 +662,9 @@ function calculateStats() {
 
     let count = 0, checkedHp = 0, totalHp = 0, totalCalcCost = 0, totalActualCost = 0, totalDbHp = 0;
     
+    // 団体戦術の枚数集計用（_A, _D, _Sの順でカウント）
+    let tacticCounts = {};
+
     let sumCols = {};
     for(let i=1; i<=8; i++) sumCols['c'+i] = 0;
     for(let i=1; i<=3; i++) sumCols['r'+i] = 0;
@@ -683,6 +685,10 @@ function calculateStats() {
             totalCalcCost += calcC;
             totalActualCost += actualC;
             totalDbHp += Number(mechaData.hp || 0);
+
+            // 登録にチェックが入っている行の団体戦術を集計
+            const t = r.tactic || '未設定';
+            tacticCounts[t] = (tacticCounts[t] || 0) + 1;
         }
 
         for(let i=1; i<=8; i++) {
@@ -693,9 +699,23 @@ function calculateStats() {
         }
     });
 
-    // 3行レイアウト用の各ステータス更新
+    // 団体戦術の並び順（末尾が A, D, S の順、さらにアルファベット順）に整えて文字列化
+    const sortedTactics = Object.keys(tacticCounts).sort((a, b) => {
+        const order = { 'A': 1, 'D': 2, 'S': 3 };
+        const orderA = order[a.slice(-1).toUpperCase()] || 99;
+        const orderB = order[b.slice(-1).toUpperCase()] || 99;
+        if (orderA !== orderB) return orderA - orderB;
+        return a.localeCompare(b);
+    });
+
+    const breakdownStr = sortedTactics.length > 0 
+        ? sortedTactics.map(t => `${t} ${tacticCounts[t]}`).join('、') 
+        : 'なし';
+
+    // スマートに整理された統計表示の更新
     document.getElementById('stat-count').innerText = count;
     document.getElementById('stat-total-rows').innerText = ev.tactics.length;
+    document.getElementById('stat-tactics-breakdown').innerText = breakdownStr;
     document.getElementById('stat-cost').innerText = totalCalcCost.toLocaleString();
     document.getElementById('stat-db-hp').innerText = totalDbHp.toLocaleString();
     document.getElementById('stat-actual-cost').innerText = totalActualCost.toLocaleString();
@@ -728,6 +748,7 @@ function calculateStats() {
     `;
 }
 
+// 【作戦要点サマリタブ】参加メンバー全員分のカードを生成し、作戦立案タブの内容と連動させる（実コストも追加）
 function renderSummaryCards() {
     const evData = events.find(e => e.id === currentEventId);
     if (!evData) return;
@@ -768,7 +789,7 @@ function renderSummaryCards() {
                             <span>[作戦${idx + 1}] 団体: ${r.tactic || '-'}</span>
                             <span>登場 T: ${r.turn}</span>
                         </div>
-                        <div style="font-size: 0.85rem; margin-top: 3px;"><strong>機体:</strong> ${r.mecha || '-'} (実HP: ${r.hp})</div>
+                        <div style="font-size: 0.85rem; margin-top: 3px;"><strong>機体:</strong> ${r.mecha || '-'} (実HP: ${r.hp} / <strong>実コスト:</strong> <span style="color: var(--accent-warn);">${r.actualCost !== undefined ? r.actualCost : 0}</span>)</div>
                         <div style="font-size: 0.85rem;"><strong>武装:</strong> ${r.weapon || '-'} (射程: ${r.minR}〜${r.maxR})</div>
                         <div style="font-size: 0.85rem;"><strong>装備:</strong> ${r.equip || '-'}</div>
                         <div style="margin-top: 4px; color: var(--text-muted); font-size: 0.8rem;">
