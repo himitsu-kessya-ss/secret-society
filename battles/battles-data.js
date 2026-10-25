@@ -44,5 +44,30 @@ const battleEvents = [
                 description: "戦闘詳細"
             }
         ]
+    },
+    {
+        eventName: "関係者限定団体戦（2026年10月25日開催）",
+        battles: [
+            {
+                roundName: "大会概要",
+                url: "./関係者限定団体戦261025/summary.html",
+                description: "レギュなど大会概要"
+            },
+            {
+                roundName: "大会結果まとめ",
+                url: "./関係者限定団体戦261025/summary.html",
+                description: "勝敗やスコアなどの結果データ"
+            },
+            {
+                roundName: "戦闘ログ (1〜100ターン)",
+                url: "./関係者限定団体戦261025/1-100.html",
+                description: "戦闘詳細"
+            },
+            {
+                roundName: "戦闘ログ (1011〜200ターン)",
+                url: "./関係者限定団体戦261025/101-200.html",
+                description: "戦闘詳細"
+            }
+        ]
     }
 ];
