@@ -12,8 +12,12 @@
     <div id="header-container"></div>
 
 <div class="container" style="padding: 20px;">
-    <div style="margin-bottom: 20px;">
+    <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
         <button id="btn-back-main" class="btn btn-secondary hidden" onclick="showMainPage()">← 作戦一覧に戻る</button>
+        <!-- 共通の手動同期ボタン -->
+        <div id="global-sync-controls" class="hidden" style="display: flex; gap: 10px; margin-left: auto;">
+            <button class="btn btn-secondary" onclick="manualLoadFromServer()">🔄 最新データを読込</button>
+        </div>
     </div>
 
     <!-- ① メインページ (イベント一覧) -->
@@ -40,11 +44,16 @@
 
         <!-- TAB 1: 作戦立案メイン -->
         <div id="tab-plan" class="tab-content">
-            <div class="card" style="margin-bottom: 15px; display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
-                <div>登録機体数: <span id="stat-count" style="color:var(--accent); font-weight:bold;">0</span></div>
-                <div>登録機体 合計 実HP: <span id="stat-hp" style="color:var(--accent-green); font-weight:bold;">0</span></div>
-                <div>総合計 実HP（想定値）: <span id="stat-total-hp" style="color:var(--text-muted); font-weight:bold;">0</span></div>
-                <div>合計目安コスト: <span id="stat-cost" style="color:var(--accent-warn); font-weight:bold;">0</span></div>
+            <div class="card" style="margin-bottom: 15px; display: flex; gap: 20px; align-items: center; flex-wrap: wrap; justify-content: space-between;">
+                <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                    <div>登録機体数: <span id="stat-count" style="color:var(--accent); font-weight:bold;">0</span></div>
+                    <div>登録機体 合計 実HP: <span id="stat-hp" style="color:var(--accent-green); font-weight:bold;">0</span></div>
+                    <div>総合計 実HP（想定値）: <span id="stat-total-hp" style="color:var(--text-muted); font-weight:bold;">0</span></div>
+                    <div>合計目安コスト: <span id="stat-cost" style="color:var(--accent-warn); font-weight:bold;">0</span></div>
+                </div>
+                <div>
+                    <button class="btn" onclick="saveSelectedTacticsToServer()" style="background-color: rgba(0, 240, 255, 0.15);">💾 チェックした行をサーバーに反映</button>
+                </div>
             </div>
 
             <div class="table-responsive card">
@@ -52,6 +61,7 @@
                     <thead>
                         <tr>
                             <th>登録</th>
+                            <th>更新対象</th>
                             <th>No.</th>
                             <th>団体戦術</th>
                             <th>登場ターン</th>
@@ -97,8 +107,13 @@
         <!-- TAB 2: 参加メンバー・階級設定 -->
         <div id="tab-member" class="tab-content hidden">
             <div class="card">
-                <h3>参加メンバー・階級管理</h3>
-                <p class="sub-title" style="margin-bottom: 15px;">メンバーの追加、削除、およびイベント時点の階級変更が行えます。</p>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <div>
+                        <h3>参加メンバー・階級管理</h3>
+                        <p class="sub-title">メンバーの追加、削除、およびイベント時点の階級変更が行えます。</p>
+                    </div>
+                    <button class="btn" onclick="saveMembersToServer()" style="background-color: rgba(0, 240, 255, 0.15);">💾 メンバー情報をサーバーに保存</button>
+                </div>
                 <div class="table-responsive">
                     <table style="min-width: 600px; max-width: 800px;">
                         <thead>
