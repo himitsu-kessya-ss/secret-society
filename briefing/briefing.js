@@ -72,7 +72,6 @@ async function loadEventsFromServer(isBackground = false) {
         if (!currentEventId) {
             renderEventList();
         } else {
-            // 現在開いているシートを最新データで再描画
             const ev = events.find(e => e.id === currentEventId);
             if (ev) {
                 renderMemberTable(ev);
@@ -87,7 +86,6 @@ async function loadEventsFromServer(isBackground = false) {
     }
 }
 
-// 【手動・全体保存用（内部）】
 async function saveEventsToServer() {
     if (!GAS_URL) return;
     try {
@@ -108,7 +106,6 @@ async function saveSelectedTacticsToServer() {
     const ev = events.find(e => e.id === currentEventId);
     if (!ev) return;
 
-    // 1. まずサーバーから最新データを取得して競合を防ぐ
     try {
         const response = await fetch(GAS_URL);
         const data = await response.json();
@@ -120,24 +117,20 @@ async function saveSelectedTacticsToServer() {
     let targetEv = events.find(e => e.id === currentEventId);
     if (!targetEv) return;
 
-    // 画面上のテーブルから「更新対象」チェックボックスがONの行のデータを収集
     const rows = document.querySelectorAll('#tbody-tactics tr');
     let updatedCount = 0;
 
     rows.forEach((tr, idx) => {
         const syncCheckbox = tr.querySelector('.row-sync-checkbox');
         if (syncCheckbox && syncCheckbox.checked) {
-            // 現在画面に入力されている最新の値をローカルデータに反映
             collectRowDataFromDOM(idx, ev);
             
-            // サーバー側のデータ（targetEv）の該当行を更新（なければ追加）
             if (!targetEv.tactics[idx]) {
                 targetEv.tactics[idx] = JSON.parse(JSON.stringify(ev.tactics[idx]));
             } else {
                 targetEv.tactics[idx] = JSON.parse(JSON.stringify(ev.tactics[idx]));
             }
             updatedCount++;
-            // 保存完了したらチェックを外す
             syncCheckbox.checked = false;
         }
     });
@@ -147,7 +140,6 @@ async function saveSelectedTacticsToServer() {
         return;
     }
 
-    // 2. サーバーへ送信
     await saveEventsToServer();
     alert(`選択された ${updatedCount} 行の作戦データをサーバーに反映しました！`);
     renderTacticsTable(targetEv);
@@ -170,7 +162,6 @@ async function saveMembersToServer() {
     let targetEv = events.find(e => e.id === currentEventId);
     if (!targetEv) return;
 
-    // 画面上のメンバー情報を収集して反映
     const memberRows = document.querySelectorAll('#tbody-members tr');
     let newMembersObj = {};
 
@@ -578,7 +569,10 @@ function createTacticsTr(row, no, ev) {
         <td>${traitSelectHtml(row.t4, 4)} ${lvSelectHtml(row.l4, 'l4', 4)}</td>
         <td>${traitSelectHtml(row.t5, 5)} ${lvSelectHtml(row.l5, 'l5', 5)}</td>
 
+        <!-- 補・解・回・麻・E回・ミ・爆・時 (計8列) -->
         ${[...Array(8)].map((_, i) => `<td><input type="number" class="row-c${i+1}-input" value="${row['c'+(i+1)] || 0}" style="width:38px;" oninput="collectRowDataFromDOM(${no-1}, events.find(e=>e.id===currentEventId)); calculateStats();"></td>`).join('')}
+        
+        <!-- 耐実・耐ビ・耐ヒ (計3列) -->
         ${[...Array(3)].map((_, i) => `<td><input type="number" class="row-r${i+1}-input" value="${row['r'+(i+1)] || 0}" style="width:38px;" oninput="collectRowDataFromDOM(${no-1}, events.find(e=>e.id===currentEventId)); calculateStats();"></td>`).join('')}
     `;
 
@@ -710,6 +704,7 @@ function calculateStats() {
             <td colspan="3"></td>
             <td>${totalHp.toLocaleString()}</td>
             <td colspan="13"></td>
+            <!-- 特性(5つ分×2セル=10) + 装備(1) + 個人戦術前後(2) = 計13列分の空き -->
             ${[...Array(8)].map((_, i) => `<td>${sumCols['c'+(i+1)].toLocaleString()}</td>`).join('')}
             ${[...Array(3)].map((_, i) => `<td>${sumCols['r'+(i+1)].toLocaleString()}</td>`).join('')}
         </tr>
