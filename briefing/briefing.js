@@ -146,6 +146,25 @@ async function saveSelectedTacticsToServer() {
     renderTacticsTable(targetEv);
 }
 
+// 画面上のDOMからメンバー表の入力内容を一時オブジェクト（ev.members）に収集する関数
+function collectMembersFromDOM(ev) {
+    const memberRows = document.querySelectorAll('#tbody-members tr');
+    let newMembersObj = {};
+
+    memberRows.forEach(tr => {
+        const nameInput = tr.querySelector('.member-name-input');
+        const expInput = tr.querySelector('.member-exp-input');
+        const rankSelect = tr.querySelector('.member-rank-select');
+        if (nameInput && nameInput.value) {
+            newMembersObj[nameInput.value] = {
+                exp: Number(expInput ? expInput.value : 100),
+                rank: rankSelect ? rankSelect.value : '一等兵'
+            };
+        }
+    });
+    ev.members = newMembersObj;
+}
+
 // 【メンバータブ用】メンバー情報をサーバー全体に保存
 async function saveMembersToServer() {
     if (!GAS_URL) return;
@@ -163,22 +182,7 @@ async function saveMembersToServer() {
     let targetEv = events.find(e => e.id === currentEventId);
     if (!targetEv) return;
 
-    const memberRows = document.querySelectorAll('#tbody-members tr');
-    let newMembersObj = {};
-
-    memberRows.forEach(tr => {
-        const nameInput = tr.querySelector('.member-name-input');
-        const expInput = tr.querySelector('.member-exp-input');
-        const rankSelect = tr.querySelector('.member-rank-select');
-        if (nameInput && nameInput.value) {
-            newMembersObj[nameInput.value] = {
-                exp: Number(expInput ? expInput.value : 100),
-                rank: rankSelect ? rankSelect.value : '一等兵'
-            };
-        }
-    });
-
-    targetEv.members = newMembersObj;
+    collectMembersFromDOM(targetEv);
     await saveEventsToServer();
     alert('参加メンバー・階級情報をサーバーに保存しました！');
     renderMemberTable(targetEv);
@@ -250,15 +254,19 @@ function renderEventList() {
     const listEl = document.getElementById('event-list');
     if (!listEl) return;
     listEl.innerHTML = '';
-    events.forEach(ev => {
+    
+    // 起票順（配列の順番）にイベント通しNo.（1始まり）を割り振って描画
+    events.forEach((ev, index) => {
         const card = document.createElement('div');
         card.className = 'event-card';
         
         const hasPass = ev.pass !== undefined && ev.pass !== null && ev.pass !== "";
         const lockText = hasPass ? '🔒 要パスワード保護' : '🔓 パスワードなし';
+        const eventNo = index + 1; // 通しNo.
 
         card.innerHTML = `
             <div onclick="handleEventCardClick('${ev.id}')" style="cursor: pointer;">
+                <div style="font-size: 0.8rem; color: var(--accent); margin-bottom: 4px; font-weight: bold;">No. ${eventNo}</div>
                 <h3>${ev.title}</h3>
                 <p class="sub-title" style="margin-top:8px;">${lockText}</p>
             </div>
@@ -463,6 +471,12 @@ function loadEventSheet(ev) {
 }
 
 function switchTab(tabName) {
+    // タブ切り替え前に、現在表示中のメンバー表の入力内容を退避保持する
+    if (currentTab === 'member' && currentEventId) {
+        const ev = events.find(e => e.id === currentEventId);
+        if (ev) collectMembersFromDOM(ev);
+    }
+
     currentTab = tabName;
 
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -474,6 +488,8 @@ function switchTab(tabName) {
     } else if (tabName === 'member') {
         document.querySelectorAll('.tab-btn')[1].classList.add('active');
         document.getElementById('tab-member').classList.remove('hidden');
+        const ev = events.find(e => e.id === currentEventId);
+        if (ev) renderMemberTable(ev); // 保持されたデータを元に再描画
     } else if (tabName === 'summary') {
         document.querySelectorAll('.tab-btn')[2].classList.add('active');
         document.getElementById('tab-summary').classList.remove('hidden');
@@ -507,6 +523,9 @@ function renderMemberTable(ev) {
 
 function addMemberRow() {
     const ev = events.find(e => e.id === currentEventId);
+    if (!ev) return;
+    collectMembersFromDOM(ev);
+
     let newName = "新規メンバー";
     let count = 1;
     while(ev.members[newName]) {
@@ -518,6 +537,8 @@ function addMemberRow() {
 
 function deleteMember(pName) {
     const ev = events.find(e => e.id === currentEventId);
+    if (!ev) return;
+    collectMembersFromDOM(ev);
     delete ev.members[pName];
     renderMemberTable(ev);
     renderTacticsTable(ev);
@@ -608,7 +629,7 @@ function updateTraitStyle(selectEl, no, traitIndex) {
     const tVal = tSelect ? tSelect.value : "";
     const lVal = lSelect ? Number(lSelect.value) : 0;
 
-    if (!tVal || lVal === 1) {
+    if (!tVal || lVal === 0) {
         wrapper.className = "trait-cell-wrapper trait-muted";
     } else {
         wrapper.className = "trait-cell-wrapper trait-active";
@@ -634,8 +655,13 @@ function createTacticsTr(row, no, ev) {
     }
 
     const traitBlockHtml = (selectedVal, selectedLv, traitIndex) => {
-        const isMuted = !selectedVal || Number(selectedLv) === 1;
+        const isMuted = !selectedVal || Number(selectedLv) === 0;
         const wrapperClass = isMuted ? "trait-cell-wrapper trait-muted" : "trait-cell-wrapper trait-active";
+
+        const lvOptions = [...Array(11)].map((_, i) => {
+            const val = 10 - i;
+            return `<option value="${val}" ${Number(selectedLv) === val ? 'selected' : ''}>${val}</option>`;
+        }).join('');
 
         return `
             <div class="${wrapperClass}" id="trait-box-${no-1}-${traitIndex}">
@@ -644,7 +670,7 @@ function createTacticsTr(row, no, ev) {
                     ${TRAIT_MASTER.map(t => `<option value="${t}" ${t === selectedVal ? 'selected' : ''}>${t}</option>`).join('')}
                 </select>
                 <select class="trait-lv-select row-l${traitIndex}-select" onchange="updateTraitStyle(this, ${no}, ${traitIndex})">
-                    ${[...Array(11)].map((_, i) => `<option value="${i}" ${Number(selectedLv) === i ? 'selected' : ''}>${i === 0 ? '0' : i}</option>`).join('')}
+                    ${lvOptions}
                 </select>
             </div>
         `;
