@@ -191,14 +191,17 @@
         </div>
     </div>
 
-    <!-- 管理用設定モーダル（PW変更・削除） -->
+    <!-- 管理用設定モーダル（イベント名・PW変更・削除） -->
     <div id="modal-admin-settings" class="modal hidden">
         <h3 id="admin-settings-title">イベント管理設定</h3>
         <p class="sub-title">管理者パスワードを入力してください。</p>
         <input type="password" id="input-mgr-admin-pw" placeholder="管理者パスワード">
         
         <div style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px;">
-            <label style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 5px;">入室パスワード設定</label>
+            <label style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 5px;">イベント名変更</label>
+            <input type="text" id="input-mgr-event-title" placeholder="新しいイベント名">
+
+            <label style="font-size: 0.85rem; color: var(--text-muted); display: block; margin: 15px 0 5px 0;">入室パスワード設定</label>
             <div style="margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
                 <input type="checkbox" id="input-mgr-no-pass" onchange="toggleMgrPassInput(this)" style="width: auto; transform: scale(1.2); cursor: pointer;">
                 <label for="input-mgr-no-pass" style="cursor: pointer; font-size: 0.9rem;">パスワードなしにする</label>
