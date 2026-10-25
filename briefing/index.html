@@ -161,18 +161,26 @@
 
 <!-- モーダルダイアログ群 -->
 <div id="modal-overlay" class="modal-overlay hidden">
+    <!-- 新規起票モーダル -->
     <div id="modal-create" class="modal hidden">
         <h3>新規イベント起票</h3>
         <p class="sub-title">管理者パスワードを入力してください。</p>
         <input type="password" id="input-admin-pw" placeholder="管理者パスワード">
         <input type="text" id="input-event-title" placeholder="イベント名 (例: 11月勢力戦)">
+        
+        <div style="margin: 10px 0; display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="input-no-pass-check" onchange="toggleCreatePassInput(this)" style="width: auto; transform: scale(1.2); cursor: pointer;">
+            <label for="input-no-pass-check" style="cursor: pointer; font-size: 0.9rem;">入室パスワードを不要にする</label>
+        </div>
         <input type="password" id="input-event-pw" placeholder="入室用パスワード設定">
+
         <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px;">
             <button class="btn btn-secondary" onclick="closeModal()">キャンセル</button>
             <button class="btn" onclick="submitCreateEvent()">起票する</button>
         </div>
     </div>
 
+    <!-- 入室認証モーダル -->
     <div id="modal-auth" class="modal hidden">
         <h3 id="auth-event-title">イベント入室</h3>
         <p class="sub-title">開示された入室パスワードを入力してください。</p>
@@ -183,6 +191,31 @@
         </div>
     </div>
 
+    <!-- 管理用設定モーダル（PW変更・削除） -->
+    <div id="modal-admin-settings" class="modal hidden">
+        <h3 id="admin-settings-title">イベント管理設定</h3>
+        <p class="sub-title">管理者パスワードを入力してください。</p>
+        <input type="password" id="input-mgr-admin-pw" placeholder="管理者パスワード">
+        
+        <div style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px;">
+            <label style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 5px;">入室パスワード設定</label>
+            <div style="margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" id="input-mgr-no-pass" onchange="toggleMgrPassInput(this)" style="width: auto; transform: scale(1.2); cursor: pointer;">
+                <label for="input-mgr-no-pass" style="cursor: pointer; font-size: 0.9rem;">パスワードなしにする</label>
+            </div>
+            <input type="password" id="input-mgr-new-pw" placeholder="新しい入室パスワード">
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: space-between; align-items: center; margin-top: 20px;">
+            <button class="btn btn-danger" onclick="executeDeleteEvent()">イベントを削除</button>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-secondary" onclick="closeModal()">キャンセル</button>
+                <button class="btn" onclick="submitAdminSettings()">保存する</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 機体検索モーダル -->
     <div id="modal-mecha-search" class="modal hidden" style="width: 500px; max-width: 90%;">
         <h3>機体検索</h3>
         <p class="sub-title">機体No. または 機体名（あいまい検索）で検索できます。</p>
