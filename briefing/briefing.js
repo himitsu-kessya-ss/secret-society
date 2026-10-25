@@ -6,6 +6,7 @@ let currentTab = 'plan';
 let MECHA_DB = {}; 
 let mechaListArray = []; 
 let editingRowIndex = null; 
+let isUserTyping = false; // ユーザーが入力中かどうかのフラグ
 
 const RANK_MASTER = {
     "民間人": 0, "志願兵": 1, "二等兵": 2, "一等兵": 3, "上等兵": 4, "兵長": 5,
@@ -41,9 +42,9 @@ window.onload = async function() {
     await loadMechaCsv();
     await loadEventsFromServer(false); 
 
-    // 5秒おきにスプレッドシートから最新データを自動取得して同期
+    // 5秒おきに自動同期（ただしユーザー入力中は勝手に上書きされないようにブロック）
     setInterval(async () => {
-        if (GAS_URL) {
+        if (GAS_URL && !isUserTyping) {
             await loadEventsFromServer(true); 
         }
     }, 5000);
@@ -74,9 +75,10 @@ async function loadEventsFromServer(isBackground = false) {
             renderEventList();
         }
     } else {
-        if (currentEventId) {
+        if (currentEventId && !isUserTyping) {
             const ev = events.find(ev => ev.id === currentEventId);
             if (ev) {
+                // 入力中でない場合のみ、表示中のテーブルや統計を更新
                 calculateStats();
             }
         }
@@ -282,7 +284,6 @@ function switchTab(tabName) {
     }
 }
 
-// 参加メンバー一覧テーブルの描画（入力中に再描画されて消えないよう最適化）
 function renderMemberTable(ev) {
     const tbody = document.getElementById('tbody-members');
     tbody.innerHTML = '';
@@ -300,26 +301,32 @@ function renderMemberTable(ev) {
                     ${Object.keys(RANK_MASTER).map(r => `<option value="${r}" ${r === m.rank ? 'selected' : ''}>${r}</option>`).join('')}
                 </select>
             </td>
-            <td style="color:var(--accent); font-weight:bold;" class="member-cost-cell">+${rankCost}</td>
+            <td style="color:var(--accent); font-weight:bold;">+${rankCost}</td>
             <td><button class="btn btn-danger" style="padding: 2px 8px; font-size:0.75rem;" onclick="deleteMember('${pName}')">削除</button></td>
         `;
         tbody.appendChild(tr);
     });
 
-    // 各入力フィールドのイベントリスナーを設定（入力中に画面が再描画されないようにする）
+    // 入力開始時に同期をブロック
+    tbody.querySelectorAll('input').forEach(input => {
+        input.onfocus = () => { isUserTyping = true; };
+        input.onblur = () => { 
+            setTimeout(() => { isUserTyping = false; }, 1000);
+        };
+    });
+
     tbody.querySelectorAll('.member-name-input').forEach(input => {
         input.oninput = function() {
+            isUserTyping = true;
             const oldName = this.dataset.oldname;
             const newName = this.value;
             const ev = events.find(e => e.id === currentEventId);
             if (!newName || ev.members[newName]) return;
 
-            // データのキーを付け替え
             ev.members[newName] = ev.members[oldName];
             delete ev.members[oldName];
             this.dataset.oldname = newName;
 
-            // 関連する戦術行のプレイヤー名も更新
             ev.tactics.forEach(t => { if(t.player === oldName) t.player = newName; });
             saveEventsToServer();
         };
@@ -327,6 +334,7 @@ function renderMemberTable(ev) {
 
     tbody.querySelectorAll('.member-exp-input').forEach(input => {
         input.oninput = function() {
+            isUserTyping = true;
             const pName = this.dataset.player;
             const ev = events.find(e => e.id === currentEventId);
             if (ev && ev.members[pName]) {
@@ -345,7 +353,6 @@ function renderMemberTable(ev) {
             if (ev && ev.members[pName]) {
                 ev.members[pName].rank = newRank;
                 saveEventsToServer();
-                // 階級変更時のみコスト表示を更新するため再描画
                 renderMemberTable(ev);
                 renderTacticsTable(ev);
             }
@@ -436,9 +443,9 @@ function createTacticsTr(row, no, ev) {
                 ${TACTICS_MASTER.map(t => `<option value="${t}" ${t === row.tactic ? 'selected' : ''}>${t}</option>`).join('')}
             </select>
         </td>
-        <td><input type="number" value="${row.turn}" style="width:50px;" oninput="row.turn = Number(this.value); saveEventsToServer();"></td>
+        <td><input type="number" class="tactic-turn-input" value="${row.turn}" style="width:50px;"></td>
         <td>
-            <select onchange="row.player = this.value; saveEventsToServer(); calculateStats();" style="width:120px;">
+            <select class="tactic-player-select" style="width:120px;">
                 <option value="">選択</option>
                 ${Object.keys(ev.members).map(p => `<option value="${p}" ${p === row.player ? 'selected' : ''}>${p}</option>`).join('')}
             </select>
@@ -485,6 +492,23 @@ function createTacticsTr(row, no, ev) {
         ${[...Array(8)].map((_, i) => `<td><input type="number" value="${row['c'+(i+1)] || 0}" style="width:38px;" oninput="row.c${i+1} = Number(this.value); saveEventsToServer(); calculateStats();"></td>`).join('')}
         ${[...Array(3)].map((_, i) => `<td><input type="number" value="${row['r'+(i+1)] || 0}" style="width:38px;" oninput="row.r${i+1} = Number(this.value); saveEventsToServer(); calculateStats();"></td>`).join('')}
     `;
+
+    // 登場ターン・プレイヤー名の入力イベント設定（入力中ブロック対応）
+    const turnInput = tr.querySelector('.tactic-turn-input');
+    turnInput.onfocus = () => { isUserTyping = true; };
+    turnInput.onblur = () => { setTimeout(() => { isUserTyping = false; }, 1000); };
+    turnInput.oninput = function() {
+        isUserTyping = true;
+        row.turn = Number(this.value);
+        saveEventsToServer();
+    };
+
+    const playerSelect = tr.querySelector('.tactic-player-select');
+    playerSelect.onchange = function() {
+        row.player = this.value;
+        saveEventsToServer();
+        renderTacticsTable(ev);
+    };
 
     return tr;
 }
