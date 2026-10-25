@@ -660,7 +660,8 @@ function calculateStats() {
     const ev = events.find(e => e.id === currentEventId);
     if (!ev) return;
 
-    let count = 0, checkedHp = 0, totalHp = 0, totalCalcCost = 0, totalActualCost = 0, totalDbHp = 0;
+    let regCount = 0;
+    let checkedHp = 0, totalHp = 0, totalCalcCost = 0, totalActualCost = 0, totalActualCostAll = 0, totalDbHp = 0;
     
     // 団体戦術の枚数集計用（全数集計）
     let tacticCounts = {};
@@ -679,8 +680,11 @@ function calculateStats() {
         const calcC = (r.mecha ? mechaData.cost : 0) + addCost;
         const actualC = r.actualCost !== undefined ? Number(r.actualCost) : calcC;
 
+        // 全体の実コスト合計（登録フラグ関係なし）
+        totalActualCostAll += actualC;
+
         if (r.reg) {
-            count++;
+            regCount++;
             checkedHp += hpVal;
             totalCalcCost += calcC;
             totalActualCost += actualC;
@@ -708,7 +712,6 @@ function calculateStats() {
         return a.localeCompare(b);
     });
 
-    // 団体戦術の文字だけに背景色クラスを付与する
     const breakdownStr = sortedTactics.length > 0 
         ? sortedTactics.map(t => {
             const lastChar = t.slice(-1).toUpperCase();
@@ -720,15 +723,22 @@ function calculateStats() {
           }).join('、') 
         : 'なし';
 
-    // ステータス表示の更新
-    document.getElementById('stat-count').innerText = count;
+    // ステータス表示の更新（3行構成の各項目）
+    document.getElementById('stat-count').innerText = regCount;
     document.getElementById('stat-total-rows').innerText = ev.tactics.length;
     document.getElementById('stat-tactics-breakdown').innerHTML = breakdownStr;
-    document.getElementById('stat-cost').innerText = totalCalcCost.toLocaleString();
-    document.getElementById('stat-db-hp').innerText = totalDbHp.toLocaleString();
-    document.getElementById('stat-actual-cost').innerText = totalActualCost.toLocaleString();
-    document.getElementById('stat-hp').innerText = checkedHp.toLocaleString();
+    
+    // [目安] 登録フラグ関係なく集計（目安コスト計、目安HP計はデータベースの標準コスト・HPの合計、または目安コスト）
+    document.getElementById('stat-cost').innerText = totalCalcCost.toLocaleString(); // または目安コスト計
+    document.getElementById('stat-db-hp').innerText = totalDbHp.toLocaleString(); // あるいは全行のDB HP計など
+
+    // [実合計] 実コスト計(全行)、実HP計(想定=totalHp)
+    document.getElementById('stat-actual-cost-total').innerText = totalActualCostAll.toLocaleString();
     document.getElementById('stat-total-hp').innerText = totalHp.toLocaleString();
+
+    // [登録済] 登録フラグONを集計
+    document.getElementById('stat-actual-cost-reg').innerText = totalActualCost.toLocaleString();
+    document.getElementById('stat-hp').innerText = checkedHp.toLocaleString();
 
     const tfoot = document.getElementById('tfoot-tactics');
     tfoot.innerHTML = `
