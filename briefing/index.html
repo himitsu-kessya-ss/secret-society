@@ -44,7 +44,7 @@
 
         <!-- TAB 1: 作戦立案メイン -->
         <div id="tab-plan" class="tab-content">
-            <!-- 綺麗に整列された3行のステータス表示ブロック -->
+            <!-- 整列された3行のステータス表示ブロック -->
             <div class="card" style="margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">
                     <div>
@@ -59,19 +59,16 @@
                         <span class="status-badge status-badge-target">[目安]</span>
                         <div class="status-item">コスト計: <span id="stat-cost" class="val-warn">0</span></div>
                         <div class="status-item">HP計: <span id="stat-db-hp" class="val-accent">0</span></div>
-                        <div class="status-note">＊登録フラグ関係なく集計</div>
                     </div>
                     <div class="status-row">
                         <span class="status-badge status-badge-total">[実合計]</span>
                         <div class="status-item">コスト計: <span id="stat-actual-cost-total" class="val-warn">0</span></div>
-                        <div class="status-item">HP計(想定): <span id="stat-total-hp" class="val-muted">0</span></div>
-                        <div class="status-note">＊登録フラグ関係なく集計</div>
+                        <div class="status-item">HP計: <span id="stat-total-hp" class="val-muted">0</span></div>
                     </div>
                     <div class="status-row">
                         <span class="status-badge status-badge-reg">[登録済]</span>
                         <div class="status-item">コスト計: <span id="stat-actual-cost-reg" class="val-warn">0</span></div>
                         <div class="status-item">HP計: <span id="stat-hp" class="val-green">0</span></div>
-                        <div class="status-note">＊登録フラグONを集計</div>
                     </div>
                 </div>
             </div>
