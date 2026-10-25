@@ -132,7 +132,11 @@ async function saveSelectedTacticsToServer() {
                 targetEv.tactics[idx] = JSON.parse(JSON.stringify(ev.tactics[idx]));
             }
             updatedCount++;
+            
+            // サーバー反映完了後に更新対象フラグをOFFにする
             syncCheckbox.checked = false;
+            if (ev.tactics[idx]) ev.tactics[idx].sync = false;
+            if (targetEv.tactics[idx]) targetEv.tactics[idx].sync = false;
         }
     });
 
@@ -141,9 +145,30 @@ async function saveSelectedTacticsToServer() {
         return;
     }
 
+    // ヘッダーの「全選択」チェックボックスもOFFにリセット
+    const toggleAllHeader = document.getElementById('toggle-all-sync');
+    if (toggleAllHeader) toggleAllHeader.checked = false;
+
     await saveEventsToServer();
     alert(`選択された ${updatedCount} 行の作戦データをサーバーに反映しました！`);
     renderTacticsTable(targetEv);
+}
+
+// ヘッダーの「更新対象」一括ON/OFF切替関数
+function toggleAllSyncCheckboxes(headerCheckbox) {
+    const isChecked = headerCheckbox.checked;
+    const rows = document.querySelectorAll('#tbody-tactics tr');
+    const ev = events.find(e => e.id === currentEventId);
+
+    rows.forEach((tr, idx) => {
+        const syncCheckbox = tr.querySelector('.row-sync-checkbox');
+        if (syncCheckbox) {
+            syncCheckbox.checked = isChecked;
+        }
+        if (ev && ev.tactics[idx]) {
+            ev.tactics[idx].sync = isChecked;
+        }
+    });
 }
 
 // 画面上のDOMからメンバー表の入力内容を一時オブジェクト（ev.members）に収集する関数
@@ -255,14 +280,13 @@ function renderEventList() {
     if (!listEl) return;
     listEl.innerHTML = '';
     
-    // 起票順（配列の順番）にイベント通しNo.（1始まり）を割り振って描画
     events.forEach((ev, index) => {
         const card = document.createElement('div');
         card.className = 'event-card';
         
         const hasPass = ev.pass !== undefined && ev.pass !== null && ev.pass !== "";
         const lockText = hasPass ? '🔒 要パスワード保護' : '🔓 パスワードなし';
-        const eventNo = index + 1; // 通しNo.
+        const eventNo = index + 1;
 
         card.innerHTML = `
             <div onclick="handleEventCardClick('${ev.id}')" style="cursor: pointer;">
@@ -471,7 +495,6 @@ function loadEventSheet(ev) {
 }
 
 function switchTab(tabName) {
-    // タブ切り替え前に、現在表示中のメンバー表の入力内容を退避保持する
     if (currentTab === 'member' && currentEventId) {
         const ev = events.find(e => e.id === currentEventId);
         if (ev) collectMembersFromDOM(ev);
@@ -489,7 +512,7 @@ function switchTab(tabName) {
         document.querySelectorAll('.tab-btn')[1].classList.add('active');
         document.getElementById('tab-member').classList.remove('hidden');
         const ev = events.find(e => e.id === currentEventId);
-        if (ev) renderMemberTable(ev); // 保持されたデータを元に再描画
+        if (ev) renderMemberTable(ev);
     } else if (tabName === 'summary') {
         document.querySelectorAll('.tab-btn')[2].classList.add('active');
         document.getElementById('tab-summary').classList.remove('hidden');
@@ -548,10 +571,16 @@ function renderTacticsTable(ev) {
     const tbody = document.getElementById('tbody-tactics');
     tbody.innerHTML = '';
 
+    // テーブル描画時は全行の更新対象フラグ（sync）を初期値OFF（false）にする
     ev.tactics.forEach((row, idx) => {
+        row.sync = false;
         const tr = createTacticsTr(row, idx + 1, ev);
         tbody.appendChild(tr);
     });
+
+    // ヘッダーの全選択用チェックボックスもOFFにリセット
+    const toggleAllHeader = document.getElementById('toggle-all-sync');
+    if (toggleAllHeader) toggleAllHeader.checked = false;
 
     calculateStats();
 }
@@ -559,7 +588,7 @@ function renderTacticsTable(ev) {
 function addTacticsRow() {
     const ev = events.find(e => e.id === currentEventId);
     ev.tactics.push({
-        reg: false, sync: true, tactic: "AA", actualCost: 0, turn: 1, player: "", mecha: "", hp: 0, weapon: "", minR: 0, maxR: 20, equip: "", 
+        reg: false, sync: false, tactic: "AA", actualCost: 0, turn: 1, player: "", mecha: "", hp: 0, weapon: "", minR: 0, maxR: 20, equip: "", 
         strPre: "移動", strPost: "攻撃", 
         t1: "", l1: 0, t2: "", l2: 0, t3: "", l3: 0, t4: "", l4: 0, t5: "", l5: 0, 
         c1:false, c2:false, c3:false, c4:false, c5:false, c6:false, c7:false, c8:false, r1:false, r2:false, r3:false
@@ -574,6 +603,7 @@ function collectRowDataFromDOM(rowIndex, ev) {
     const row = ev.tactics[rowIndex];
 
     const regCb = tr.querySelector('.row-reg-checkbox');
+    const syncCb = tr.querySelector('.row-sync-checkbox');
     const tacticSel = tr.querySelector('.row-tactic-select');
     const turnInput = tr.querySelector('.row-turn-input');
     const playerSel = tr.querySelector('.row-player-select');
@@ -587,6 +617,7 @@ function collectRowDataFromDOM(rowIndex, ev) {
     const postSel = tr.querySelector('.row-post-select');
 
     if (regCb) row.reg = regCb.checked;
+    if (syncCb) row.sync = syncCb.checked;
     if (tacticSel) row.tactic = tacticSel.value;
     if (turnInput) row.turn = Number(turnInput.value);
     if (playerSel) row.player = playerSel.value;
@@ -678,7 +709,7 @@ function createTacticsTr(row, no, ev) {
 
     tr.innerHTML = `
         <td><input type="checkbox" class="row-reg-checkbox" ${row.reg ? 'checked' : ''} onchange="collectRowDataFromDOM(${no-1}, events.find(e=>e.id===currentEventId)); calculateStats();"></td>
-        <td><input type="checkbox" class="row-sync-checkbox" ${row.sync ? 'checked' : ''}></td>
+        <td><input type="checkbox" class="row-sync-checkbox" ${row.sync ? 'checked' : ''} onchange="collectRowDataFromDOM(${no-1}, events.find(e=>e.id===currentEventId));"></td>
         <td>${no}</td>
         <td>
             <select class="${tacticClass} row-tactic-select" onchange="changeTactic(this, ${no-1})">
