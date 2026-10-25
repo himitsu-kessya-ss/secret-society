@@ -617,7 +617,7 @@ function openMechaSearchModal(rowIndex) {
     document.getElementById('input-mecha-query').value = '';
     renderMechaSearchResults(mechaListArray);
     document.getElementById('modal-overlay').classList.remove('hidden');
-    document.getElementById('modal-mecha-search').classList.remove('hidden');
+    document.getElementById('modal-mecha-search').classList.add('hidden');
 }
 
 function filterMechaList() {
@@ -696,17 +696,28 @@ function calculateStats() {
     document.getElementById('stat-cost').innerText = totalCalcCost.toLocaleString();
 
     const tfoot = document.getElementById('tfoot-tactics');
+    // 全35列に対応するセルを1つずつ正確に生成し、「補」の列から下に合計値がピタリと来るように修正
     tfoot.innerHTML = `
         <tr>
-            <td colspan="6" style="text-align: right; padding-right: 15px;">合計値：</td>
+            <td></td><td></td><td></td><td></td><td></td>
+            <td style="text-align: right; font-weight: bold;">合計：</td>
             <td>${totalCalcCost.toLocaleString()}</td>
             <td>${totalActualCost.toLocaleString()}</td>
-            <td colspan="3"></td>
+            <td></td><td></td><td></td>
             <td>${totalHp.toLocaleString()}</td>
-            <td colspan="13"></td>
-            <!-- 特性(5つ分×2セル=10) + 装備(1) + 個人戦術前後(2) = 計13列分の空き -->
-            ${[...Array(8)].map((_, i) => `<td>${sumCols['c'+(i+1)].toLocaleString()}</td>`).join('')}
-            ${[...Array(3)].map((_, i) => `<td>${sumCols['r'+(i+1)].toLocaleString()}</td>`).join('')}
+            <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+            <td></td><td></td><td></td><td></td><td></td>
+            <td>${sumCols['c1'].toLocaleString()}</td>
+            <td>${sumCols['c2'].toLocaleString()}</td>
+            <td>${sumCols['c3'].toLocaleString()}</td>
+            <td>${sumCols['c4'].toLocaleString()}</td>
+            <td>${sumCols['c5'].toLocaleString()}</td>
+            <td>${sumCols['c6'].toLocaleString()}</td>
+            <td>${sumCols['c7'].toLocaleString()}</td>
+            <td>${sumCols['c8'].toLocaleString()}</td>
+            <td>${sumCols['r1'].toLocaleString()}</td>
+            <td>${sumCols['r2'].toLocaleString()}</td>
+            <td>${sumCols['r3'].toLocaleString()}</td>
         </tr>
     `;
 }
