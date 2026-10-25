@@ -64,7 +64,7 @@ const battleEvents = [
                 description: "戦闘詳細"
             },
             {
-                roundName: "戦闘ログ (1011〜200ターン)",
+                roundName: "戦闘ログ (101〜200ターン)",
                 url: "./関係者限定団体戦261025/101-200.html",
                 description: "戦闘詳細"
             }
