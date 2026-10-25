@@ -101,6 +101,39 @@ header {
     margin-bottom: 20px;
 }
 
+/* ステータス表示の列整列用グリッド */
+.status-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.status-row {
+    display: grid;
+    grid-template-columns: 85px 160px 160px 1fr;
+    align-items: center;
+    font-size: 0.9rem;
+    padding-top: 4px;
+    border-top: 1px dashed rgba(36, 52, 77, 0.6);
+}
+.status-row:first-child { border-top: none; padding-top: 0; }
+.status-badge {
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    text-align: center;
+}
+.status-badge-target { background: rgba(0, 240, 255, 0.15); color: var(--accent); }
+.status-badge-total  { background: rgba(255, 170, 0, 0.15); color: var(--accent-warn); }
+.status-badge-reg    { background: rgba(0, 255, 136, 0.15); color: var(--accent-green); }
+
+.status-item { white-space: nowrap; }
+.status-note { color: var(--text-muted); font-size: 0.8rem; }
+.val-warn { color: var(--accent-warn); font-weight: bold; }
+.val-accent { color: var(--accent); font-weight: bold; }
+.val-green { color: var(--accent-green); font-weight: bold; }
+.val-muted { color: var(--text-muted); font-weight: bold; }
+
 .event-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
