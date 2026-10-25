@@ -661,9 +661,8 @@ function calculateStats() {
     if (!ev) return;
 
     let regCount = 0;
-    let checkedHp = 0, totalHp = 0, totalCalcCost = 0, totalActualCost = 0, totalActualCostAll = 0, totalDbHp = 0;
+    let checkedHp = 0, totalHp = 0, totalCalcCost = 0, totalActualCost = 0, totalActualCostAll = 0, totalDbHpAll = 0;
     
-    // 団体戦術の枚数集計用（全数集計）
     let tacticCounts = {};
 
     let sumCols = {};
@@ -672,7 +671,7 @@ function calculateStats() {
 
     ev.tactics.forEach(r => {
         const hpVal = Number(r.hp || 0);
-        totalHp += hpVal;
+        totalHp += hpVal; // 全行の実HP計
 
         const mechaData = MECHA_DB[r.mecha] || { cost: 0, hp: 0 };
         const playerRank = ev.members[r.player] ? ev.members[r.player].rank : null;
@@ -680,18 +679,19 @@ function calculateStats() {
         const calcC = (r.mecha ? mechaData.cost : 0) + addCost;
         const actualC = r.actualCost !== undefined ? Number(r.actualCost) : calcC;
 
-        // 全体の実コスト合計（登録フラグ関係なし）
+        // 全行の目安コスト計
+        totalCalcCost += calcC;
+        // 全行のDB HP計
+        totalDbHpAll += Number(mechaData.hp || 0);
+        // 全行の実コスト計
         totalActualCostAll += actualC;
 
         if (r.reg) {
             regCount++;
-            checkedHp += hpVal;
-            totalCalcCost += calcC;
-            totalActualCost += actualC;
-            totalDbHp += Number(mechaData.hp || 0);
+            checkedHp += hpVal; // 登録済行の実HP計
+            totalActualCost += actualC; // 登録済行の実コスト計
         }
 
-        // 登録フラグに関わらず、すべての行の団体戦術を集計
         const t = r.tactic || '未設定';
         tacticCounts[t] = (tacticCounts[t] || 0) + 1;
 
@@ -703,7 +703,6 @@ function calculateStats() {
         }
     });
 
-    // 団体戦術の並び順（_A、_D、_S順、さらにアルファベット順）に整える
     const sortedTactics = Object.keys(tacticCounts).sort((a, b) => {
         const order = { 'A': 1, 'D': 2, 'S': 3 };
         const orderA = order[a.slice(-1).toUpperCase()] || 99;
@@ -723,20 +722,19 @@ function calculateStats() {
           }).join('、') 
         : 'なし';
 
-    // ステータス表示の更新（3行構成の各項目）
     document.getElementById('stat-count').innerText = regCount;
     document.getElementById('stat-total-rows').innerText = ev.tactics.length;
     document.getElementById('stat-tactics-breakdown').innerHTML = breakdownStr;
     
-    // [目安] 登録フラグ関係なく集計（目安コスト計、目安HP計はデータベースの標準コスト・HPの合計、または目安コスト）
-    document.getElementById('stat-cost').innerText = totalCalcCost.toLocaleString(); // または目安コスト計
-    document.getElementById('stat-db-hp').innerText = totalDbHp.toLocaleString(); // あるいは全行のDB HP計など
+    // [目安] 全行集計
+    document.getElementById('stat-cost').innerText = totalCalcCost.toLocaleString();
+    document.getElementById('stat-db-hp').innerText = totalDbHpAll.toLocaleString();
 
-    // [実合計] 実コスト計(全行)、実HP計(想定=totalHp)
+    // [実合計] 全行集計
     document.getElementById('stat-actual-cost-total').innerText = totalActualCostAll.toLocaleString();
     document.getElementById('stat-total-hp').innerText = totalHp.toLocaleString();
 
-    // [登録済] 登録フラグONを集計
+    // [登録済] 登録フラグON行のみ集計
     document.getElementById('stat-actual-cost-reg').innerText = totalActualCost.toLocaleString();
     document.getElementById('stat-hp').innerText = checkedHp.toLocaleString();
 
