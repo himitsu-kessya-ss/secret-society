@@ -483,6 +483,28 @@ function collectRowDataFromDOM(rowIndex, ev) {
     }
 }
 
+// 特性が変更されたときに動的に見た目を切り替える関数
+function updateTraitStyle(selectEl, no, traitIndex) {
+    collectRowDataFromDOM(no-1, events.find(e=>e.id===currentEventId));
+    
+    const tr = selectEl.closest('tr');
+    const wrapper = tr.querySelector(`#trait-box-${no-1}-${traitIndex}`);
+    if (!wrapper) return;
+
+    const tSelect = wrapper.querySelector(`.row-t${traitIndex}-select`);
+    const lSelect = wrapper.querySelector(`.row-l${traitIndex}-select`);
+
+    const tVal = tSelect ? tSelect.value : "";
+    const lVal = lSelect ? Number(lSelect.value) : 0;
+
+    // (なし) または Lvが1 のときはグレーアウト、それ以外は強調
+    if (!tVal || lVal === 1) {
+        wrapper.className = "trait-cell-wrapper trait-muted";
+    } else {
+        wrapper.className = "trait-cell-wrapper trait-active";
+    }
+}
+
 function createTacticsTr(row, no, ev) {
     const tr = document.createElement('tr');
 
@@ -501,18 +523,22 @@ function createTacticsTr(row, no, ev) {
         else if (lastChar === 'S') tacticClass = "tactic-s";
     }
 
-    const traitSelectHtml = (selectedVal, traitIndex) => `
-        <select class="trait-select row-t${traitIndex}-select" onchange="collectRowDataFromDOM(${no-1}, events.find(e=>e.id===currentEventId))">
-            <option value="">(なし)</option>
-            ${TRAIT_MASTER.map(t => `<option value="${t}" ${t === selectedVal ? 'selected' : ''}>${t}</option>`).join('')}
-        </select>
-    `;
+    const traitBlockHtml = (selectedVal, selectedLv, traitIndex) => {
+        const isMuted = !selectedVal || Number(selectedLv) === 1;
+        const wrapperClass = isMuted ? "trait-cell-wrapper trait-muted" : "trait-cell-wrapper trait-active";
 
-    const lvSelectHtml = (selectedLv, lvKey, lvNum) => `
-        <select class="trait-lv-select row-l${lvNum}-select" onchange="collectRowDataFromDOM(${no-1}, events.find(e=>e.id===currentEventId))">
-            ${[...Array(11)].map((_, i) => `<option value="${i}" ${Number(selectedLv) === i ? 'selected' : ''}>${i === 0 ? '0' : i}</option>`).join('')}
-        </select>
-    `;
+        return `
+            <div class="${wrapperClass}" id="trait-box-${no-1}-${traitIndex}">
+                <select class="trait-select row-t${traitIndex}-select" onchange="updateTraitStyle(this, ${no}, ${traitIndex})">
+                    <option value="">(なし)</option>
+                    ${TRAIT_MASTER.map(t => `<option value="${t}" ${t === selectedVal ? 'selected' : ''}>${t}</option>`).join('')}
+                </select>
+                <select class="trait-lv-select row-l${traitIndex}-select" onchange="updateTraitStyle(this, ${no}, ${traitIndex})">
+                    ${[...Array(11)].map((_, i) => `<option value="${i}" ${Number(selectedLv) === i ? 'selected' : ''}>${i === 0 ? '0' : i}</option>`).join('')}
+                </select>
+            </div>
+        `;
+    };
 
     tr.innerHTML = `
         <td><input type="checkbox" class="row-reg-checkbox" ${row.reg ? 'checked' : ''} onchange="collectRowDataFromDOM(${no-1}, events.find(e=>e.id===currentEventId)); calculateStats();"></td>
@@ -563,11 +589,11 @@ function createTacticsTr(row, no, ev) {
             </select>
         </td>
 
-        <td>${traitSelectHtml(row.t1, 1)} ${lvSelectHtml(row.l1, 'l1', 1)}</td>
-        <td>${traitSelectHtml(row.t2, 2)} ${lvSelectHtml(row.l2, 'l2', 2)}</td>
-        <td>${traitSelectHtml(row.t3, 3)} ${lvSelectHtml(row.l3, 'l3', 3)}</td>
-        <td>${traitSelectHtml(row.t4, 4)} ${lvSelectHtml(row.l4, 'l4', 4)}</td>
-        <td>${traitSelectHtml(row.t5, 5)} ${lvSelectHtml(row.l5, 'l5', 5)}</td>
+        <td>${traitBlockHtml(row.t1, row.l1, 1)}</td>
+        <td>${traitBlockHtml(row.t2, row.l2, 2)}</td>
+        <td>${traitBlockHtml(row.t3, row.l3, 3)}</td>
+        <td>${traitBlockHtml(row.t4, row.l4, 4)}</td>
+        <td>${traitBlockHtml(row.t5, row.l5, 5)}</td>
 
         ${[...Array(8)].map((_, i) => `<td><input type="checkbox" class="row-c${i+1}-checkbox" ${row['c'+(i+1)] ? 'checked' : ''} onchange="collectRowDataFromDOM(${no-1}, events.find(e=>e.id===currentEventId)); calculateStats();"></td>`).join('')}
         ${[...Array(3)].map((_, i) => `<td><input type="checkbox" class="row-r${i+1}-checkbox" ${row['r'+(i+1)] ? 'checked' : ''} onchange="collectRowDataFromDOM(${no-1}, events.find(e=>e.id===currentEventId)); calculateStats();"></td>`).join('')}
@@ -671,7 +697,7 @@ function calculateStats() {
 
     ev.tactics.forEach(r => {
         const hpVal = Number(r.hp || 0);
-        totalHp += hpVal; // 全行の実HP計
+        totalHp += hpVal;
 
         const mechaData = MECHA_DB[r.mecha] || { cost: 0, hp: 0 };
         const playerRank = ev.members[r.player] ? ev.members[r.player].rank : null;
@@ -679,17 +705,14 @@ function calculateStats() {
         const calcC = (r.mecha ? mechaData.cost : 0) + addCost;
         const actualC = r.actualCost !== undefined ? Number(r.actualCost) : calcC;
 
-        // 全行の目安コスト計
-        totalCalcCost += calcC;
-        // 全行のDB HP計
-        totalDbHpAll += Number(mechaData.hp || 0);
-        // 全行の実コスト計
         totalActualCostAll += actualC;
+        totalCalcCost += calcC;
+        totalDbHpAll += Number(mechaData.hp || 0);
 
         if (r.reg) {
             regCount++;
-            checkedHp += hpVal; // 登録済行の実HP計
-            totalActualCost += actualC; // 登録済行の実コスト計
+            checkedHp += hpVal;
+            totalActualCost += actualC;
         }
 
         const t = r.tactic || '未設定';
@@ -726,15 +749,12 @@ function calculateStats() {
     document.getElementById('stat-total-rows').innerText = ev.tactics.length;
     document.getElementById('stat-tactics-breakdown').innerHTML = breakdownStr;
     
-    // [目安] 全行集計
     document.getElementById('stat-cost').innerText = totalCalcCost.toLocaleString();
     document.getElementById('stat-db-hp').innerText = totalDbHpAll.toLocaleString();
 
-    // [実合計] 全行集計
     document.getElementById('stat-actual-cost-total').innerText = totalActualCostAll.toLocaleString();
     document.getElementById('stat-total-hp').innerText = totalHp.toLocaleString();
 
-    // [登録済] 登録フラグON行のみ集計
     document.getElementById('stat-actual-cost-reg').innerText = totalActualCost.toLocaleString();
     document.getElementById('stat-hp').innerText = checkedHp.toLocaleString();
 
