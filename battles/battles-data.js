@@ -55,7 +55,7 @@ const battleEvents = [
             },
             {
                 roundName: "大会結果まとめ",
-                url: "./関係者限定団体戦261025/summary.html",
+                url: "./関係者限定団体戦261025/result.html",
                 description: "勝敗やスコアなどの結果データ"
             },
             {
