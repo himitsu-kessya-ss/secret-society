@@ -238,10 +238,10 @@ function initDefaultEventData(ev) {
     ev.tactics = [
         { reg: true, sync: false, tactic: "DA", actualCost: 38, turn: 10, player: "Oro🍊min", mecha: "ガンダム", hp: 501, weapon: "★フルバースト", minR: 20, maxR: 70, equip: "プロペラントタンク", strPre: "移動しない", strPost: "攻撃", 
           t1: "集中", l1: 10, t2: "機転", l2: 10, t3: "", l3: 0, t4: "", l4: 0, t5: "", l5: 0, 
-          c1:0, c2:0, c3:0, c4:0, c5:0, c6:0, c7:0, c8:0, r1:0, r2:0, r3:0 },
+          c1:false, c2:false, c3:false, c4:false, c5:false, c6:false, c7:false, c8:false, r1:false, r2:false, r3:false },
         { reg: true, sync: false, tactic: "DA", actualCost: 72, turn: 1, player: "Yggdrasill", mecha: "ガリルナガン", hp: 696, weapon: "アキシオン・アッシャー", minR: 50, maxR: 90, equip: "プロペラントタンク", strPre: "足止め", strPost: "回避", 
           t1: "集中", l1: 10, t2: "繊細", l2: 10, t3: "偵察", l3: 7, t4: "", l4: 0, t5: "", l5: 0, 
-          c1:0, c2:0, c3:0, c4:0, c5:0, c6:0, c7:0, c8:0, r1:0, r2:0, r3:0 }
+          c1:false, c2:false, c3:false, c4:false, c5:false, c6:false, c7:false, c8:false, r1:false, r2:false, r3:false }
     ];
 }
 
@@ -430,7 +430,7 @@ function addTacticsRow() {
         reg: false, sync: true, tactic: "AA", actualCost: 0, turn: 1, player: "", mecha: "", hp: 0, weapon: "", minR: 0, maxR: 20, equip: "", 
         strPre: "移動", strPost: "攻撃", 
         t1: "", l1: 0, t2: "", l2: 0, t3: "", l3: 0, t4: "", l4: 0, t5: "", l5: 0, 
-        c1:0, c2:0, c3:0, c4:0, c5:0, c6:0, c7:0, c8:0, r1:0, r2:0, r3:0
+        c1:false, c2:false, c3:false, c4:false, c5:false, c6:false, c7:false, c8:false, r1:false, r2:false, r3:false
     });
     renderTacticsTable(ev);
 }
@@ -474,12 +474,12 @@ function collectRowDataFromDOM(rowIndex, ev) {
         if (lSel) row['l' + i] = Number(lSel.value);
     }
     for (let i = 1; i <= 8; i++) {
-        const cInp = tr.querySelector(`.row-c${i}-input`);
-        if (cInp) row['c' + i] = Number(cInp.value);
+        const cBox = tr.querySelector(`.row-c${i}-checkbox`);
+        if (cBox) row['c' + i] = cBox.checked;
     }
     for (let i = 1; i <= 3; i++) {
-        const rInp = tr.querySelector(`.row-r${i}-input`);
-        if (rInp) row['r' + i] = Number(rInp.value);
+        const rBox = tr.querySelector(`.row-r${i}-checkbox`);
+        if (rBox) row['r' + i] = rBox.checked;
     }
 }
 
@@ -569,8 +569,9 @@ function createTacticsTr(row, no, ev) {
         <td>${traitSelectHtml(row.t4, 4)} ${lvSelectHtml(row.l4, 'l4', 4)}</td>
         <td>${traitSelectHtml(row.t5, 5)} ${lvSelectHtml(row.l5, 'l5', 5)}</td>
 
-        ${[...Array(8)].map((_, i) => `<td><input type="number" class="row-c${i+1}-input" value="${row['c'+(i+1)] || 0}" style="width:38px; text-align:center;" oninput="collectRowDataFromDOM(${no-1}, events.find(e=>e.id===currentEventId)); calculateStats();"></td>`).join('')}
-        ${[...Array(3)].map((_, i) => `<td><input type="number" class="row-r${i+1}-input" value="${row['r'+(i+1)] || 0}" style="width:38px; text-align:center;" oninput="collectRowDataFromDOM(${no-1}, events.find(e=>e.id===currentEventId)); calculateStats();"></td>`).join('')}
+        <!-- 補〜耐ヒ列 (チェックボックス化) -->
+        ${[...Array(8)].map((_, i) => `<td><input type="checkbox" class="row-c${i+1}-checkbox" ${row['c'+(i+1)] ? 'checked' : ''} onchange="collectRowDataFromDOM(${no-1}, events.find(e=>e.id===currentEventId)); calculateStats();"></td>`).join('')}
+        ${[...Array(3)].map((_, i) => `<td><input type="checkbox" class="row-r${i+1}-checkbox" ${row['r'+(i+1)] ? 'checked' : ''} onchange="collectRowDataFromDOM(${no-1}, events.find(e=>e.id===currentEventId)); calculateStats();"></td>`).join('')}
     `;
 
     return tr;
@@ -660,7 +661,7 @@ function calculateStats() {
     const ev = events.find(e => e.id === currentEventId);
     if (!ev) return;
 
-    let count = 0, checkedHp = 0, totalHp = 0, totalCalcCost = 0, totalActualCost = 0;
+    let count = 0, checkedHp = 0, totalHp = 0, totalCalcCost = 0, totalActualCost = 0, totalDbHp = 0;
     
     let sumCols = {};
     for(let i=1; i<=8; i++) sumCols['c'+i] = 0;
@@ -670,7 +671,7 @@ function calculateStats() {
         const hpVal = Number(r.hp || 0);
         totalHp += hpVal;
 
-        const mechaData = MECHA_DB[r.mecha] || { cost: 0 };
+        const mechaData = MECHA_DB[r.mecha] || { cost: 0, hp: 0 };
         const playerRank = ev.members[r.player] ? ev.members[r.player].rank : null;
         const addCost = playerRank ? (RANK_MASTER[playerRank] || 0) : 0;
         const calcC = (r.mecha ? mechaData.cost : 0) + addCost;
@@ -681,16 +682,25 @@ function calculateStats() {
             checkedHp += hpVal;
             totalCalcCost += calcC;
             totalActualCost += actualC;
+            totalDbHp += Number(mechaData.hp || 0);
         }
 
-        for(let i=1; i<=8; i++) sumCols['c'+i] += Number(r['c'+i] || 0);
-        for(let i=1; i<=3; i++) sumCols['r'+i] += Number(r['r'+i] || 0);
+        for(let i=1; i<=8; i++) {
+            if (r['c'+i]) sumCols['c'+i]++;
+        }
+        for(let i=1; i<=3; i++) {
+            if (r['r'+i]) sumCols['r'+i]++;
+        }
     });
 
+    // 3行レイアウト用の各ステータス更新
     document.getElementById('stat-count').innerText = count;
+    document.getElementById('stat-total-rows').innerText = ev.tactics.length;
+    document.getElementById('stat-cost').innerText = totalCalcCost.toLocaleString();
+    document.getElementById('stat-db-hp').innerText = totalDbHp.toLocaleString();
+    document.getElementById('stat-actual-cost').innerText = totalActualCost.toLocaleString();
     document.getElementById('stat-hp').innerText = checkedHp.toLocaleString();
     document.getElementById('stat-total-hp').innerText = totalHp.toLocaleString();
-    document.getElementById('stat-cost').innerText = totalCalcCost.toLocaleString();
 
     const tfoot = document.getElementById('tfoot-tactics');
     tfoot.innerHTML = `
@@ -703,22 +713,21 @@ function calculateStats() {
             <td style="text-align: center;">${totalHp.toLocaleString()}</td>
             <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
             <td></td><td></td><td></td><td></td><td></td>
-            <td style="text-align: center;">${sumCols['c1'].toLocaleString()}</td>
-            <td style="text-align: center;">${sumCols['c2'].toLocaleString()}</td>
-            <td style="text-align: center;">${sumCols['c3'].toLocaleString()}</td>
-            <td style="text-align: center;">${sumCols['c4'].toLocaleString()}</td>
-            <td style="text-align: center;">${sumCols['c5'].toLocaleString()}</td>
-            <td style="text-align: center;">${sumCols['c6'].toLocaleString()}</td>
-            <td style="text-align: center;">${sumCols['c7'].toLocaleString()}</td>
-            <td style="text-align: center;">${sumCols['c8'].toLocaleString()}</td>
-            <td style="text-align: center;">${sumCols['r1'].toLocaleString()}</td>
-            <td style="text-align: center;">${sumCols['r2'].toLocaleString()}</td>
-            <td style="text-align: center;">${sumCols['r3'].toLocaleString()}</td>
+            <td style="text-align: center;">${sumCols['c1']}</td>
+            <td style="text-align: center;">${sumCols['c2']}</td>
+            <td style="text-align: center;">${sumCols['c3']}</td>
+            <td style="text-align: center;">${sumCols['c4']}</td>
+            <td style="text-align: center;">${sumCols['c5']}</td>
+            <td style="text-align: center;">${sumCols['c6']}</td>
+            <td style="text-align: center;">${sumCols['c7']}</td>
+            <td style="text-align: center;">${sumCols['c8']}</td>
+            <td style="text-align: center;">${sumCols['r1']}</td>
+            <td style="text-align: center;">${sumCols['r2']}</td>
+            <td style="text-align: center;">${sumCols['r3']}</td>
         </tr>
     `;
 }
 
-// 【作戦要点サマリタブ】参加メンバー全員分のカードを生成し、作戦立案タブの内容と連動させる
 function renderSummaryCards() {
     const evData = events.find(e => e.id === currentEventId);
     if (!evData) return;
@@ -726,7 +735,6 @@ function renderSummaryCards() {
     const container = document.getElementById('summary-cards');
     container.innerHTML = '';
 
-    // 参加メンバー一覧（「参加メンバー・階級設定」タブに登録されている全員）を取得
     const memberNames = Object.keys(evData.members);
     
     if (memberNames.length === 0) {
@@ -734,11 +742,8 @@ function renderSummaryCards() {
         return;
     }
 
-    // メンバーごとにカードを生成
     memberNames.forEach(pName => {
         const mInfo = evData.members[pName];
-        
-        // 作戦立案タブ（evData.tactics）の中で、このメンバー（pName）が担当している行をすべて抽出
         const assignedTactics = evData.tactics.filter(r => r.player === pName);
 
         const card = document.createElement('div');
@@ -775,7 +780,6 @@ function renderSummaryCards() {
             });
         }
 
-        // カードのヘッダーにメンバー名、階級、熟練度を表示
         card.innerHTML = `
             <div class="summary-header">
                 <span>👤 ${pName}</span>
