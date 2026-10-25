@@ -214,6 +214,23 @@ select { width: 110px; }
 .trait-select { width: 75px; }
 .trait-lv-select { width: 50px; text-align: center; }
 
+/* 特性セルの強調・グレーアウト用スタイル */
+.trait-cell-wrapper {
+    display: inline-flex;
+    gap: 2px;
+    padding: 2px;
+    border-radius: 4px;
+    transition: 0.2s;
+}
+.trait-cell-wrapper.trait-muted {
+    opacity: 0.35;
+    filter: grayscale(80%);
+}
+.trait-cell-wrapper.trait-active {
+    background: rgba(0, 240, 255, 0.08);
+    border: 1px solid rgba(0, 240, 255, 0.3);
+}
+
 input[type="checkbox"] { width: auto; transform: scale(1.2); cursor: pointer; }
 
 .tactic-a { background-color: rgba(255, 77, 77, 0.35) !important; color: #ff9999; font-weight: bold; }
