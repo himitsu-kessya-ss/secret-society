@@ -146,7 +146,7 @@ table {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.85rem;
-    min-width: 2300px;
+    min-width: 2400px;
 }
 th, td {
     border: 1px solid var(--border);
