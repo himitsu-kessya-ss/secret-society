@@ -272,7 +272,6 @@ function handleEventCardClick(evId) {
     const ev = events.find(e => e.id === evId);
     if (!ev) return;
 
-    // パスワードが設定されていない（または空）の場合は、そのまま直接入室
     if (!ev.pass) {
         loadEventSheet(ev);
     } else {
@@ -370,14 +369,15 @@ function submitAuthEvent() {
     }
 }
 
-// 管理設定モーダル（PW変更・削除）
+// 管理設定モーダル（イベント名・PW変更・削除）
 function openAdminSettingsModal(eventObj, evId) {
-    eventObj.stopPropagation(); // カード全体のクリックイベントを防止
+    eventObj.stopPropagation();
     targetEventIdForAdmin = evId;
     const ev = events.find(e => e.id === evId);
 
     document.getElementById('admin-settings-title').innerText = `管理設定: ${ev.title}`;
     document.getElementById('input-mgr-admin-pw').value = '';
+    document.getElementById('input-mgr-event-title').value = ev.title;
     document.getElementById('input-mgr-new-pw').value = ev.pass || '';
     
     const noPassCheck = document.getElementById('input-mgr-no-pass');
@@ -404,14 +404,20 @@ async function submitAdminSettings() {
     const ev = events.find(e => e.id === targetEventIdForAdmin);
     if (!ev) return;
 
+    const newTitle = document.getElementById('input-mgr-event-title').value;
     const noPass = document.getElementById('input-mgr-no-pass').checked;
     const newPw = document.getElementById('input-mgr-new-pw').value;
 
+    if (!newTitle) {
+        alert('イベント名を入力してください。');
+        return;
+    }
     if (!noPass && !newPw) {
         alert('新しい入室パスワードを入力するか、「パスワードなしにする」にチェックを入れてください。');
         return;
     }
 
+    ev.title = newTitle;
     ev.pass = noPass ? "" : newPw;
     await saveEventsToServer();
     renderEventList();
@@ -602,7 +608,6 @@ function updateTraitStyle(selectEl, no, traitIndex) {
     const tVal = tSelect ? tSelect.value : "";
     const lVal = lSelect ? Number(lSelect.value) : 0;
 
-    // (なし) または Lvが1 のときはグレーアウト、それ以外は背景色で強調
     if (!tVal || lVal === 1) {
         wrapper.className = "trait-cell-wrapper trait-muted";
     } else {
