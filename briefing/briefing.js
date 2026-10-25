@@ -662,7 +662,7 @@ function calculateStats() {
 
     let count = 0, checkedHp = 0, totalHp = 0, totalCalcCost = 0, totalActualCost = 0, totalDbHp = 0;
     
-    // 団体戦術の枚数集計用（_A, _D, _Sの順でカウント）
+    // 団体戦術の枚数集計用（全数集計）
     let tacticCounts = {};
 
     let sumCols = {};
@@ -685,11 +685,11 @@ function calculateStats() {
             totalCalcCost += calcC;
             totalActualCost += actualC;
             totalDbHp += Number(mechaData.hp || 0);
-
-            // 登録にチェックが入っている行の団体戦術を集計
-            const t = r.tactic || '未設定';
-            tacticCounts[t] = (tacticCounts[t] || 0) + 1;
         }
+
+        // 登録フラグに関わらず、すべての行の団体戦術を集計
+        const t = r.tactic || '未設定';
+        tacticCounts[t] = (tacticCounts[t] || 0) + 1;
 
         for(let i=1; i<=8; i++) {
             if (r['c'+i]) sumCols['c'+i]++;
@@ -699,7 +699,7 @@ function calculateStats() {
         }
     });
 
-    // 団体戦術の並び順（末尾が A, D, S の順、さらにアルファベット順）に整えて文字列化
+    // 団体戦術の並び順（_A、_D、_S順、さらにアルファベット順）に整える
     const sortedTactics = Object.keys(tacticCounts).sort((a, b) => {
         const order = { 'A': 1, 'D': 2, 'S': 3 };
         const orderA = order[a.slice(-1).toUpperCase()] || 99;
@@ -708,14 +708,22 @@ function calculateStats() {
         return a.localeCompare(b);
     });
 
+    // 団体戦術の文字だけに背景色クラスを付与する
     const breakdownStr = sortedTactics.length > 0 
-        ? sortedTactics.map(t => `${t} ${tacticCounts[t]}`).join('、') 
+        ? sortedTactics.map(t => {
+            const lastChar = t.slice(-1).toUpperCase();
+            let badgeClass = '';
+            if (lastChar === 'A') badgeClass = 'tactic-badge-a';
+            else if (lastChar === 'D') badgeClass = 'tactic-badge-d';
+            else if (lastChar === 'S') badgeClass = 'tactic-badge-s';
+            return `<span class="${badgeClass}">${t}</span> ${tacticCounts[t]}`;
+          }).join('、') 
         : 'なし';
 
-    // スマートに整理された統計表示の更新
+    // ステータス表示の更新
     document.getElementById('stat-count').innerText = count;
     document.getElementById('stat-total-rows').innerText = ev.tactics.length;
-    document.getElementById('stat-tactics-breakdown').innerText = breakdownStr;
+    document.getElementById('stat-tactics-breakdown').innerHTML = breakdownStr;
     document.getElementById('stat-cost').innerText = totalCalcCost.toLocaleString();
     document.getElementById('stat-db-hp').innerText = totalDbHp.toLocaleString();
     document.getElementById('stat-actual-cost').innerText = totalActualCost.toLocaleString();
@@ -748,7 +756,7 @@ function calculateStats() {
     `;
 }
 
-// 【作戦要点サマリタブ】参加メンバー全員分のカードを生成し、作戦立案タブの内容と連動させる（実コストも追加）
+// 【作戦要点サマリタブ】参加メンバー全員分のカードを生成し、作戦立案タブの内容と連動させる
 function renderSummaryCards() {
     const evData = events.find(e => e.id === currentEventId);
     if (!evData) return;
