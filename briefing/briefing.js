@@ -381,7 +381,7 @@ function renderMemberTable(ev) {
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td><input type="text" value="${pName}" class="member-name-input" style="width:120px;"></td>
-            <td><input type="number" value="${m.exp}" class="member-exp-input" style="width:70px;"></td>
+            <td><input type="number" value="${m.exp}" class="member-exp-input" style="width:70px; text-align:center;"></td>
             <td>
                 <select class="member-rank-select" style="width:130px;">
                     ${Object.keys(RANK_MASTER).map(r => `<option value="${r}" ${r === m.rank ? 'selected' : ''}>${r}</option>`).join('')}
@@ -523,7 +523,7 @@ function createTacticsTr(row, no, ev) {
                 ${TACTICS_MASTER.map(t => `<option value="${t}" ${t === row.tactic ? 'selected' : ''}>${t}</option>`).join('')}
             </select>
         </td>
-        <td><input type="number" class="row-turn-input" value="${row.turn}" style="width:50px;" oninput="collectRowDataFromDOM(${no-1}, events.find(e=>e.id===currentEventId))"></td>
+        <td><input type="number" class="row-turn-input" value="${row.turn}" style="width:50px; text-align:center;" oninput="collectRowDataFromDOM(${no-1}, events.find(e=>e.id===currentEventId))"></td>
         <td>
             <select class="row-player-select" onchange="collectRowDataFromDOM(${no-1}, events.find(e=>e.id===currentEventId)); renderTacticsTable(events.find(e=>e.id===currentEventId));" style="width:120px;">
                 <option value="">選択</option>
@@ -531,7 +531,7 @@ function createTacticsTr(row, no, ev) {
             </select>
         </td>
         <td style="color:var(--accent); font-weight:bold;">${calcCost || '#N/A'}</td>
-        <td><input type="number" class="row-actualcost-input" value="${row.actualCost !== undefined ? row.actualCost : calcCost}" style="width:65px;" oninput="collectRowDataFromDOM(${no-1}, events.find(e=>e.id===currentEventId)); calculateStats();"></td>
+        <td><input type="number" class="row-actualcost-input" value="${row.actualCost !== undefined ? row.actualCost : calcCost}" style="width:65px; text-align:center;" oninput="collectRowDataFromDOM(${no-1}, events.find(e=>e.id===currentEventId)); calculateStats();"></td>
         <td>
             <button class="btn btn-secondary" style="padding: 4px 8px; font-size:0.8rem; width:100%; text-align:left; overflow:hidden; text-overflow:ellipsis;" onclick="openMechaSearchModal(${no-1})">
                 ${row.mecha || '機体を検索...'}
@@ -539,11 +539,11 @@ function createTacticsTr(row, no, ev) {
         </td>
         <td>${dbCost}</td>
         <td>${dbHp}</td>
-        <td><input type="number" class="row-hp-input" value="${row.hp || (mechaData.hp || 0)}" style="width:65px;" oninput="collectRowDataFromDOM(${no-1}, events.find(e=>e.id===currentEventId)); calculateStats();"></td>
+        <td><input type="number" class="row-hp-input" value="${row.hp || (mechaData.hp || 0)}" style="width:65px; text-align:center;" oninput="collectRowDataFromDOM(${no-1}, events.find(e=>e.id===currentEventId)); calculateStats();"></td>
         <td><input type="text" class="weapon-input row-weapon-input" value="${row.weapon}" oninput="collectRowDataFromDOM(${no-1}, events.find(e=>e.id===currentEventId))"></td>
         
-        <td><input type="number" min="0" max="99" class="row-minr-input" value="${row.minR}" style="width:50px;" oninput="updateRangeBar(this, ${no-1}, 'min')"></td>
-        <td><input type="number" min="0" max="99" class="row-maxr-input" value="${row.maxR}" style="width:50px;" oninput="updateRangeBar(this, ${no-1}, 'max')"></td>
+        <td><input type="number" min="0" max="99" class="row-minr-input" value="${row.minR}" style="width:50px; text-align:center;" oninput="updateRangeBar(this, ${no-1}, 'min')"></td>
+        <td><input type="number" min="0" max="99" class="row-maxr-input" value="${row.maxR}" style="width:50px; text-align:center;" oninput="updateRangeBar(this, ${no-1}, 'max')"></td>
         <td>
             <div class="range-bar-container" id="range-bar-${no-1}">
                 <div class="range-bar-fill" style="left: ${Math.min(100, Math.max(0, row.minR))}%; width: ${Math.max(0, Math.min(100 - row.minR, row.maxR - row.minR))}%;"></div>
@@ -569,11 +569,9 @@ function createTacticsTr(row, no, ev) {
         <td>${traitSelectHtml(row.t4, 4)} ${lvSelectHtml(row.l4, 'l4', 4)}</td>
         <td>${traitSelectHtml(row.t5, 5)} ${lvSelectHtml(row.l5, 'l5', 5)}</td>
 
-        <!-- 補・解・回・麻・E回・ミ・爆・時 (計8列) -->
-        ${[...Array(8)].map((_, i) => `<td><input type="number" class="row-c${i+1}-input" value="${row['c'+(i+1)] || 0}" style="width:38px;" oninput="collectRowDataFromDOM(${no-1}, events.find(e=>e.id===currentEventId)); calculateStats();"></td>`).join('')}
-        
-        <!-- 耐実・耐ビ・耐ヒ (計3列) -->
-        ${[...Array(3)].map((_, i) => `<td><input type="number" class="row-r${i+1}-input" value="${row['r'+(i+1)] || 0}" style="width:38px;" oninput="collectRowDataFromDOM(${no-1}, events.find(e=>e.id===currentEventId)); calculateStats();"></td>`).join('')}
+        <!-- 補〜耐ヒ列 (中央揃えの数値入力) -->
+        ${[...Array(8)].map((_, i) => `<td><input type="number" class="row-c${i+1}-input" value="${row['c'+(i+1)] || 0}" style="width:38px; text-align:center;" oninput="collectRowDataFromDOM(${no-1}, events.find(e=>e.id===currentEventId)); calculateStats();"></td>`).join('')}
+        ${[...Array(3)].map((_, i) => `<td><input type="number" class="row-r${i+1}-input" value="${row['r'+(i+1)] || 0}" style="width:38px; text-align:center;" oninput="collectRowDataFromDOM(${no-1}, events.find(e=>e.id===currentEventId)); calculateStats();"></td>`).join('')}
     `;
 
     return tr;
@@ -617,7 +615,7 @@ function openMechaSearchModal(rowIndex) {
     document.getElementById('input-mecha-query').value = '';
     renderMechaSearchResults(mechaListArray);
     document.getElementById('modal-overlay').classList.remove('hidden');
-    document.getElementById('modal-mecha-search').classList.add('hidden');
+    document.getElementById('modal-mecha-search').classList.remove('hidden');
 }
 
 function filterMechaList() {
@@ -696,28 +694,28 @@ function calculateStats() {
     document.getElementById('stat-cost').innerText = totalCalcCost.toLocaleString();
 
     const tfoot = document.getElementById('tfoot-tactics');
-    // 全35列に対応するセルを1つずつ正確に生成し、「補」の列から下に合計値がピタリと来るように修正
+    // すべての集計値（実コスト、実HP、補〜耐ヒなど）を中央揃えでピタリと表示
     tfoot.innerHTML = `
         <tr>
             <td></td><td></td><td></td><td></td><td></td>
             <td style="text-align: right; font-weight: bold;">合計：</td>
-            <td>${totalCalcCost.toLocaleString()}</td>
-            <td>${totalActualCost.toLocaleString()}</td>
+            <td style="text-align: center;">${totalCalcCost.toLocaleString()}</td>
+            <td style="text-align: center;">${totalActualCost.toLocaleString()}</td>
             <td></td><td></td><td></td>
-            <td>${totalHp.toLocaleString()}</td>
+            <td style="text-align: center;">${totalHp.toLocaleString()}</td>
             <td></td><td></td><td></td><td></td><td></td><td></td><td></td>
             <td></td><td></td><td></td><td></td><td></td>
-            <td>${sumCols['c1'].toLocaleString()}</td>
-            <td>${sumCols['c2'].toLocaleString()}</td>
-            <td>${sumCols['c3'].toLocaleString()}</td>
-            <td>${sumCols['c4'].toLocaleString()}</td>
-            <td>${sumCols['c5'].toLocaleString()}</td>
-            <td>${sumCols['c6'].toLocaleString()}</td>
-            <td>${sumCols['c7'].toLocaleString()}</td>
-            <td>${sumCols['c8'].toLocaleString()}</td>
-            <td>${sumCols['r1'].toLocaleString()}</td>
-            <td>${sumCols['r2'].toLocaleString()}</td>
-            <td>${sumCols['r3'].toLocaleString()}</td>
+            <td style="text-align: center;">${sumCols['c1'].toLocaleString()}</td>
+            <td style="text-align: center;">${sumCols['c2'].toLocaleString()}</td>
+            <td style="text-align: center;">${sumCols['c3'].toLocaleString()}</td>
+            <td style="text-align: center;">${sumCols['c4'].toLocaleString()}</td>
+            <td style="text-align: center;">${sumCols['c5'].toLocaleString()}</td>
+            <td style="text-align: center;">${sumCols['c6'].toLocaleString()}</td>
+            <td style="text-align: center;">${sumCols['c7'].toLocaleString()}</td>
+            <td style="text-align: center;">${sumCols['c8'].toLocaleString()}</td>
+            <td style="text-align: center;">${sumCols['r1'].toLocaleString()}</td>
+            <td style="text-align: center;">${sumCols['r2'].toLocaleString()}</td>
+            <td style="text-align: center;">${sumCols['r3'].toLocaleString()}</td>
         </tr>
     `;
 }
