@@ -26,7 +26,6 @@ const TRAIT_MASTER = [
     "威圧", "鍛錬", "一徹", "威風", "堅実", "明朗", "繊細", "高尚", "闘争"
 ];
 
-// ご要望通りの個人戦術マスタ
 const STRATEGY_PRE_MASTER = ["移動", "足止め", "移動しない"];
 const STRATEGY_POST_MASTER = ["攻撃", "回避", "撹乱", "操縦"];
 
@@ -78,7 +77,6 @@ async function loadEventsFromServer(isBackground = false) {
         if (currentEventId) {
             const ev = events.find(ev => ev.id === currentEventId);
             if (ev) {
-                // バックグラウンド同期時、現在開いているイベントのデータを保持しつつスタッツ更新
                 calculateStats();
             }
         }
@@ -284,6 +282,7 @@ function switchTab(tabName) {
     }
 }
 
+// 参加メンバー一覧テーブルの描画（入力中に再描画されて消えないよう最適化）
 function renderMemberTable(ev) {
     const tbody = document.getElementById('tbody-members');
     tbody.innerHTML = '';
@@ -294,17 +293,63 @@ function renderMemberTable(ev) {
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td><input type="text" value="${pName}" oninput="renameMember('${pName}', this.value)" style="width:120px;"></td>
-            <td><input type="number" value="${m.exp}" oninput="ev.members['${pName}'].exp = Number(this.value); saveEventsToServer(); calculateStats();"></td>
+            <td><input type="text" value="${pName}" data-oldname="${pName}" class="member-name-input" style="width:120px;"></td>
+            <td><input type="number" value="${m.exp}" data-player="${pName}" class="member-exp-input" style="width:70px;"></td>
             <td>
-                <select onchange="updateMemberRank('${pName}', this.value)" style="width:130px;">
+                <select data-player="${pName}" class="member-rank-select" style="width:130px;">
                     ${Object.keys(RANK_MASTER).map(r => `<option value="${r}" ${r === m.rank ? 'selected' : ''}>${r}</option>`).join('')}
                 </select>
             </td>
-            <td style="color:var(--accent); font-weight:bold;">+${rankCost}</td>
+            <td style="color:var(--accent); font-weight:bold;" class="member-cost-cell">+${rankCost}</td>
             <td><button class="btn btn-danger" style="padding: 2px 8px; font-size:0.75rem;" onclick="deleteMember('${pName}')">削除</button></td>
         `;
         tbody.appendChild(tr);
+    });
+
+    // 各入力フィールドのイベントリスナーを設定（入力中に画面が再描画されないようにする）
+    tbody.querySelectorAll('.member-name-input').forEach(input => {
+        input.oninput = function() {
+            const oldName = this.dataset.oldname;
+            const newName = this.value;
+            const ev = events.find(e => e.id === currentEventId);
+            if (!newName || ev.members[newName]) return;
+
+            // データのキーを付け替え
+            ev.members[newName] = ev.members[oldName];
+            delete ev.members[oldName];
+            this.dataset.oldname = newName;
+
+            // 関連する戦術行のプレイヤー名も更新
+            ev.tactics.forEach(t => { if(t.player === oldName) t.player = newName; });
+            saveEventsToServer();
+        };
+    });
+
+    tbody.querySelectorAll('.member-exp-input').forEach(input => {
+        input.oninput = function() {
+            const pName = this.dataset.player;
+            const ev = events.find(e => e.id === currentEventId);
+            if (ev && ev.members[pName]) {
+                ev.members[pName].exp = Number(this.value);
+                saveEventsToServer();
+                calculateStats();
+            }
+        };
+    });
+
+    tbody.querySelectorAll('.member-rank-select').forEach(select => {
+        select.onchange = function() {
+            const pName = this.dataset.player;
+            const newRank = this.value;
+            const ev = events.find(e => e.id === currentEventId);
+            if (ev && ev.members[pName]) {
+                ev.members[pName].rank = newRank;
+                saveEventsToServer();
+                // 階級変更時のみコスト表示を更新するため再描画
+                renderMemberTable(ev);
+                renderTacticsTable(ev);
+            }
+        };
     });
 }
 
@@ -320,26 +365,9 @@ function addMemberRow() {
     renderMemberTable(ev);
 }
 
-function renameMember(oldName, newName) {
-    const ev = events.find(e => e.id === currentEventId);
-    if(!newName || ev.members[newName]) return;
-    ev.members[newName] = ev.members[oldName];
-    delete ev.members[oldName];
-    ev.tactics.forEach(t => { if(t.player === oldName) t.player = newName; });
-    saveEventsToServer();
-}
-
 function deleteMember(pName) {
     const ev = events.find(e => e.id === currentEventId);
     delete ev.members[pName];
-    saveEventsToServer();
-    renderMemberTable(ev);
-    renderTacticsTable(ev);
-}
-
-function updateMemberRank(pName, newRank) {
-    const ev = events.find(e => e.id === currentEventId);
-    ev.members[pName].rank = newRank;
     saveEventsToServer();
     renderMemberTable(ev);
     renderTacticsTable(ev);
