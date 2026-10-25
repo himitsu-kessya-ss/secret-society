@@ -44,20 +44,23 @@
 
         <!-- TAB 1: 作戦立案メイン -->
         <div id="tab-plan" class="tab-content">
-            <!-- ご要望の3行レイアウトのステータス表示 -->
+            <!-- スマートに整理されたステータス表示ブロック -->
             <div class="card" style="margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
-                    <div>登録機体数: <span id="stat-count" style="color:var(--accent); font-weight:bold;">0</span> / 全機体数: <span id="stat-total-rows" style="color:var(--text-muted); font-weight:bold;">0</span></div>
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        機体登録: <span id="stat-count" style="color:var(--accent); font-weight:bold;">0</span> / <span id="stat-total-rows" style="color:var(--text-muted); font-weight:bold;">0</span>
+                        <span style="margin-left: 15px; color: var(--text-muted);">| 団体戦術: <span id="stat-tactics-breakdown" style="color: #fff; font-weight: 500;">-</span></span>
+                    </div>
                     <div><button class="btn" onclick="saveSelectedTacticsToServer()" style="background-color: rgba(0, 240, 255, 0.15);">💾 チェックした行をサーバーに反映</button></div>
                 </div>
                 <div style="display: flex; gap: 30px; flex-wrap: wrap; border-top: 1px solid var(--border); padding-top: 6px; font-size: 0.9rem;">
-                    <div>合計目安コスト: <span id="stat-cost" style="color:var(--accent-warn); font-weight:bold;">0</span></div>
-                    <div>登録機体 合計 目安HP: <span id="stat-db-hp" style="color:var(--accent); font-weight:bold;">0</span></div>
+                    <div>目安コスト計: <span id="stat-cost" style="color:var(--accent-warn); font-weight:bold;">0</span></div>
+                    <div>目安HP計: <span id="stat-db-hp" style="color:var(--accent); font-weight:bold;">0</span></div>
                 </div>
                 <div style="display: flex; gap: 30px; flex-wrap: wrap; border-top: 1px solid var(--border); padding-top: 6px; font-size: 0.9rem;">
-                    <div>合計実コスト: <span id="stat-actual-cost" style="color:var(--accent-warn); font-weight:bold;">0</span></div>
-                    <div>登録機体 合計 実HP: <span id="stat-hp" style="color:var(--accent-green); font-weight:bold;">0</span></div>
-                    <div>総合計 実HP（想定値）: <span id="stat-total-hp" style="color:var(--text-muted); font-weight:bold;">0</span></div>
+                    <div>実コスト計: <span id="stat-actual-cost" style="color:var(--accent-warn); font-weight:bold;">0</span></div>
+                    <div>実HP計: <span id="stat-hp" style="color:var(--accent-green); font-weight:bold;">0</span></div>
+                    <div>実HP総合計（想定）: <span id="stat-total-hp" style="color:var(--text-muted); font-weight:bold;">0</span></div>
                 </div>
             </div>
 
