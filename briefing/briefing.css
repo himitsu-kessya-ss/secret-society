@@ -171,10 +171,9 @@ input, select {
     font-size: 0.85rem;
 }
 input[type="text"] { width: 140px; }
-input[type="number"] { width: 60px; text-align: center; } /* 数値入力は中央寄せ */
+input[type="number"] { width: 60px; text-align: center; }
 select { width: 110px; }
 
-/* 団体戦術列の幅をコンパクト（登場ターンと同等）に狭める設定 */
 .row-tactic-select { width: 55px !important; text-align: center; }
 
 .weapon-input { width: 170px !important; }
