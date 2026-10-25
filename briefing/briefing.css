@@ -109,7 +109,7 @@ header {
 }
 .status-row {
     display: grid;
-    grid-template-columns: 85px 160px 160px 1fr;
+    grid-template-columns: 85px 170px 170px;
     align-items: center;
     font-size: 0.9rem;
     padding-top: 4px;
@@ -128,7 +128,6 @@ header {
 .status-badge-reg    { background: rgba(0, 255, 136, 0.15); color: var(--accent-green); }
 
 .status-item { white-space: nowrap; }
-.status-note { color: var(--text-muted); font-size: 0.8rem; }
 .val-warn { color: var(--accent-warn); font-weight: bold; }
 .val-accent { color: var(--accent); font-weight: bold; }
 .val-green { color: var(--accent-green); font-weight: bold; }
