@@ -569,7 +569,6 @@ function createTacticsTr(row, no, ev) {
         <td>${traitSelectHtml(row.t4, 4)} ${lvSelectHtml(row.l4, 'l4', 4)}</td>
         <td>${traitSelectHtml(row.t5, 5)} ${lvSelectHtml(row.l5, 'l5', 5)}</td>
 
-        <!-- 補〜耐ヒ列 (中央揃えの数値入力) -->
         ${[...Array(8)].map((_, i) => `<td><input type="number" class="row-c${i+1}-input" value="${row['c'+(i+1)] || 0}" style="width:38px; text-align:center;" oninput="collectRowDataFromDOM(${no-1}, events.find(e=>e.id===currentEventId)); calculateStats();"></td>`).join('')}
         ${[...Array(3)].map((_, i) => `<td><input type="number" class="row-r${i+1}-input" value="${row['r'+(i+1)] || 0}" style="width:38px; text-align:center;" oninput="collectRowDataFromDOM(${no-1}, events.find(e=>e.id===currentEventId)); calculateStats();"></td>`).join('')}
     `;
@@ -694,7 +693,6 @@ function calculateStats() {
     document.getElementById('stat-cost').innerText = totalCalcCost.toLocaleString();
 
     const tfoot = document.getElementById('tfoot-tactics');
-    // すべての集計値（実コスト、実HP、補〜耐ヒなど）を中央揃えでピタリと表示
     tfoot.innerHTML = `
         <tr>
             <td></td><td></td><td></td><td></td><td></td>
@@ -720,6 +718,7 @@ function calculateStats() {
     `;
 }
 
+// 【作戦要点サマリタブ】参加メンバー全員分のカードを生成し、作戦立案タブの内容と連動させる
 function renderSummaryCards() {
     const evData = events.find(e => e.id === currentEventId);
     if (!evData) return;
@@ -727,36 +726,66 @@ function renderSummaryCards() {
     const container = document.getElementById('summary-cards');
     container.innerHTML = '';
 
-    const activeRows = evData.tactics.filter(r => r.reg);
-    if (activeRows.length === 0) {
-        container.innerHTML = '<p class="sub-title">登録にチェックが入っている機体がありません。</p>';
+    // 参加メンバー一覧（「参加メンバー・階級設定」タブに登録されている全員）を取得
+    const memberNames = Object.keys(evData.members);
+    
+    if (memberNames.length === 0) {
+        container.innerHTML = '<p class="sub-title">登録されている参加メンバーがいません。</p>';
         return;
     }
 
-    activeRows.forEach(r => {
+    // メンバーごとにカードを生成
+    memberNames.forEach(pName => {
+        const mInfo = evData.members[pName];
+        
+        // 作戦立案タブ（evData.tactics）の中で、このメンバー（pName）が担当している行をすべて抽出
+        const assignedTactics = evData.tactics.filter(r => r.player === pName);
+
         const card = document.createElement('div');
         card.className = 'summary-item-card';
-        const traitsStr = [
-            r.t1 ? `${r.t1}(${r.l1})` : '',
-            r.t2 ? `${r.t2}(${r.l2})` : '',
-            r.t3 ? `${r.t3}(${r.l3})` : '',
-            r.t4 ? `${r.t4}(${r.l4})` : '',
-            r.t5 ? `${r.t5}(${r.l5})` : ''
-        ].filter(Boolean).join(', ');
 
+        let tacticsHtml = '';
+        if (assignedTactics.length === 0) {
+            tacticsHtml = '<div style="color: var(--text-muted); font-size: 0.85rem; padding: 5px 0;">（割当作戦なし）</div>';
+        } else {
+            assignedTactics.forEach((r, idx) => {
+                const traitsStr = [
+                    r.t1 ? `${r.t1}(${r.l1})` : '',
+                    r.t2 ? `${r.t2}(${r.l2})` : '',
+                    r.t3 ? `${r.t3}(${r.l3})` : '',
+                    r.t4 ? `${r.t4}(${r.l4})` : '',
+                    r.t5 ? `${r.t5}(${r.l5})` : ''
+                ].filter(Boolean).join(', ');
+
+                tacticsHtml += `
+                    <div style="border-top: 1px dashed var(--border); padding-top: 8px; margin-top: 8px;">
+                        <div style="display: flex; justify-content: space-between; color: var(--accent); font-size: 0.9rem; font-weight: bold;">
+                            <span>[作戦${idx + 1}] 団体: ${r.tactic || '-'}</span>
+                            <span>登場 T: ${r.turn}</span>
+                        </div>
+                        <div style="font-size: 0.85rem; margin-top: 3px;"><strong>機体:</strong> ${r.mecha || '-'} (実HP: ${r.hp})</div>
+                        <div style="font-size: 0.85rem;"><strong>武装:</strong> ${r.weapon || '-'} (射程: ${r.minR}〜${r.maxR})</div>
+                        <div style="font-size: 0.85rem;"><strong>装備:</strong> ${r.equip || '-'}</div>
+                        <div style="margin-top: 4px; color: var(--text-muted); font-size: 0.8rem;">
+                            個人戦術: ${r.strPre || '-'} / ${r.strPost || '-'}<br>
+                            特性: ${traitsStr || '-'}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // カードのヘッダーにメンバー名、階級、熟練度を表示
         card.innerHTML = `
             <div class="summary-header">
-                <span>${r.player || '未設定'} (${r.tactic})</span>
-                <span>登場 T: ${r.turn}</span>
+                <span>👤 ${pName}</span>
+                <span style="font-size: 0.85rem; color: var(--text-muted);">階級: ${mInfo.rank} / 熟練度: ${mInfo.exp}</span>
             </div>
-            <div><strong>機体:</strong> ${r.mecha || '-'} (実HP: ${r.hp})</div>
-            <div><strong>武装:</strong> ${r.weapon || '-'} (射程: ${r.minR}〜${r.maxR})</div>
-            <div><strong>装備:</strong> ${r.equip || '-'}</div>
-            <div style="margin-top:8px; color:var(--text-muted); font-size:0.8rem;">
-                個人戦術: ${r.strPre || '-'} / ${r.strPost || '-'}<br>
-                特性: ${traitsStr || '-'}
+            <div style="margin-top: 5px;">
+                ${tacticsHtml}
             </div>
         `;
+
         container.appendChild(card);
     });
 }
