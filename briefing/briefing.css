@@ -145,7 +145,7 @@ header {
     border-left: 4px solid var(--accent);
     border-radius: 6px;
     padding: 15px;
-    cursor: pointer;
+    position: relative;
     transition: transform 0.2s, border-color 0.2s;
 }
 .event-card:hover {
@@ -214,7 +214,7 @@ select { width: 110px; }
 .trait-select { width: 75px; }
 .trait-lv-select { width: 50px; text-align: center; }
 
-/* 特性セルの強調・グレーアウト用スタイル */
+/* 特性セルのグレーアウト・文字背景色による強調スタイル */
 .trait-cell-wrapper {
     display: inline-flex;
     gap: 2px;
@@ -222,13 +222,15 @@ select { width: 110px; }
     border-radius: 4px;
     transition: 0.2s;
 }
-.trait-cell-wrapper.trait-muted {
+.trait-cell-wrapper.trait-muted select {
     opacity: 0.35;
     filter: grayscale(80%);
 }
-.trait-cell-wrapper.trait-active {
-    background: rgba(0, 240, 255, 0.08);
-    border: 1px solid rgba(0, 240, 255, 0.3);
+.trait-cell-wrapper.trait-active select {
+    background-color: rgba(0, 240, 255, 0.22);
+    border-color: var(--accent);
+    color: #ffffff;
+    font-weight: bold;
 }
 
 input[type="checkbox"] { width: auto; transform: scale(1.2); cursor: pointer; }
@@ -300,7 +302,7 @@ select option {
     border: 1px solid var(--accent);
     padding: 25px;
     border-radius: 8px;
-    width: 400px;
+    width: 420px;
 }
 .modal input { margin: 10px 0; width: 100%; }
 
