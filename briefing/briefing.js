@@ -26,15 +26,15 @@ const TRAIT_MASTER = [
     "威圧", "鍛錬", "一徹", "威風", "堅実", "明朗", "繊細", "高尚", "闘争"
 ];
 
-const STRATEGY_PRE_MASTER = ["移動を意識する", "足止め", "移動しない"];
-const STRATEGY_POST_MASTER = ["攻撃重視", "回避重視", "撹乱重視", "操縦重視"];
+// ご要望通りの個人戦術マスタ
+const STRATEGY_PRE_MASTER = ["移動", "足止め", "移動しない"];
+const STRATEGY_POST_MASTER = ["攻撃", "回避", "撹乱", "操縦"];
 
 const TACTICS_MASTER = ["NS", "AS", "DS", "SS", "NA", "AA", "DA", "SA", "ND", "AD", "DD", "SD", "LA", "LD", "LS"];
 const DEFAULT_PLAYERS = ["Oro🍊min", "Halbert", "Yggdrasill", "スパイク", "キッド", "ボブ", "リーア", "ハチワレ", "ナイト"];
 
 let events = [];
 
-// ページ読み込み時の処理
 window.onload = async function() {
     localStorage.removeItem('secret_society_briefing_state_v3');
     showMainPage();
@@ -50,7 +50,6 @@ window.onload = async function() {
     }, 5000);
 };
 
-// スプレッドシート（GAS）からデータを読み込む
 async function loadEventsFromServer(isBackground = false) {
     if (!GAS_URL) {
         initDefaultEvents();
@@ -78,12 +77,14 @@ async function loadEventsFromServer(isBackground = false) {
     } else {
         if (currentEventId) {
             const ev = events.find(ev => ev.id === currentEventId);
-            if (ev) calculateStats();
+            if (ev) {
+                // バックグラウンド同期時、現在開いているイベントのデータを保持しつつスタッツ更新
+                calculateStats();
+            }
         }
     }
 }
 
-// スプレッドシート（GAS）へデータを保存する
 async function saveEventsToServer() {
     if (!GAS_URL) return;
 
@@ -151,10 +152,10 @@ function initDefaultEventData(ev) {
     ev.members["Halbert"] = { exp: 265, rank: "先任曹長" };
 
     ev.tactics = [
-        { reg: true, tactic: "DA", actualCost: 38, turn: 10, player: "Oro🍊min", mecha: "ガンダム", hp: 501, weapon: "★フルバースト", minR: 20, maxR: 70, equip: "プロペラントタンク", strPre: "移動しない", strPost: "攻撃重視", 
+        { reg: true, tactic: "DA", actualCost: 38, turn: 10, player: "Oro🍊min", mecha: "ガンダム", hp: 501, weapon: "★フルバースト", minR: 20, maxR: 70, equip: "プロペラントタンク", strPre: "移動しない", strPost: "攻撃", 
           t1: "集中", l1: 10, t2: "機転", l2: 10, t3: "", l3: 0, t4: "", l4: 0, t5: "", l5: 0, 
           c1:0, c2:0, c3:0, c4:0, c5:0, c6:0, c7:0, c8:0, r1:0, r2:0, r3:0 },
-        { reg: true, tactic: "DA", actualCost: 72, turn: 1, player: "Yggdrasill", mecha: "ガリルナガン", hp: 696, weapon: "アキシオン・アッシャー", minR: 50, maxR: 90, equip: "プロペラントタンク", strPre: "足止め", strPost: "回避重視", 
+        { reg: true, tactic: "DA", actualCost: 72, turn: 1, player: "Yggdrasill", mecha: "ガリルナガン", hp: 696, weapon: "アキシオン・アッシャー", minR: 50, maxR: 90, equip: "プロペラントタンク", strPre: "足止め", strPost: "回避", 
           t1: "集中", l1: 10, t2: "繊細", l2: 10, t3: "偵察", l3: 7, t4: "", l4: 0, t5: "", l5: 0, 
           c1:0, c2:0, c3:0, c4:0, c5:0, c6:0, c7:0, c8:0, r1:0, r2:0, r3:0 }
     ];
@@ -360,7 +361,7 @@ function addTacticsRow() {
     const ev = events.find(e => e.id === currentEventId);
     ev.tactics.push({
         reg: false, tactic: "AA", actualCost: 0, turn: 1, player: "", mecha: "", hp: 0, weapon: "", minR: 0, maxR: 20, equip: "", 
-        strPre: "移動を意識する", strPost: "攻撃重視", 
+        strPre: "移動", strPost: "攻撃", 
         t1: "", l1: 0, t2: "", l2: 0, t3: "", l3: 0, t4: "", l4: 0, t5: "", l5: 0, 
         c1:0, c2:0, c3:0, c4:0, c5:0, c6:0, c7:0, c8:0, r1:0, r2:0, r3:0
     });
@@ -409,7 +410,7 @@ function createTacticsTr(row, no, ev) {
         </td>
         <td><input type="number" value="${row.turn}" style="width:50px;" oninput="row.turn = Number(this.value); saveEventsToServer();"></td>
         <td>
-            <select onchange="row.player = this.value; saveEventsToServer(); renderTacticsTable(ev);" style="width:120px;">
+            <select onchange="row.player = this.value; saveEventsToServer(); calculateStats();" style="width:120px;">
                 <option value="">選択</option>
                 ${Object.keys(ev.members).map(p => `<option value="${p}" ${p === row.player ? 'selected' : ''}>${p}</option>`).join('')}
             </select>
