@@ -2,6 +2,7 @@
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxJFwDlx71xhfSF3mp6cSK46zog3cSM7kr_3tkGocyQJpnfbzQ8dDPWSjfxG5C7lcdejA/exec';
 
 let currentEventId = null;
+let targetEventIdForAdmin = null; // 管理設定モーダルで操作中のイベントID
 let currentTab = 'plan';
 let MECHA_DB = {}; 
 let mechaListArray = []; 
@@ -252,13 +253,31 @@ function renderEventList() {
     events.forEach(ev => {
         const card = document.createElement('div');
         card.className = 'event-card';
-        card.onclick = () => openAuthModal(ev.id);
+        
+        const hasPass = ev.pass !== undefined && ev.pass !== null && ev.pass !== "";
+        const lockText = hasPass ? '🔒 要パスワード保護' : '🔓 パスワードなし';
+
         card.innerHTML = `
-            <h3>${ev.title}</h3>
-            <p class="sub-title" style="margin-top:8px;">🔒 要パスワード保護</p>
+            <div onclick="handleEventCardClick('${ev.id}')" style="cursor: pointer;">
+                <h3>${ev.title}</h3>
+                <p class="sub-title" style="margin-top:8px;">${lockText}</p>
+            </div>
+            <button class="btn btn-secondary" style="position: absolute; top: 15px; right: 15px; padding: 4px 10px; font-size: 0.75rem;" onclick="openAdminSettingsModal(event, '${ev.id}')">⚙️ 管理設定</button>
         `;
         listEl.appendChild(card);
     });
+}
+
+function handleEventCardClick(evId) {
+    const ev = events.find(e => e.id === evId);
+    if (!ev) return;
+
+    // パスワードが設定されていない（または空）の場合は、そのまま直接入室
+    if (!ev.pass) {
+        loadEventSheet(ev);
+    } else {
+        openAuthModal(evId);
+    }
 }
 
 function showMainPage() {
@@ -274,35 +293,50 @@ function closeModal() {
     document.getElementById('modal-overlay').classList.add('hidden');
     document.getElementById('modal-create').classList.add('hidden');
     document.getElementById('modal-auth').classList.add('hidden');
+    document.getElementById('modal-admin-settings').classList.add('hidden');
     document.getElementById('modal-mecha-search').classList.add('hidden');
 }
 
+// 新規起票モーダル
 function openCreateModal() {
     document.getElementById('input-admin-pw').value = '';
     document.getElementById('input-event-title').value = '';
     document.getElementById('input-event-pw').value = '';
+    document.getElementById('input-no-pass-check').checked = false;
+    document.getElementById('input-event-pw').disabled = false;
     document.getElementById('modal-overlay').classList.remove('hidden');
     document.getElementById('modal-create').classList.remove('hidden');
+}
+
+function toggleCreatePassInput(checkbox) {
+    const pwInput = document.getElementById('input-event-pw');
+    pwInput.disabled = checkbox.checked;
+    if (checkbox.checked) pwInput.value = '';
 }
 
 function submitCreateEvent() {
     const adminPw = document.getElementById('input-admin-pw').value;
     const title = document.getElementById('input-event-title').value;
+    const noPass = document.getElementById('input-no-pass-check').checked;
     const eventPw = document.getElementById('input-event-pw').value;
 
     if (adminPw !== 'p@ssw0rd') {
         alert('管理者パスワードが正しくありません。');
         return;
     }
-    if (!title || !eventPw) {
-        alert('イベント名と入室パスワードを入力してください。');
+    if (!title) {
+        alert('イベント名を入力してください。');
+        return;
+    }
+    if (!noPass && !eventPw) {
+        alert('入室パスワードを入力するか、「入室パスワードを不要にする」にチェックを入れてください。');
         return;
     }
 
     const newEv = {
         id: 'ev_' + Date.now(),
         title: title,
-        pass: eventPw,
+        pass: noPass ? "" : eventPw,
         members: {},
         tactics: []
     };
@@ -314,6 +348,7 @@ function submitCreateEvent() {
     alert('新規イベントを起票しました！');
 }
 
+// 入室認証モーダル
 function openAuthModal(evId) {
     currentEventId = evId;
     const ev = events.find(e => e.id === evId);
@@ -333,6 +368,76 @@ function submitAuthEvent() {
     } else {
         alert('パスワードが正しくありません。');
     }
+}
+
+// 管理設定モーダル（PW変更・削除）
+function openAdminSettingsModal(eventObj, evId) {
+    eventObj.stopPropagation(); // カード全体のクリックイベントを防止
+    targetEventIdForAdmin = evId;
+    const ev = events.find(e => e.id === evId);
+
+    document.getElementById('admin-settings-title').innerText = `管理設定: ${ev.title}`;
+    document.getElementById('input-mgr-admin-pw').value = '';
+    document.getElementById('input-mgr-new-pw').value = ev.pass || '';
+    
+    const noPassCheck = document.getElementById('input-mgr-no-pass');
+    noPassCheck.checked = !ev.pass;
+    document.getElementById('input-mgr-new-pw').disabled = !ev.pass;
+
+    document.getElementById('modal-overlay').classList.remove('hidden');
+    document.getElementById('modal-admin-settings').classList.remove('hidden');
+}
+
+function toggleMgrPassInput(checkbox) {
+    const newPwInput = document.getElementById('input-mgr-new-pw');
+    newPwInput.disabled = checkbox.checked;
+    if (checkbox.checked) newPwInput.value = '';
+}
+
+async function submitAdminSettings() {
+    const adminPw = document.getElementById('input-mgr-admin-pw').value;
+    if (adminPw !== 'p@ssw0rd') {
+        alert('管理者パスワードが正しくありません。');
+        return;
+    }
+
+    const ev = events.find(e => e.id === targetEventIdForAdmin);
+    if (!ev) return;
+
+    const noPass = document.getElementById('input-mgr-no-pass').checked;
+    const newPw = document.getElementById('input-mgr-new-pw').value;
+
+    if (!noPass && !newPw) {
+        alert('新しい入室パスワードを入力するか、「パスワードなしにする」にチェックを入れてください。');
+        return;
+    }
+
+    ev.pass = noPass ? "" : newPw;
+    await saveEventsToServer();
+    renderEventList();
+    closeModal();
+    alert('イベント管理設定を更新しました！');
+}
+
+async function executeDeleteEvent() {
+    const adminPw = document.getElementById('input-mgr-admin-pw').value;
+    if (adminPw !== 'p@ssw0rd') {
+        alert('管理者パスワードが正しくありません。');
+        return;
+    }
+
+    const ev = events.find(e => e.id === targetEventIdForAdmin);
+    if (!ev) return;
+
+    if (!confirm(`本当にイベント「${ev.title}」を削除しますか？この操作は元に戻せません。`)) {
+        return;
+    }
+
+    events = events.filter(e => e.id !== targetEventIdForAdmin);
+    await saveEventsToServer();
+    renderEventList();
+    closeModal();
+    alert('イベントを削除しました。');
 }
 
 function loadEventSheet(ev) {
@@ -497,7 +602,7 @@ function updateTraitStyle(selectEl, no, traitIndex) {
     const tVal = tSelect ? tSelect.value : "";
     const lVal = lSelect ? Number(lSelect.value) : 0;
 
-    // (なし) または Lvが1 のときはグレーアウト、それ以外は強調
+    // (なし) または Lvが1 のときはグレーアウト、それ以外は背景色で強調
     if (!tVal || lVal === 1) {
         wrapper.className = "trait-cell-wrapper trait-muted";
     } else {
