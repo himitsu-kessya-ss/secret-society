@@ -171,14 +171,17 @@ input, select {
     font-size: 0.85rem;
 }
 input[type="text"] { width: 140px; }
-input[type="number"] { width: 60px; }
+input[type="number"] { width: 60px; text-align: center; } /* 数値入力は中央寄せ */
 select { width: 110px; }
+
+/* 団体戦術列の幅をコンパクト（登場ターンと同等）に狭める設定 */
+.row-tactic-select { width: 55px !important; text-align: center; }
 
 .weapon-input { width: 170px !important; }
 .equip-input { width: 150px !important; }
 .strategy-select { width: 115px; }
 .trait-select { width: 75px; }
-.trait-lv-select { width: 50px; }
+.trait-lv-select { width: 50px; text-align: center; }
 
 input[type="checkbox"] { width: auto; transform: scale(1.2); cursor: pointer; }
 
