@@ -188,6 +188,11 @@ input[type="checkbox"] { width: auto; transform: scale(1.2); cursor: pointer; }
 .tactic-d { background-color: rgba(0, 136, 255, 0.35) !important; color: #99ccff; font-weight: bold; }
 .tactic-s { background-color: rgba(0, 255, 136, 0.35) !important; color: #99ffcc; font-weight: bold; }
 
+/* 団体戦術集計用のカラーバッジ */
+.tactic-badge-a { background-color: rgba(255, 77, 77, 0.35); color: #ff9999; padding: 1px 5px; border-radius: 3px; font-weight: bold; }
+.tactic-badge-d { background-color: rgba(0, 136, 255, 0.35); color: #99ccff; padding: 1px 5px; border-radius: 3px; font-weight: bold; }
+.tactic-badge-s { background-color: rgba(0, 255, 136, 0.35); color: #99ffcc; padding: 1px 5px; border-radius: 3px; font-weight: bold; }
+
 select.tactic-a option,
 select.tactic-d option,
 select.tactic-s option,
