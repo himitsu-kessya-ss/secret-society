@@ -37,9 +37,36 @@ const STORAGE_KEY_DELETE_KEY = 'ss_upload_delete_key';
 let allPosts = [];
 let displayLimit = 10;
 
+// --- 機体名(キー)と機体No.(バリュー)の対応マップ ---
+let machineDataMap = new Map();
+
 // --- ソート状態管理 ---
 let currentSortColumn = 'unitNo';
 let currentSortDirection = 'asc';
+
+// --- 初期化：CSVデータの読み込み（routeフォルダ内） ---
+async function loadMachineCsvForJs() {
+    try {
+        const response = await fetch('../route/GL)機体一覧 - 機体一覧.csv');
+        if (!response.ok) throw new Error('CSVファイルの取得に失敗しました。');
+        const csvText = await response.text();
+        
+        const lines = csvText.split(/\r\n|\n/);
+        lines.forEach(line => {
+            if (!line.trim()) return;
+            const cols = line.split(',');
+            if (cols.length >= 2) {
+                const machineNo = cols[0].trim();   // 1列目：機体No.
+                const machineName = cols[1].trim(); // 2列目：機体名
+                if (machineNo && machineName) {
+                    machineDataMap.set(machineName, machineNo);
+                }
+            }
+        });
+    } catch (error) {
+        console.error('機体一覧CSV読み込みエラー:', error);
+    }
+}
 
 // --- 初期化：No.1 〜 No.9 セレクトボックスの生成 ---
 function createAbilityOptionsHTML(selectedValue = '') {
@@ -436,13 +463,9 @@ function renderPosts(postsToRender) {
 
             let editorHTML = `<h4 style="margin-top:0; margin-bottom:12px; color:#ff9800; font-size:14px;">🛠 投稿データの直接編集</h4>`;
             editorHTML += `
-                <div style="display: grid; grid-template-columns: 120px 1fr; gap: 10px; margin-bottom: 15px; background: #1f1f1f; padding: 10px; border-radius: 4px; border: 1px solid #444;">
+                <div style="margin-bottom: 15px; background: #1f1f1f; padding: 10px; border-radius: 4px; border: 1px solid #444;">
                     <div>
-                        <label style="font-size: 11px; color: #aaa; display: block; margin-bottom: 4px;">機体ナンバー (4桁)</label>
-                        <input type="text" id="edit-unit-number-${data.id}" value="${escapeHTML(data.unitNumber || '')}" maxlength="4" pattern="\\d{4}" style="width: 100%; padding: 6px; box-sizing: border-box; background: #1a1a1a; color: #fff; border: 1px solid #555; border-radius: 4px;">
-                    </div>
-                    <div>
-                        <label style="font-size: 11px; color: #aaa; display: block; margin-bottom: 4px;">機体名</label>
+                        <label style="font-size: 11px; color: #aaa; display: block; margin-bottom: 4px;">機体名（変更すると機体No.もCSVから自動更新されます）</label>
                         <input type="text" id="edit-unit-name-${data.id}" value="${escapeHTML(data.unitName || '')}" style="width: 100%; padding: 6px; box-sizing: border-box; background: #1a1a1a; color: #fff; border: 1px solid #555; border-radius: 4px;">
                     </div>
                 </div>
@@ -493,15 +516,17 @@ function renderPosts(postsToRender) {
                 saveBtn.textContent = '保存中...';
 
                 try {
-                    const newUnitNumber = document.getElementById(`edit-unit-number-${data.id}`).value.trim();
                     const newUnitName = document.getElementById(`edit-unit-name-${data.id}`).value.trim();
 
-                    if (!newUnitNumber || !newUnitName) {
-                        alert('機体ナンバーと機体名は必須です。');
+                    if (!newUnitName) {
+                        alert('機体名は必須です。');
                         saveBtn.disabled = false;
                         saveBtn.textContent = '変更を保存';
                         return;
                     }
+
+                    // CSVから機体名に対応する機体No.を自動取得
+                    let newUnitNumber = machineDataMap.get(newUnitName) || data.unitNumber || '';
 
                     const selects = inlineEditContainer.querySelectorAll('.inline-ability-select');
                     const newAbilities = [];
@@ -594,8 +619,14 @@ form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const file = imageFileInput.files[0];
-    const unitNumber = document.getElementById('unit-number').value.trim();
     const unitName = document.getElementById('unit-name').value.trim();
+    
+    // 入力された機体名から、CSVマップを使って機体No.を自動取得する
+    let unitNumber = document.getElementById('unit-number').value.trim();
+    if (!unitNumber && unitName && machineDataMap.has(unitName)) {
+        unitNumber = machineDataMap.get(unitName);
+    }
+
     const author = document.getElementById('author').value.trim();
     const deleteKey = document.getElementById('delete-key').value.trim();
 
@@ -734,8 +765,9 @@ function escapeHTML(str) {
 }
 
 // ページ読み込み時の初期化処理
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     initAbilityDropdowns();
     loadSavedCredentials();
+    await loadMachineCsvForJs(); // CSVをあらかじめ読み込んでマップに保持
     loadPosts();
 });
