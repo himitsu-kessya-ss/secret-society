@@ -42,8 +42,8 @@
             <div class="guide-card">
                 <h2 class="guide-title">ℹ️ SS投稿の使い方・ルール</h2>
                 <ul class="guide-list">
-                    <li><strong>機体ナンバー：</strong> 対象となる機体の4桁の番号（例：0001）を入力してください。</li>
-                    <li><strong>機体名：</strong> 画像に映っている機体の名称を入力してください。</li>
+                    <li><strong>機体名：</strong> ゲーム画面から機体名をコピペまたは手入力してください（CSVから機体No.が自動紐付けされます）。</li>
+                    <li><strong>機体ナンバー：</strong> 機体名から自動で取得・登録されます（隠し項目として保持）。</li>
                     <li><strong>投稿者：</strong> ゲーム内でのキャラクター名（パイロット名）を入力してください。</li>
                     <li><strong>削除キー：</strong> 投稿後に自分で削除したい場合に使用する<span class="guide-highlight">数字4桁の暗証番号</span>を設定してください。</li>
                     <li><strong>特殊能力解析：</strong> 画像から特殊能力を自動抽出します。プルダウンから手動で変更・追加も可能です。</li>
@@ -54,13 +54,18 @@
             <div class="upload-form-card">
                 <form id="upload-form">
                     <div class="form-row">
-                        <div class="form-group small">
-                            <label for="unit-number">機体ナンバー</label>
-                            <input type="text" id="unit-number" placeholder="0001" maxlength="4" pattern="\d{4}" required title="4桁の数字を入力してください">
-                        </div>
-                        <div class="form-group">
+                        <!-- 機体名入力（手打ち・コピペ用 ＋ サジェスト候補リスト付き） -->
+                        <div class="form-group" style="flex: 1;">
                             <label for="unit-name">機体名</label>
-                            <input type="text" id="unit-name" placeholder="例：ガンダム" required>
+                            <input type="text" id="unit-name" list="machine-name-candidates" placeholder="例：ガンダム（コピペまたは手入力）" required>
+                            <!-- サジェスト用datalist（CSVから自動生成） -->
+                            <datalist id="machine-name-candidates"></datalist>
+                            <!-- 自動検出された機体No.の表示用ステータス -->
+                            <div id="machine-no-status" style="font-size: 0.85rem; color: var(--accent-color, #00d4ff); margin-top: 5px;">
+                                機体No.：未入力（機体名を入力すると自動取得されます）
+                            </div>
+                            <!-- データベース等へ送信される実際の機体No.保持用（隠しフィールド） -->
+                            <input type="hidden" id="unit-number" name="unit-number">
                         </div>
                     </div>
 
@@ -177,7 +182,7 @@
             </div>
         </div>
 
-        <!-- ▼ 4. 投稿ランキング（Special Thanks）タブのコンテンツ (新規追加) -->
+        <!-- ▼ 4. 投稿ランキング（Special Thanks）タブのコンテンツ -->
         <div id="ranking-tab" class="tab-content">
             <div class="guide-card" style="background: rgba(255, 215, 0, 0.05); border-color: rgba(255, 215, 0, 0.3); border-left-color: #ffd700;">
                 <h2 class="guide-title" style="color: #ffd700;">💖 Special Thanks (投稿貢献者ランキング)</h2>
@@ -239,7 +244,7 @@
         });
     </script>
 
-    <!-- 共通ヘッダー読み込み（サブフォルダ対応版：../header.html を取得します） -->
+    <!-- 共通ヘッダー読み込み -->
     <script>
         fetch('../header.html')
             .then(response => {
@@ -264,6 +269,70 @@
                 }
             })
             .catch(err => console.log("ヘッダー読み込みスキップ: ", err));
+    </script>
+
+    <!-- ▼ routeフォルダ内のCSVを読み込み、機体名から機体No.を自動紐付けるスクリプト -->
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const machineNameInput = document.getElementById('unit-name');
+            const machineNoHidden = document.getElementById('unit-number');
+            const statusDisplay = document.getElementById('machine-no-status');
+            const datalist = document.getElementById('machine-name-candidates');
+
+            let machineMap = new Map(); // 機体名 -> 機体No.
+
+            try {
+                // routeフォルダ内のCSVを参照
+                const response = await fetch('../route/GL)機体一覧 - 機体一覧.csv');
+                if (!response.ok) throw new Error('CSVファイルの取得に失敗しました');
+                const csvText = await response.text();
+                
+                const lines = csvText.split(/\r\n|\n/);
+                lines.forEach(line => {
+                    if (!line.trim()) return;
+                    const cols = line.split(',');
+                    if (cols.length >= 2) {
+                        const machineNo = cols[0].trim();   // 1列目：機体No.
+                        const machineName = cols[1].trim(); // 2列目：機体名
+                        if (machineNo && machineName) {
+                            machineMap.set(machineName, machineNo);
+
+                            // 入力補助（サジェスト）用の候補リストに追加
+                            const option = document.createElement('option');
+                            option.value = machineName;
+                            datalist.appendChild(option);
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error('機体一覧CSV読み込みエラー:', error);
+                if (statusDisplay) {
+                    statusDisplay.textContent = '※機体一覧CSVの読み込みに失敗しました（手動で機体名を入力してください）';
+                    statusDisplay.style.color = 'var(--danger-color, #ff4d4d)';
+                }
+            }
+
+            // 機体名入力時のリアルタイム自動紐付け処理
+            if (machineNameInput) {
+                machineNameInput.addEventListener('input', (e) => {
+                    const inputName = e.target.value.trim();
+                    if (machineMap.has(inputName)) {
+                        const matchedNo = machineMap.get(inputName);
+                        machineNoHidden.value = matchedNo;
+                        statusDisplay.textContent = `✔ 機体No.「${matchedNo}」を自動検出しました`;
+                        statusDisplay.style.color = 'var(--accent-color, #00d4ff)';
+                    } else if (inputName === '') {
+                        machineNoHidden.value = '';
+                        statusDisplay.textContent = '機体No.：未入力（機体名を入力すると自動取得されます）';
+                        statusDisplay.style.color = 'var(--accent-color, #00d4ff)';
+                    } else {
+                        machineNoHidden.value = '';
+                        statusDisplay.textContent = '⚠ 一致する機体名がCSVに見つかりません';
+                        statusDisplay.style.color = 'var(--danger-color, #ff4d4d)';
+                    }
+                });
+            }
+        });
     </script>
 
     <!-- メインのJavaScript -->
