@@ -34,7 +34,9 @@
             <div class="search-box">
                 <div class="search-row">
                     <label for="searchName">機体名で検索：</label>
-                    <input type="text" id="searchName" placeholder="例: ドリテア、ボール改 など">
+                    <!-- autocomplete="off" と list属性、サジェスト用datalistを追加 -->
+                    <input type="text" id="searchName" placeholder="例: ドリテア、ボール改 など" list="searchName-candidates" autocomplete="off">
+                    <datalist id="searchName-candidates"></datalist>
                 </div>
                 <div class="search-row">
                     <label for="searchNo">機体No.で検索：</label>
@@ -161,7 +163,7 @@
         </div>
     </div>
 
-    <!-- 共通ヘッダーを読み込んで現在地をアクティブにする処理（サブフォルダ対応版：../header.html を取得） -->
+    <!-- 共通ヘッダーを読み込んで現在地をアクティブにする処理 -->
     <script>
         fetch('../header.html')
             .then(response => {
