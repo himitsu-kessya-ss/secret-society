@@ -108,7 +108,7 @@
     </div>
 </div>
 
-<!-- 共通ヘッダーを読み込んで現在地をアクティブにする処理（エラーハンドリング強化版） -->
+<!-- 共通ヘッダーを読み込んで現在地をアクティブにする処理（ルートのheader.htmlを正しく取得） -->
 <script>
     fetch('../header.html')
         .then(response => {
@@ -134,7 +134,7 @@
         })
         .catch(err => console.log("ヘッダー読み込みスキップ: ", err));
 
-    // タブ切り替え時のテキスト・HTML読み込みを安全に行う処理
+    // タブ切り替え時のテキスト・HTML読み込み処理
     $(document).ready(function() {
         $('.tab-btn').on('click', function() {
             $('.tab-btn').removeClass('active');
@@ -159,7 +159,7 @@
                         $('#text-content-display').html(txt);
                     })
                     .catch(e => {
-                        $('#text-content-display').html('<p style="color: #ff5555;">特殊戦闘ファイルの読み込みに失敗しました。ファイル名や配置を確認してください。</p>');
+                        $('#text-content-display').html('<p style="color: #ff5555;">特殊戦闘ファイルの読み込みに失敗しました。</p>');
                     });
             } else if (type === 'html') {
                 $('#content-frame').attr('src', file).show();
