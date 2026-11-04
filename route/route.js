@@ -353,15 +353,15 @@ function nextPage() {
     }
 }
 
-// 6. 派生ルート検索処理
+// 6. 派生ルート検索処理（あいまい検索対応版）
 function searchRoute() {
     if (mechDataList.length === 0 || routeData.length === 0) {
         alert("まだデータの読み込みが完了していません。");
         return;
     }
 
-    const nameKeyword = document.getElementById("searchName").value.trim();
-    const noKeyword = document.getElementById("searchNo").value.trim();
+    const nameKeyword = document.getElementById("searchName").value.trim().toLowerCase();
+    const noKeyword = document.getElementById("searchNo").value.trim().toLowerCase();
 
     if (!nameKeyword && !noKeyword) {
         alert("「機体名」または「機体No.」のどちらかを入力してください。");
@@ -370,30 +370,43 @@ function searchRoute() {
 
     let targetRow = null;
 
+    // 1. 機体No.による検索（完全一致または部分一致）
     if (noKeyword) {
         for (let i = 0; i < routeData.length; i++) {
             let row = routeData[i];
-            if (row[1] && row[1] === noKeyword) {
+            let rowNo = String(row[1] || "").trim().toLowerCase();
+            if (rowNo && rowNo.includes(noKeyword)) {
                 targetRow = row;
                 break;
             }
         }
     }
 
+    // 2. 機体名による検索（目的機体名：2列目でのあいまい検索）
     if (!targetRow && nameKeyword) {
         for (let i = 0; i < routeData.length; i++) {
             let row = routeData[i];
-            if (row[2] && row[2] === nameKeyword) {
+            let targetName = String(row[2] || "").trim().toLowerCase();
+            if (targetName && targetName.includes(nameKeyword)) {
                 targetRow = row;
                 break;
             }
         }
     }
 
+    // 3. 派生ルートの途中（3列目以降）に含まれる機体名でのあいまい検索
     if (!targetRow && nameKeyword) {
         for (let i = 0; i < routeData.length; i++) {
             let row = routeData[i];
-            if (row.some((col, colIndex) => colIndex >= 3 && col === nameKeyword)) {
+            let foundInRoute = false;
+            for (let colIndex = 3; colIndex < row.length; colIndex++) {
+                let colVal = String(row[colIndex] || "").trim().toLowerCase();
+                if (colVal && colVal.includes(nameKeyword)) {
+                    foundInRoute = true;
+                    break;
+                }
+            }
+            if (foundInRoute) {
                 targetRow = row;
                 break;
             }
