@@ -4,6 +4,7 @@ const ROUTE_CSV = "./GL)機体派生ルート_261018 - 派生ルート.csv";
 let mechDataList = []; 
 let routeData = [];    
 let filteredMechList = []; 
+let allMachineNames = []; // あいまい検索サジェスト用の機体名リスト
 let currentPage = 1;
 const itemsPerPage = 100; 
 
@@ -35,6 +36,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const searchName = document.getElementById("searchName");
     if (searchName) {
+        // 入力するたびにサジェスト候補を動的に絞り込む
+        searchName.addEventListener("input", (e) => {
+            updateSearchCandidates(e.target.value.trim());
+        });
+
         searchName.addEventListener("keypress", (e) => {
             if (e.key === 'Enter') searchRoute();
         });
@@ -81,6 +87,16 @@ function loadCSVData() {
             return true;
         });
 
+        // 機体名（2列目）を収集してサジェスト用の配列を作成
+        allMachineNames = [];
+        mechDataList.forEach(row => {
+            let mechName = String(row[1] || "").trim();
+            if (mechName && !allMachineNames.includes(mechName)) {
+                allMachineNames.push(mechName);
+            }
+        });
+        updateSearchCandidates('');
+
         let validRouteRows = routeData.filter(row => row.length > 2 && row[2] !== "" && row[2] !== "目的派生検索");
 
         const logBox = document.getElementById("logBox");
@@ -100,6 +116,24 @@ function loadCSVData() {
         if (logBox) {
             logBox.innerHTML = `【動作確認ログ】<br><span style="color:#ff6b6b;">読み込みエラー: ${error.message}</span>`;
         }
+    });
+}
+
+// サジェスト候補リスト（datalist）を動的に更新する関数
+function updateSearchCandidates(keyword = '') {
+    const datalist = document.getElementById('searchName-candidates');
+    if (!datalist) return;
+    datalist.innerHTML = '';
+
+    // 入力文字に部分一致する機体名を抽出（最大50件に制限して軽量化）
+    const filtered = allMachineNames.filter(name => 
+        keyword === '' || name.toLowerCase().includes(keyword.toLowerCase())
+    ).slice(0, 50);
+
+    filtered.forEach(name => {
+        let option = document.createElement('option');
+        option.value = name;
+        datalist.appendChild(option);
     });
 }
 
@@ -353,7 +387,7 @@ function nextPage() {
     }
 }
 
-// 6. 派生ルート検索処理（あいまい検索対応版）
+// 6. 派生ルート検索処理（あいまい検索・部分一致対応）
 function searchRoute() {
     if (mechDataList.length === 0 || routeData.length === 0) {
         alert("まだデータの読み込みが完了していません。");
@@ -370,7 +404,7 @@ function searchRoute() {
 
     let targetRow = null;
 
-    // 1. 機体No.による検索（完全一致または部分一致）
+    // 1. 機体No.による検索（部分一致対応）
     if (noKeyword) {
         for (let i = 0; i < routeData.length; i++) {
             let row = routeData[i];
@@ -382,7 +416,7 @@ function searchRoute() {
         }
     }
 
-    // 2. 機体名による検索（目的機体名：2列目でのあいまい検索）
+    // 2. 機体名による検索（目的機体名：2列目の部分一致）
     if (!targetRow && nameKeyword) {
         for (let i = 0; i < routeData.length; i++) {
             let row = routeData[i];
@@ -394,7 +428,7 @@ function searchRoute() {
         }
     }
 
-    // 3. 派生ルートの途中（3列目以降）に含まれる機体名でのあいまい検索
+    // 3. 派生ルートの途中（3列目以降）に含まれる機体名での部分一致検索
     if (!targetRow && nameKeyword) {
         for (let i = 0; i < routeData.length; i++) {
             let row = routeData[i];
