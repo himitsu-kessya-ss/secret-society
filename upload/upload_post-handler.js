@@ -46,16 +46,46 @@ export async function uploadImageToImgBB(file, postNo, unitNumber, unitName) {
 }
 
 /**
- * 新規投稿メイン処理
+ * 新規投稿メイン処理（登録済み機体との重複チェック機能付き）
  */
-export async function handlePostSubmit({ db, file, unitNumber, unitName, author, deleteKey, submitBtn, customAbilities }) {
+export async function handlePostSubmit({ db, file, unitNumber, unitName, author, deleteKey, submitBtn, customAbilities, allPosts = [] }) {
     if (!file) {
         alert('画像を選択してください。');
         return false;
     }
 
+    if (!unitName || !unitName.trim()) {
+        alert('機体名を入力してください。');
+        return false;
+    }
+
     if (!/^\d{4}$/.test(deleteKey)) {
         alert('削除キーは数字4桁で設定してください。');
+        return false;
+    }
+
+    // ----------------------------------------------------
+    // ▼ 登録済み機体との重複チェック（機体名 または 機体No.）
+    // ----------------------------------------------------
+    const targetName = unitName.trim().toLowerCase();
+    const targetNo = unitNumber ? unitNumber.trim() : '';
+
+    const duplicatePost = allPosts.find(post => {
+        const existingName = (post.unitName || '').trim().toLowerCase();
+        const existingNo = (post.unitNumber || '').trim();
+
+        const nameMatched = existingName && existingName === targetName;
+        const noMatched = targetNo && existingNo && targetNo !== '----' && existingNo === targetNo;
+
+        return nameMatched || noMatched;
+    });
+
+    if (duplicatePost) {
+        const existName = duplicatePost.unitName || unitName;
+        const existAuthor = duplicatePost.author || '他のメンバー';
+        const existNo = duplicatePost.postNo || duplicatePost.postId || '不明';
+
+        alert(`⚠️【重複エラー】\n\n「${existName}」はすでに ${existAuthor} さんによって投稿されています（投稿No.${existNo}）。\n\n同じ機体の重複投稿を防ぐため、投稿を中止しました。登録済機体一覧をご確認ください。`);
         return false;
     }
 
@@ -94,7 +124,7 @@ export async function handlePostSubmit({ db, file, unitNumber, unitName, author,
         // Firebaseへの新規保存
         await addDoc(collection(db, "posts"), {
             postNo: newPostNo,
-            unitNumber: unitNumber,
+            unitNumber: unitNumber || '----',
             unitName: unitName,
             author: author,
             deleteKey: deleteKey,
