@@ -387,36 +387,59 @@ function nextPage() {
     }
 }
 
-// 6. 派生ルート検索処理（あいまい検索・部分一致対応）
+// 6. 派生ルート検索処理（完全一致を最優先する検索ロジック）
 function searchRoute() {
     if (mechDataList.length === 0 || routeData.length === 0) {
         alert("まだデータの読み込みが完了していません。");
         return;
     }
 
-    const nameKeyword = document.getElementById("searchName").value.trim().toLowerCase();
+    const rawNameKeyword = document.getElementById("searchName").value.trim();
+    const nameKeyword = rawNameKeyword.toLowerCase();
     const noKeyword = document.getElementById("searchNo").value.trim().toLowerCase();
 
-    if (!nameKeyword && !noKeyword) {
+    if (!rawNameKeyword && !noKeyword) {
         alert("「機体名」または「機体No.」のどちらかを入力してください。");
         return;
     }
 
     let targetRow = null;
 
-    // 1. 機体No.による検索（部分一致対応）
+    // 1. 機体No.による検索
     if (noKeyword) {
         for (let i = 0; i < routeData.length; i++) {
             let row = routeData[i];
             let rowNo = String(row[1] || "").trim().toLowerCase();
-            if (rowNo && rowNo.includes(noKeyword)) {
+            if (rowNo && rowNo === noKeyword) {
+                targetRow = row;
+                break;
+            }
+        }
+        if (!targetRow) {
+            for (let i = 0; i < routeData.length; i++) {
+                let row = routeData[i];
+                let rowNo = String(row[1] || "").trim().toLowerCase();
+                if (rowNo && rowNo.includes(noKeyword)) {
+                    targetRow = row;
+                    break;
+                }
+            }
+        }
+    }
+
+    // 2. 機体名による検索：【完全一致】を最優先で探索（「ハイザック」なら「マリン・ハイザック」ではなく「ハイザック」を正確に取得）
+    if (!targetRow && rawNameKeyword) {
+        for (let i = 0; i < routeData.length; i++) {
+            let row = routeData[i];
+            let targetName = String(row[2] || "").trim();
+            if (targetName && targetName === rawNameKeyword) {
                 targetRow = row;
                 break;
             }
         }
     }
 
-    // 2. 機体名による検索（目的機体名：2列目の部分一致）
+    // 3. 次に、目的機体名（2列目）の部分一致で探索
     if (!targetRow && nameKeyword) {
         for (let i = 0; i < routeData.length; i++) {
             let row = routeData[i];
@@ -428,7 +451,7 @@ function searchRoute() {
         }
     }
 
-    // 3. 派生ルートの途中（3列目以降）に含まれる機体名での部分一致検索
+    // 4. 最後に、派生ルートの途中（3列目以降）に含まれる機体名での部分一致検索
     if (!targetRow && nameKeyword) {
         for (let i = 0; i < routeData.length; i++) {
             let row = routeData[i];
