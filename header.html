@@ -48,7 +48,6 @@
         gap: 10px;
         overflow-x: auto;
         white-space: nowrap;
-        /* ナビが長い場合にカウンターと重ならないよう余白を持たせる */
         margin-right: 15px; 
     }
     .nav-links::-webkit-scrollbar { display: none; }
@@ -97,40 +96,41 @@
         text-shadow: 0 0 6px rgba(0, 212, 255, 0.6);
     }
 
-    /* スマホ画面などで幅が狭くなったときの調整（必要に応じて） */
     @media (max-width: 768px) {
         .access-counter {
-            display: none; /* スマホではヘッダー領域を圧迫するため非表示にする例 */
+            display: none;
         }
     }
 </style>
 
-<!-- ページごとのパスを判別してアクセス数をカウント・表示するスクリプト -->
+<!-- ヘッダーが読み込まれたあとに確実に実行されるカウンター処理 -->
 <script>
 (function() {
-    // 1. 現在のページのURLパス（例: /secret-society/arms/index.html）を固有のキーにする
+    // 現在のページのパス（例: /secret-society/briefing/index.html など）を固有のキーにする
     const currentPath = window.location.pathname;
     const pageKey = 'secret_counter_' + currentPath;
 
-    // 2. ブラウザの保存領域（localStorage）から現在のカウントを取得
+    // ブラウザの保存領域（localStorage）から現在のカウントを取得
     let count = localStorage.getItem(pageKey);
     
     if (!count) {
-        // 初回アクセスの場合は初期値（例: 120スタート）を設定
-        count = 120;
+        count = 120; // 初回アクセスの初期値
     } else {
-        // ページが読み込まれるたびに1加算
         count = parseInt(count, 10) + 1;
     }
     
-    // 3. 更新した数値をブラウザに保存
+    // 更新した数値を保存
     localStorage.setItem(pageKey, count);
 
-    // 4. 6桁のゼロ埋め形式（例: 000121）に変換して画面に表示
+    // 6桁のゼロ埋め形式（例: 000121）に変換
     const paddedCount = String(count).padStart(6, '0');
-    const counterElement = document.getElementById('visitor-counter');
-    if (counterElement) {
-        counterElement.textContent = paddedCount;
-    }
+    
+    // 画面上のカウンター要素に反映（少し遅延させて確実に対象要素を取得）
+    setTimeout(() => {
+        const counterElement = document.getElementById('visitor-counter');
+        if (counterElement) {
+            counterElement.textContent = paddedCount;
+        }
+    }, 50);
 })();
 </script>
