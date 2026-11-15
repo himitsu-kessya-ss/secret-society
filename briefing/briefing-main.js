@@ -15,16 +15,17 @@ window.onload = async function() {
     await loadEventsFromServer(false); 
 };
 
-// 【作戦立案タブ用】「更新対象」がONの行だけをサーバーのデータにマージして保存
+// 【作戦立案タブ用】「更新対象」がONの行だけをサーバーの最新データにマージして保存
 async function saveSelectedTacticsToServer() {
     if (!GAS_URL) return;
     const ev = events.find(e => e.id === currentEventId);
     if (!ev) return;
 
+    // 最新のサーバーデータを取得して、他人の変更を反映したベースを作る
     try {
         const response = await fetch(GAS_URL);
         const data = await response.json();
-        if (data && data.events) {
+        if (data && Array.isArray(data.events)) {
             events = data.events;
         }
     } catch(e) {}
@@ -39,12 +40,7 @@ async function saveSelectedTacticsToServer() {
         const syncCheckbox = tr.querySelector('.row-sync-checkbox');
         if (syncCheckbox && syncCheckbox.checked) {
             collectRowDataFromDOM(idx, ev);
-            
-            if (!targetEv.tactics[idx]) {
-                targetEv.tactics[idx] = JSON.parse(JSON.stringify(ev.tactics[idx]));
-            } else {
-                targetEv.tactics[idx] = JSON.parse(JSON.stringify(ev.tactics[idx]));
-            }
+            targetEv.tactics[idx] = JSON.parse(JSON.stringify(ev.tactics[idx]));
             updatedCount++;
             
             syncCheckbox.checked = false;
@@ -61,7 +57,8 @@ async function saveSelectedTacticsToServer() {
     const toggleAllHeader = document.getElementById('toggle-all-sync');
     if (toggleAllHeader) toggleAllHeader.checked = false;
 
-    await saveEventsToServer();
+    // ★このイベント単体だけを安全にサーバーへ保存
+    await saveSingleEventToServer(targetEv);
     alert(`選択された ${updatedCount} 行の作戦データをサーバーに反映しました！`);
     renderTacticsTable(targetEv);
 }
@@ -108,7 +105,7 @@ async function saveMembersToServer() {
     try {
         const response = await fetch(GAS_URL);
         const data = await response.json();
-        if (data && data.events) {
+        if (data && Array.isArray(data.events)) {
             events = data.events;
         }
     } catch(e) {}
@@ -117,7 +114,9 @@ async function saveMembersToServer() {
     if (!targetEv) return;
 
     collectMembersFromDOM(targetEv);
-    await saveEventsToServer();
+    
+    // ★このイベント単体だけを安全にサーバーへ保存
+    await saveSingleEventToServer(targetEv);
     alert('参加メンバー・階級情報をサーバーに保存しました！');
     renderMemberTable(targetEv);
     renderTacticsTable(targetEv);
@@ -236,8 +235,6 @@ async function submitCreateEvent() {
         return;
     }
 
-    await fetchLatestEventsBeforeAdminAction();
-
     const newEv = {
         id: 'ev_' + Date.now(),
         title: title,
@@ -246,8 +243,12 @@ async function submitCreateEvent() {
         tactics: []
     };
     initDefaultEventData(newEv);
+
+    // ★新規イベント1件だけを安全にサーバーへ追加（他のイベントは上書きしない）
+    await saveSingleEventToServer(newEv);
+    
+    // 画面表示用にローカル配列にも追加
     events.push(newEv);
-    await saveEventsToServer();
     renderEventList();
     closeModal();
     alert('新規イベントを起票しました！');
@@ -318,19 +319,15 @@ async function submitAdminSettings() {
         return;
     }
 
-    await fetchLatestEventsBeforeAdminAction();
-
     const ev = events.find(e => e.id === targetEventIdForAdmin);
-    if (!ev) {
-        alert('対象のイベントが見つかりませんでした。');
-        renderEventList();
-        closeModal();
-        return;
-    }
+    if (!ev) return;
 
     ev.title = newTitle;
     ev.pass = noPass ? "" : newPw;
-    await saveEventsToServer();
+
+    // ★設定変更した1イベントだけを安全にサーバーへ更新
+    await saveSingleEventToServer(ev);
+    
     renderEventList();
     closeModal();
     alert('イベント管理設定を更新しました！');
@@ -350,10 +347,10 @@ async function executeDeleteEvent() {
         return;
     }
 
-    await fetchLatestEventsBeforeAdminAction();
+    // ★指定したイベントIDだけを削除するようサーバーへ命令（他のイベントには一切触れない）
+    await deleteEventFromServer(targetEventIdForAdmin);
 
     events = events.filter(e => e.id !== targetEventIdForAdmin);
-    await saveEventsToServer();
     renderEventList();
     closeModal();
     alert('イベントを削除しました。');
