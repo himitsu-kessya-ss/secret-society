@@ -2,7 +2,7 @@
 
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxJFwDlx71xhfSF3mp6cSK46zog3cSM7kr_3tkGocyQJpnfbzQ8dDPWSjfxG5C7lcdejA/exec';
 
-// サーバーからデータを取得
+// サーバーから全イベントデータを取得
 async function loadEventsFromServer(isBackground = false) {
     if (!GAS_URL) {
         initDefaultEvents();
@@ -13,7 +13,7 @@ async function loadEventsFromServer(isBackground = false) {
     try {
         const response = await fetch(GAS_URL);
         const data = await response.json();
-        if (data && data.events && data.events.length > 0) {
+        if (data && Array.isArray(data.events) && data.events.length > 0) {
             events = data.events;
         } else {
             initDefaultEvents();
@@ -41,7 +41,43 @@ async function loadEventsFromServer(isBackground = false) {
     }
 }
 
-// サーバーへ全データを保存
+// 【安全版】指定した1つのイベントだけをサーバーに追加・更新する
+async function saveSingleEventToServer(targetEvent) {
+    if (!GAS_URL || !targetEvent) return;
+    try {
+        await fetch(GAS_URL, {
+            method: 'POST',
+            mode: 'no-cors', 
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'upsert',
+                event: targetEvent
+            })
+        });
+    } catch (e) {
+        console.error("イベントの保存に失敗しました", e);
+    }
+}
+
+// 【安全版】指定したイベントIDだけをサーバーから削除する（他のイベントには一切触れない）
+async function deleteEventFromServer(eventId) {
+    if (!GAS_URL || !eventId) return;
+    try {
+        await fetch(GAS_URL, {
+            method: 'POST',
+            mode: 'no-cors', 
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'delete',
+                eventId: eventId
+            })
+        });
+    } catch (e) {
+        console.error("イベントの削除に失敗しました", e);
+    }
+}
+
+// 従来の全件保存（初期データ生成時のみ使用）
 async function saveEventsToServer() {
     if (!GAS_URL) return;
     try {
@@ -53,20 +89,6 @@ async function saveEventsToServer() {
         });
     } catch (e) {
         console.error("サーバーへの保存に失敗しました", e);
-    }
-}
-
-// 管理操作の直前に最新データを取得（上書き事故防止）
-async function fetchLatestEventsBeforeAdminAction() {
-    if (!GAS_URL) return;
-    try {
-        const response = await fetch(GAS_URL);
-        const data = await response.json();
-        if (data && Array.isArray(data.events)) {
-            events = data.events;
-        }
-    } catch (e) {
-        console.warn("最新データの取得に失敗しました。", e);
     }
 }
 
