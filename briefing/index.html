@@ -173,6 +173,18 @@
         <input type="password" id="input-admin-pw" placeholder="管理者パスワード">
         <input type="text" id="input-event-title" placeholder="イベント名 (例: 11月勢力戦)">
         
+        <!-- 日付入力欄（任意） -->
+        <div style="display: flex; gap: 10px; margin-top: 5px;">
+            <div style="flex: 1;">
+                <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 2px;">開催予定日 (任意)</label>
+                <input type="text" id="input-event-sched" placeholder="例: 2026/11/20">
+            </div>
+            <div style="flex: 1;">
+                <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 2px;">開催日 (任意)</label>
+                <input type="text" id="input-event-date" placeholder="例: 2026/11/25">
+            </div>
+        </div>
+
         <div style="margin: 10px 0; display: flex; align-items: center; gap: 8px;">
             <input type="checkbox" id="input-no-pass-check" onchange="toggleCreatePassInput(this)" style="width: auto; transform: scale(1.2); cursor: pointer;">
             <label for="input-no-pass-check" style="cursor: pointer; font-size: 0.9rem;">入室パスワードを不要にする</label>
@@ -196,7 +208,7 @@
         </div>
     </div>
 
-    <!-- 管理用設定モーダル（イベント名・PW変更・削除） -->
+    <!-- 管理用設定モーダル（イベント名・PW変更・日時変更・削除） -->
     <div id="modal-admin-settings" class="modal hidden">
         <h3 id="admin-settings-title">イベント管理設定</h3>
         <p class="sub-title">管理者パスワードを入力してください。</p>
@@ -205,6 +217,18 @@
         <div style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px;">
             <label style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 5px;">イベント名変更</label>
             <input type="text" id="input-mgr-event-title" placeholder="新しいイベント名">
+
+            <!-- 管理設定の日付変更欄（任意） -->
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <div style="flex: 1;">
+                    <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 2px;">開催予定日</label>
+                    <input type="text" id="input-mgr-event-sched" placeholder="例: 2026/11/20">
+                </div>
+                <div style="flex: 1;">
+                    <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 2px;">開催日</label>
+                    <input type="text" id="input-mgr-event-date" placeholder="例: 2026/11/25">
+                </div>
+            </div>
 
             <label style="font-size: 0.85rem; color: var(--text-muted); display: block; margin: 15px 0 5px 0;">入室パスワード設定</label>
             <div style="margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
