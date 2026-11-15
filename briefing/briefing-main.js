@@ -15,36 +15,14 @@ window.onload = async function() {
     await loadEventsFromServer(false); 
 };
 
-// 管理者操作の直前にサーバーから最新のイベントリストを安全に取得する関数
-async function fetchLatestEventsBeforeAdminAction() {
-    if (!GAS_URL) return;
-    try {
-        const response = await fetch(GAS_URL);
-        const data = await response.json();
-        if (data && Array.isArray(data.events) && data.events.length > 0) {
-            events = data.events;
-        }
-    } catch (e) {
-        console.warn("最新データの事前取得に失敗しました。手元のデータを使用します。", e);
-    }
-}
-
-// 【作戦立案タブ用】「更新対象」がONの行だけをサーバーの最新データにマージして保存
+// 【作戦立案タブ用】「更新対象」がONの行だけを反映して一括保存
 async function saveSelectedTacticsToServer() {
     if (!GAS_URL) return;
+    
+    await loadEventsFromServer(true);
+
     const ev = events.find(e => e.id === currentEventId);
     if (!ev) return;
-
-    try {
-        const response = await fetch(GAS_URL);
-        const data = await response.json();
-        if (data && Array.isArray(data.events)) {
-            events = data.events;
-        }
-    } catch(e) {}
-
-    let targetEv = events.find(e => e.id === currentEventId);
-    if (!targetEv) return;
 
     const rows = document.querySelectorAll('#tbody-tactics tr');
     let updatedCount = 0;
@@ -53,12 +31,9 @@ async function saveSelectedTacticsToServer() {
         const syncCheckbox = tr.querySelector('.row-sync-checkbox');
         if (syncCheckbox && syncCheckbox.checked) {
             collectRowDataFromDOM(idx, ev);
-            targetEv.tactics[idx] = JSON.parse(JSON.stringify(ev.tactics[idx]));
+            ev.tactics[idx].sync = false;
             updatedCount++;
-            
             syncCheckbox.checked = false;
-            if (ev.tactics[idx]) ev.tactics[idx].sync = false;
-            if (targetEv.tactics[idx]) targetEv.tactics[idx].sync = false;
         }
     });
 
@@ -70,9 +45,9 @@ async function saveSelectedTacticsToServer() {
     const toggleAllHeader = document.getElementById('toggle-all-sync');
     if (toggleAllHeader) toggleAllHeader.checked = false;
 
-    await saveSingleEventToServer(targetEv);
+    await saveAllEventsToServer();
     alert(`選択された ${updatedCount} 行の作戦データをサーバーに反映しました！`);
-    renderTacticsTable(targetEv);
+    renderTacticsTable(ev);
 }
 
 function toggleAllSyncCheckboxes(headerCheckbox) {
@@ -111,26 +86,17 @@ function collectMembersFromDOM(ev) {
 
 async function saveMembersToServer() {
     if (!GAS_URL) return;
+    await loadEventsFromServer(true);
+
     const ev = events.find(e => e.id === currentEventId);
     if (!ev) return;
 
-    try {
-        const response = await fetch(GAS_URL);
-        const data = await response.json();
-        if (data && Array.isArray(data.events)) {
-            events = data.events;
-        }
-    } catch(e) {}
-
-    let targetEv = events.find(e => e.id === currentEventId);
-    if (!targetEv) return;
-
-    collectMembersFromDOM(targetEv);
+    collectMembersFromDOM(ev);
     
-    await saveSingleEventToServer(targetEv);
+    await saveAllEventsToServer();
     alert('参加メンバー・階級情報をサーバーに保存しました！');
-    renderMemberTable(targetEv);
-    renderTacticsTable(targetEv);
+    renderMemberTable(ev);
+    renderTacticsTable(ev);
 }
 
 function initDefaultEventData(ev) {
@@ -150,7 +116,7 @@ function initDefaultEventData(ev) {
     ];
 }
 
-// イベント一覧カードの描画（開催予定日・開催日の表示対応）
+// イベント一覧カードの描画
 function renderEventList() {
     const listEl = document.getElementById('event-list');
     if (!listEl) return;
@@ -164,7 +130,6 @@ function renderEventList() {
         const lockText = hasPass ? '🔒 要パスワード保護' : '🔓 パスワードなし';
         const eventNo = index + 1;
 
-        // 日付情報のHTML生成（入力されている場合のみ表示）
         let datesHtml = '';
         if (ev.scheduleDate || ev.actualDate) {
             datesHtml += `<div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 6px; display: flex; gap: 12px; flex-wrap: wrap;">`;
@@ -207,15 +172,80 @@ function showMainPage() {
     document.getElementById('btn-back-main').classList.add('hidden');
     document.getElementById('global-sync-controls').classList.add('hidden');
     currentEventId = null;
-    renderEventList();
+    loadEventsFromServer(false);
 }
 
 function closeModal() {
     document.getElementById('modal-overlay').classList.add('hidden');
     document.getElementById('modal-create').classList.add('hidden');
+    document.getElementById('modal-bulk-edit').classList.add('hidden');
     document.getElementById('modal-auth').classList.add('hidden');
     document.getElementById('modal-admin-settings').classList.add('hidden');
     document.getElementById('modal-mecha-search').classList.add('hidden');
+}
+
+// 【追加】全イベント一括管理モーダルを開く
+async function openBulkEditModal() {
+    await loadEventsFromServer(true); // 開く直前に最新データを取得
+
+    document.getElementById('input-bulk-admin-pw').value = '';
+    const container = document.getElementById('bulk-edit-container');
+    container.innerHTML = '';
+
+    events.forEach((ev, idx) => {
+        const itemDiv = document.createElement('div');
+        itemDiv.style.cssText = "background: var(--bg-main); padding: 10px; border-radius: 6px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 6px;";
+        itemDiv.innerHTML = `
+            <div style="font-size: 0.8rem; color: var(--accent); font-weight: bold;">No. ${idx + 1} (ID: ${ev.id})</div>
+            <div style="display: flex; gap: 8px;">
+                <input type="text" class="bulk-title-input" data-id="${ev.id}" value="${ev.title}" placeholder="イベント名" style="flex: 2;">
+                <input type="text" class="bulk-pass-input" data-id="${ev.id}" value="${ev.pass || ''}" placeholder="パスワード(空欄可)" style="flex: 1;">
+            </div>
+            <div style="display: flex; gap: 8px;">
+                <input type="text" class="bulk-sched-input" data-id="${ev.id}" value="${ev.scheduleDate || ''}" placeholder="開催予定日 (例: 2026/11/20)" style="flex: 1;">
+                <input type="text" class="bulk-date-input" data-id="${ev.id}" value="${ev.actualDate || ''}" placeholder="開催日 (例: 2026/11/25)" style="flex: 1;">
+            </div>
+        `;
+        container.appendChild(itemDiv);
+    });
+
+    document.getElementById('modal-overlay').classList.remove('hidden');
+    document.getElementById('modal-bulk-edit').classList.remove('hidden');
+}
+
+// 【追加】全イベント一括管理の保存処理
+async function submitBulkEdit() {
+    const adminPw = document.getElementById('input-bulk-admin-pw').value;
+    if (adminPw !== 'p@ssw0rd') {
+        alert('管理者パスワードが正しくありません。');
+        return;
+    }
+
+    // 画面の入力内容を各イベントオブジェクトに反映
+    const container = document.getElementById('bulk-edit-container');
+    const items = container.querySelectorAll('div > div');
+
+    // 最新データを再度同期
+    await loadEventsFromServer(true);
+
+    events.forEach(ev => {
+        const titleInput = container.querySelector(`.bulk-title-input[data-id="${ev.id}"]`);
+        const passInput = container.querySelector(`.bulk-pass-input[data-id="${ev.id}"]`);
+        const schedInput = container.querySelector(`.bulk-sched-input[data-id="${ev.id}"]`);
+        const dateInput = container.querySelector(`.bulk-date-input[data-id="${ev.id}"]`);
+
+        if (titleInput) ev.title = titleInput.value;
+        if (passInput) ev.pass = passInput.value;
+        if (schedInput) ev.scheduleDate = schedInput.value;
+        if (dateInput) ev.actualDate = dateInput.value;
+    });
+
+    // 一括でサーバーへ保存
+    await saveAllEventsToServer();
+
+    renderEventList();
+    closeModal();
+    alert('すべてのイベント情報を一括更新しました！');
 }
 
 function openCreateModal() {
@@ -257,6 +287,8 @@ async function submitCreateEvent() {
         return;
     }
 
+    await loadEventsFromServer(true);
+
     const newEv = {
         id: 'ev_' + Date.now(),
         title: title,
@@ -268,9 +300,9 @@ async function submitCreateEvent() {
     };
     initDefaultEventData(newEv);
 
-    await saveSingleEventToServer(newEv);
-    
     events.push(newEv);
+    await saveAllEventsToServer();
+    
     renderEventList();
     closeModal();
     alert('新規イベントを起票しました！');
@@ -345,8 +377,7 @@ async function submitAdminSettings() {
         return;
     }
 
-    // 保存の直前にサーバーから最新データを取得して同期
-    await fetchLatestEventsBeforeAdminAction();
+    await loadEventsFromServer(true);
 
     const ev = events.find(e => e.id === targetEventIdForAdmin);
     if (!ev) {
@@ -361,8 +392,7 @@ async function submitAdminSettings() {
     ev.actualDate = actualDate;
     ev.pass = noPass ? "" : newPw;
 
-    // 変更したイベントだけを安全にサーバーへ保存
-    await saveSingleEventToServer(ev);
+    await saveAllEventsToServer();
     
     renderEventList();
     closeModal();
@@ -376,6 +406,8 @@ async function executeDeleteEvent() {
         return;
     }
 
+    await loadEventsFromServer(true);
+
     const ev = events.find(e => e.id === targetEventIdForAdmin);
     if (!ev) return;
 
@@ -383,9 +415,9 @@ async function executeDeleteEvent() {
         return;
     }
 
-    await deleteEventFromServer(targetEventIdForAdmin);
-
     events = events.filter(e => e.id !== targetEventIdForAdmin);
+    await saveAllEventsToServer();
+
     renderEventList();
     closeModal();
     alert('イベントを削除しました。');
@@ -400,7 +432,7 @@ function loadEventSheet(ev) {
     document.getElementById('global-sync-controls').classList.remove('hidden');
 
     document.getElementById('sheet-event-title').innerText = ev.title;
-    document.getElementById('sheet-event-desc').innerText = `イベントID: ${ev.id} | 手動同期モード`;
+    document.getElementById('sheet-event-desc').innerText = `イベントID: ${ev.id} | 全件同期モード`;
 
     renderMemberTable(ev);
     renderTacticsTable(ev);
