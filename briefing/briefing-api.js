@@ -2,7 +2,7 @@
 
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxJFwDlx71xhfSF3mp6cSK46zog3cSM7kr_3tkGocyQJpnfbzQ8dDPWSjfxG5C7lcdejA/exec';
 
-// サーバーから全イベントデータを取得（勝手な上書きセーブを完全廃止）
+// サーバーから全イベントデータを取得
 async function loadEventsFromServer(isBackground = false) {
     if (!GAS_URL) {
         if (!isBackground) renderEventList();
@@ -12,8 +12,7 @@ async function loadEventsFromServer(isBackground = false) {
     try {
         const response = await fetch(GAS_URL);
         const data = await response.json();
-        if (data && Array.isArray(data.events)) {
-            // サーバーから取得できた場合のみ、データを更新（空であっても勝手に上書きセーブしない）
+        if (data && Array.isArray(data.events) && data.events.length > 0) {
             events = data.events;
         }
     } catch (e) {
@@ -38,41 +37,20 @@ async function loadEventsFromServer(isBackground = false) {
     }
 }
 
-// 【安全版】指定した1つのイベントだけをサーバーに追加・更新する
-async function saveSingleEventToServer(targetEvent) {
-    if (!GAS_URL || !targetEvent) return;
+// 【完全安定版】現在の全イベント配列をサーバーへ一括保存する
+async function saveAllEventsToServer() {
+    if (!GAS_URL) return;
     try {
         await fetch(GAS_URL, {
             method: 'POST',
             mode: 'no-cors', 
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'upsert',
-                event: targetEvent
-            })
+            body: JSON.stringify({ events: events })
         });
-        console.log("イベントの保存リクエストを送信しました:", targetEvent.title);
+        console.log("全イベントデータをサーバーに一括保存しました");
     } catch (e) {
-        console.error("イベントの保存に失敗しました", e);
-    }
-}
-
-// 【安全版】指定したイベントIDだけをサーバーから削除する
-async function deleteEventFromServer(eventId) {
-    if (!GAS_URL || !eventId) return;
-    try {
-        await fetch(GAS_URL, {
-            method: 'POST',
-            mode: 'no-cors', 
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'delete',
-                eventId: eventId
-            })
-        });
-        console.log("イベントの削除リクエストを送信しました:", eventId);
-    } catch (e) {
-        console.error("イベントの削除に失敗しました", e);
+        console.error("サーバーへの保存に失敗しました", e);
+        alert('保存に失敗しました。通信環境を確認してください。');
     }
 }
 
