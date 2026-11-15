@@ -250,6 +250,10 @@
         .catch(err => console.log("ヘッダー読み込みスキップ: ", err));
 </script>
 
-<script src="briefing.js"></script>
+<!-- 分割したJSファイルを依存関係の順番通りに読み込み -->
+<script src="event-data.js"></script>
+<script src="briefing-api.js"></script>
+<script src="briefing-mecha.js"></script>
+<script src="briefing-main.js"></script>
 </body>
 </html>
