@@ -246,30 +246,31 @@
 
     <!-- 共通ヘッダー読み込み -->
     <script>
-        fetch('../header.html')
-            .then(response => {
-                if (!response.ok) throw new Error('ヘッダー読み込み失敗');
-                return response.text();
-            })
-            .then(data => {
-                const container = document.getElementById('header-container');
-                if (container) {
-                    container.innerHTML = data;
-                    
-                    const pathParts = window.location.pathname.split('/').filter(Boolean);
-                    const currentFolder = pathParts[pathParts.length - 1] || '';
-
-                    const navLinks = document.querySelectorAll('.nav-links a');
-                    navLinks.forEach(link => {
-                        const href = link.getAttribute('href') || '';
-                        if (href.includes(`/${currentFolder}/`) || href.includes(`/${currentFolder}`)) {
-                            link.classList.add('active');
-                        }
-                    });
+    fetch('/secret-society/header.html')
+        .then(response => {
+            if (!response.ok) throw new Error('ヘッダー読み込み失敗');
+            return response.text();
+        })
+        .then(data => {
+            const container = document.getElementById('header-container');
+            if (container) {
+                container.innerHTML = data;
+                
+                // ★追加：ヘッダー内に含まれるスクリプトを強制的に実行する処理
+                const scripts = container.getElementsByTagName('script');
+                for (let script of scripts) {
+                    const newScript = document.createElement('script');
+                    if (script.src) {
+                        newScript.src = script.src;
+                    } else {
+                        newScript.textContent = script.textContent;
+                    }
+                    document.body.appendChild(newScript);
                 }
-            })
-            .catch(err => console.log("ヘッダー読み込みスキップ: ", err));
-    </script>
+            }
+        })
+        .catch(err => console.log("ヘッダー読み込みスキップ: ", err));
+</script>
 
     <!-- ▼ routeフォルダ内のCSVを読み込み、機体名から機体No.を自動紐付けるスクリプト -->
     <script>
