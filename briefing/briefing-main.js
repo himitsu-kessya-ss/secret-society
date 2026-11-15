@@ -21,7 +21,6 @@ async function saveSelectedTacticsToServer() {
     const ev = events.find(e => e.id === currentEventId);
     if (!ev) return;
 
-    // 最新のサーバーデータを取得して、他人の変更を反映したベースを作る
     try {
         const response = await fetch(GAS_URL);
         const data = await response.json();
@@ -57,7 +56,6 @@ async function saveSelectedTacticsToServer() {
     const toggleAllHeader = document.getElementById('toggle-all-sync');
     if (toggleAllHeader) toggleAllHeader.checked = false;
 
-    // ★このイベント単体だけを安全にサーバーへ保存
     await saveSingleEventToServer(targetEv);
     alert(`選択された ${updatedCount} 行の作戦データをサーバーに反映しました！`);
     renderTacticsTable(targetEv);
@@ -115,7 +113,6 @@ async function saveMembersToServer() {
 
     collectMembersFromDOM(targetEv);
     
-    // ★このイベント単体だけを安全にサーバーへ保存
     await saveSingleEventToServer(targetEv);
     alert('参加メンバー・階級情報をサーバーに保存しました！');
     renderMemberTable(targetEv);
@@ -124,7 +121,7 @@ async function saveMembersToServer() {
 
 function initDefaultEvents() {
     events = [
-        { id: 'ev1', title: '26.10 勢力戦', pass: '1234', members: {}, tactics: [] }
+        { id: 'ev1', title: '26.10 勢力戦', pass: '1234', scheduleDate: '', actualDate: '', members: {}, tactics: [] }
     ];
     initDefaultEventData(events[0]);
     saveEventsToServer();
@@ -147,6 +144,7 @@ function initDefaultEventData(ev) {
     ];
 }
 
+// イベント一覧カードの描画（開催予定日・開催日の表示対応）
 function renderEventList() {
     const listEl = document.getElementById('event-list');
     if (!listEl) return;
@@ -160,10 +158,24 @@ function renderEventList() {
         const lockText = hasPass ? '🔒 要パスワード保護' : '🔓 パスワードなし';
         const eventNo = index + 1;
 
+        // 日付情報のHTML生成（入力されている場合のみ表示）
+        let datesHtml = '';
+        if (ev.scheduleDate || ev.actualDate) {
+            datesHtml += `<div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 6px; display: flex; gap: 12px; flex-wrap: wrap;">`;
+            if (ev.scheduleDate) {
+                datesHtml += `<span>📅 予定: <strong style="color: #fff;">${ev.scheduleDate}</strong></span>`;
+            }
+            if (ev.actualDate) {
+                datesHtml += `<span>🎯 開催: <strong style="color: var(--accent);">${ev.actualDate}</strong></span>`;
+            }
+            datesHtml += `</div>`;
+        }
+
         card.innerHTML = `
             <div onclick="handleEventCardClick('${ev.id}')" style="cursor: pointer;">
                 <div style="font-size: 0.8rem; color: var(--accent); margin-bottom: 4px; font-weight: bold;">No. ${eventNo}</div>
                 <h3>${ev.title}</h3>
+                ${datesHtml}
                 <p class="sub-title" style="margin-top:8px;">${lockText}</p>
             </div>
             <button class="btn btn-secondary" style="position: absolute; top: 15px; right: 15px; padding: 4px 10px; font-size: 0.75rem;" onclick="openAdminSettingsModal(event, '${ev.id}')">⚙️ 管理設定</button>
@@ -203,6 +215,8 @@ function closeModal() {
 function openCreateModal() {
     document.getElementById('input-admin-pw').value = '';
     document.getElementById('input-event-title').value = '';
+    document.getElementById('input-event-sched').value = '';
+    document.getElementById('input-event-date').value = '';
     document.getElementById('input-event-pw').value = '';
     document.getElementById('input-no-pass-check').checked = false;
     document.getElementById('input-event-pw').disabled = false;
@@ -219,6 +233,8 @@ function toggleCreatePassInput(checkbox) {
 async function submitCreateEvent() {
     const adminPw = document.getElementById('input-admin-pw').value;
     const title = document.getElementById('input-event-title').value;
+    const schedDate = document.getElementById('input-event-sched').value;
+    const actualDate = document.getElementById('input-event-date').value;
     const noPass = document.getElementById('input-no-pass-check').checked;
     const eventPw = document.getElementById('input-event-pw').value;
 
@@ -238,16 +254,16 @@ async function submitCreateEvent() {
     const newEv = {
         id: 'ev_' + Date.now(),
         title: title,
+        scheduleDate: schedDate,
+        actualDate: actualDate,
         pass: noPass ? "" : eventPw,
         members: {},
         tactics: []
     };
     initDefaultEventData(newEv);
 
-    // ★新規イベント1件だけを安全にサーバーへ追加（他のイベントは上書きしない）
     await saveSingleEventToServer(newEv);
     
-    // 画面表示用にローカル配列にも追加
     events.push(newEv);
     renderEventList();
     closeModal();
@@ -283,6 +299,8 @@ function openAdminSettingsModal(eventObj, evId) {
     document.getElementById('admin-settings-title').innerText = `管理設定: ${ev.title}`;
     document.getElementById('input-mgr-admin-pw').value = '';
     document.getElementById('input-mgr-event-title').value = ev.title;
+    document.getElementById('input-mgr-event-sched').value = ev.scheduleDate || '';
+    document.getElementById('input-mgr-event-date').value = ev.actualDate || '';
     document.getElementById('input-mgr-new-pw').value = ev.pass || '';
     
     const noPassCheck = document.getElementById('input-mgr-no-pass');
@@ -307,6 +325,8 @@ async function submitAdminSettings() {
     }
 
     const newTitle = document.getElementById('input-mgr-event-title').value;
+    const schedDate = document.getElementById('input-mgr-event-sched').value;
+    const actualDate = document.getElementById('input-mgr-event-date').value;
     const noPass = document.getElementById('input-mgr-no-pass').checked;
     const newPw = document.getElementById('input-mgr-new-pw').value;
 
@@ -323,9 +343,10 @@ async function submitAdminSettings() {
     if (!ev) return;
 
     ev.title = newTitle;
+    ev.scheduleDate = schedDate;
+    ev.actualDate = actualDate;
     ev.pass = noPass ? "" : newPw;
 
-    // ★設定変更した1イベントだけを安全にサーバーへ更新
     await saveSingleEventToServer(ev);
     
     renderEventList();
@@ -347,7 +368,6 @@ async function executeDeleteEvent() {
         return;
     }
 
-    // ★指定したイベントIDだけを削除するようサーバーへ命令（他のイベントには一切触れない）
     await deleteEventFromServer(targetEventIdForAdmin);
 
     events = events.filter(e => e.id !== targetEventIdForAdmin);
