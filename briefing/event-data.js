@@ -67,7 +67,15 @@ const TACTICS_MASTER = ["NS", "AS", "DS", "SS", "NA", "AA", "DA", "SA", "ND", "A
 // デフォルト初期プレイヤーリスト
 const DEFAULT_PLAYERS = ["Oro🍊min", "Halbert", "Yggdrasill", "スパイク", "キッド", "ボブ", "リーア", "ハチワレ", "ナイト"];
 
-// 初期イベントデータ
+// 初期イベントデータ（scheduleDate: 開催予定日, actualDate: 開催日 を追加）
 let events = [
-    { id: 'ev1', title: '26.10 勢力戦', pass: '1234', members: {}, tactics: [] }
+    { 
+        id: 'ev1', 
+        title: '26.10 勢力戦', 
+        pass: '1234', 
+        scheduleDate: '2026/10/10', 
+        actualDate: '2026/10/15', 
+        members: {}, 
+        tactics: [] 
+    }
 ];
