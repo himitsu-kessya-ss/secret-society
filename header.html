@@ -14,6 +14,12 @@
         <a href="/secret-society/emoji/" class="nav-item-custom">Emoji</a>
         <a href="javascript:void(0)" class="nav-item-custom">Link</a>
     </nav>
+
+    <!-- アクセスカウンター表示エリア -->
+    <div class="access-counter">
+        <span class="counter-label">ACCESS</span>
+        <span id="visitor-counter" class="counter-digits">000000</span>
+    </div>
 </header>
 
 <style>
@@ -42,6 +48,8 @@
         gap: 10px;
         overflow-x: auto;
         white-space: nowrap;
+        /* ナビが長い場合にカウンターと重ならないよう余白を持たせる */
+        margin-right: 15px; 
     }
     .nav-links::-webkit-scrollbar { display: none; }
     .nav-item-custom {
@@ -57,4 +65,72 @@
         background: rgba(0, 212, 255, 0.2); 
         border-color: #00d4ff; 
     }
+
+    /* アクセスカウンターのデザイン */
+    .access-counter {
+        display: flex;
+        align-items: center;
+        background: #050a10;
+        border: 1px solid #00d4ff;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-family: 'Courier New', Courier, monospace;
+        box-shadow: inset 0 0 5px rgba(0, 212, 255, 0.3);
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .counter-label {
+        font-size: 0.65rem;
+        color: #00d4ff;
+        margin-right: 6px;
+        letter-spacing: 1px;
+        font-weight: bold;
+        opacity: 0.8;
+    }
+
+    .counter-digits {
+        color: #00d4ff;
+        font-weight: bold;
+        font-size: 0.95rem;
+        letter-spacing: 2px;
+        text-shadow: 0 0 6px rgba(0, 212, 255, 0.6);
+    }
+
+    /* スマホ画面などで幅が狭くなったときの調整（必要に応じて） */
+    @media (max-width: 768px) {
+        .access-counter {
+            display: none; /* スマホではヘッダー領域を圧迫するため非表示にする例 */
+        }
+    }
 </style>
+
+<!-- ページごとのパスを判別してアクセス数をカウント・表示するスクリプト -->
+<script>
+(function() {
+    // 1. 現在のページのURLパス（例: /secret-society/arms/index.html）を固有のキーにする
+    const currentPath = window.location.pathname;
+    const pageKey = 'secret_counter_' + currentPath;
+
+    // 2. ブラウザの保存領域（localStorage）から現在のカウントを取得
+    let count = localStorage.getItem(pageKey);
+    
+    if (!count) {
+        // 初回アクセスの場合は初期値（例: 120スタート）を設定
+        count = 120;
+    } else {
+        // ページが読み込まれるたびに1加算
+        count = parseInt(count, 10) + 1;
+    }
+    
+    // 3. 更新した数値をブラウザに保存
+    localStorage.setItem(pageKey, count);
+
+    // 4. 6桁のゼロ埋め形式（例: 000121）に変換して画面に表示
+    const paddedCount = String(count).padStart(6, '0');
+    const counterElement = document.getElementById('visitor-counter');
+    if (counterElement) {
+        counterElement.textContent = paddedCount;
+    }
+})();
+</script>
