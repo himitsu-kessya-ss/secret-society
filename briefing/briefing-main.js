@@ -1,39 +1,11 @@
-// ★スプレッドシートから発行された「ウェブアプリのURL」
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxJFwDlx71xhfSF3mp6cSK46zog3cSM7kr_3tkGocyQJpnfbzQ8dDPWSjfxG5C7lcdejA/exec';
+// briefing/briefing-main.js
 
 let currentEventId = null;
-let targetEventIdForAdmin = null; // 管理設定モーダルで操作中のイベントID
+let targetEventIdForAdmin = null;
 let currentTab = 'plan';
 let MECHA_DB = {}; 
 let mechaListArray = []; 
 let editingRowIndex = null; 
-
-const RANK_MASTER = {
-    "民間人": 0, "志願兵": 1, "二等兵": 2, "一等兵": 3, "上等兵": 4, "兵長": 5,
-    "上級兵長": 6, "伍長": 7, "上級伍長": 8, "軍曹": 9, "上級軍曹": 10, "先任軍曹": 11,
-    "曹長": 12, "上級曹長": 13, "先任曹長": 14, "准尉": 15, "上級准尉": 16, "特務准尉": 17,
-    "少尉": 18, "中尉": 19, "上級中尉": 20, "大尉": 21, "特務大尉": 22, "戦術大尉": 23,
-    "少佐": 24, "作戦少佐": 25, "特殊作戦少佐": 26, "中佐": 27, "特務中佐": 28, "大佐": 29, "准将": 30,
-    "少将": 31, "艦隊少将": 32, "中将": 33, "方面軍中将": 34, "大将": 35, "上級大将": 36,
-    "宇宙軍元帥": 37, "元帥": 38, "統合軍元帥": 39, "大元帥": 40, "総帥補佐官": 41, "総帥府長官": 42,
-    "副総帥": 43, "総帥": 44
-};
-
-const TRAIT_MASTER = [
-    "豪胆", "豪快", "冷酷", "清涼", "短気", "熱血", "半端", "凡庸", "沈着", "策士",
-    "迅速", "機転", "冷静", "傲慢", "一途", "暴走", "不屈", "執念", "配慮", "倹約",
-    "強欲", "流行", "脱力", "頑丈", "感応", "器用", "集中", "気弱", "悪戯", "実直",
-    "節約", "陶酔", "偏屈", "悪運", "冷血", "鈍感", "偵察", "覚醒", "再生", "闘志",
-    "威圧", "鍛錬", "一徹", "威風", "堅実", "明朗", "繊細", "高尚", "闘争"
-];
-
-const STRATEGY_PRE_MASTER = ["移動", "足止め", "移動しない"];
-const STRATEGY_POST_MASTER = ["攻撃", "回避", "撹乱", "操縦"];
-
-const TACTICS_MASTER = ["NS", "AS", "DS", "SS", "NA", "AA", "DA", "SA", "ND", "AD", "DD", "SD", "LA", "LD", "LS"];
-const DEFAULT_PLAYERS = ["Oro🍊min", "Halbert", "Yggdrasill", "スパイク", "キッド", "ボブ", "リーア", "ハチワレ", "ナイト"];
-
-let events = [];
 
 window.onload = async function() {
     localStorage.removeItem('secret_society_briefing_state_v3');
@@ -42,64 +14,6 @@ window.onload = async function() {
     await loadMechaCsv();
     await loadEventsFromServer(false); 
 };
-
-// 【手動】サーバーから最新データを取得
-async function manualLoadFromServer() {
-    await loadEventsFromServer(false);
-    alert('サーバーから最新データを読み込みました！');
-}
-
-async function loadEventsFromServer(isBackground = false) {
-    if (!GAS_URL) {
-        initDefaultEvents();
-        if (!isBackground) renderEventList();
-        return;
-    }
-
-    try {
-        const response = await fetch(GAS_URL);
-        const data = await response.json();
-        if (data && data.events && data.events.length > 0) {
-            events = data.events;
-        } else {
-            initDefaultEvents();
-        }
-    } catch (e) {
-        console.warn("サーバーからのデータ取得に失敗しました。ローカルデータを使用します。", e);
-        initDefaultEvents();
-    }
-
-    if (!isBackground) {
-        if (!currentEventId) {
-            renderEventList();
-        } else {
-            const ev = events.find(e => e.id === currentEventId);
-            if (ev) {
-                renderMemberTable(ev);
-                renderTacticsTable(ev);
-            }
-        }
-    } else {
-        if (currentEventId) {
-            const ev = events.find(ev => ev.id === currentEventId);
-            if (ev) calculateStats();
-        }
-    }
-}
-
-async function saveEventsToServer() {
-    if (!GAS_URL) return;
-    try {
-        await fetch(GAS_URL, {
-            method: 'POST',
-            mode: 'no-cors', 
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ events: events })
-        });
-    } catch (e) {
-        console.error("サーバーへの保存に失敗しました", e);
-    }
-}
 
 // 【作戦立案タブ用】「更新対象」がONの行だけをサーバーのデータにマージして保存
 async function saveSelectedTacticsToServer() {
@@ -133,7 +47,6 @@ async function saveSelectedTacticsToServer() {
             }
             updatedCount++;
             
-            // サーバー反映完了後に更新対象フラグをOFFにする
             syncCheckbox.checked = false;
             if (ev.tactics[idx]) ev.tactics[idx].sync = false;
             if (targetEv.tactics[idx]) targetEv.tactics[idx].sync = false;
@@ -145,7 +58,6 @@ async function saveSelectedTacticsToServer() {
         return;
     }
 
-    // ヘッダーの「全選択」チェックボックスもOFFにリセット
     const toggleAllHeader = document.getElementById('toggle-all-sync');
     if (toggleAllHeader) toggleAllHeader.checked = false;
 
@@ -154,7 +66,6 @@ async function saveSelectedTacticsToServer() {
     renderTacticsTable(targetEv);
 }
 
-// ヘッダーの「更新対象」一括ON/OFF切替関数
 function toggleAllSyncCheckboxes(headerCheckbox) {
     const isChecked = headerCheckbox.checked;
     const rows = document.querySelectorAll('#tbody-tactics tr');
@@ -171,7 +82,6 @@ function toggleAllSyncCheckboxes(headerCheckbox) {
     });
 }
 
-// 画面上のDOMからメンバー表の入力内容を一時オブジェクト（ev.members）に収集する関数
 function collectMembersFromDOM(ev) {
     const memberRows = document.querySelectorAll('#tbody-members tr');
     let newMembersObj = {};
@@ -190,7 +100,6 @@ function collectMembersFromDOM(ev) {
     ev.members = newMembersObj;
 }
 
-// 【メンバータブ用】メンバー情報をサーバー全体に保存
 async function saveMembersToServer() {
     if (!GAS_URL) return;
     const ev = events.find(e => e.id === currentEventId);
@@ -220,42 +129,6 @@ function initDefaultEvents() {
     ];
     initDefaultEventData(events[0]);
     saveEventsToServer();
-}
-
-async function loadMechaCsv() {
-    try {
-        const response = await fetch('GL)機体一覧 - 機体一覧.csv');
-        if (!response.ok) throw new Error('CSV読み込み失敗');
-        const csvText = await response.text();
-        const lines = csvText.split('\n');
-
-        MECHA_DB = {};
-        mechaListArray = [];
-
-        lines.forEach((line) => {
-            if (!line.trim()) return;
-            const cols = line.split(',').map(col => col.replace(/^"|"$/g, '').trim());
-
-            if (cols.length >= 18) {
-                const mechaNo = cols[0];   
-                const mechaName = cols[1]; 
-                const hpVal = Number(cols[3]) || 0;     
-                const costVal = Number(cols[17]) || 0;  
-
-                if (mechaName) {
-                    MECHA_DB[mechaName] = { hp: hpVal, cost: costVal, no: mechaNo };
-                    mechaListArray.push({ name: mechaName, hp: hpVal, cost: costVal, no: mechaNo });
-                }
-            }
-        });
-    } catch (err) {
-        MECHA_DB = {
-            "ガンダム": { hp: 384, cost: 38, no: "1" },
-            "バンシィ": { hp: 576, cost: 64, no: "2" },
-            "ガリルナガン": { hp: 700, cost: 72, no: "3" }
-        };
-        mechaListArray = Object.keys(MECHA_DB).map(k => ({ name: k, ...MECHA_DB[k] }));
-    }
 }
 
 function initDefaultEventData(ev) {
@@ -328,7 +201,6 @@ function closeModal() {
     document.getElementById('modal-mecha-search').classList.add('hidden');
 }
 
-// 新規起票モーダル
 function openCreateModal() {
     document.getElementById('input-admin-pw').value = '';
     document.getElementById('input-event-title').value = '';
@@ -345,7 +217,7 @@ function toggleCreatePassInput(checkbox) {
     if (checkbox.checked) pwInput.value = '';
 }
 
-function submitCreateEvent() {
+async function submitCreateEvent() {
     const adminPw = document.getElementById('input-admin-pw').value;
     const title = document.getElementById('input-event-title').value;
     const noPass = document.getElementById('input-no-pass-check').checked;
@@ -364,6 +236,8 @@ function submitCreateEvent() {
         return;
     }
 
+    await fetchLatestEventsBeforeAdminAction();
+
     const newEv = {
         id: 'ev_' + Date.now(),
         title: title,
@@ -373,13 +247,12 @@ function submitCreateEvent() {
     };
     initDefaultEventData(newEv);
     events.push(newEv);
-    saveEventsToServer();
+    await saveEventsToServer();
     renderEventList();
     closeModal();
     alert('新規イベントを起票しました！');
 }
 
-// 入室認証モーダル
 function openAuthModal(evId) {
     currentEventId = evId;
     const ev = events.find(e => e.id === evId);
@@ -401,7 +274,6 @@ function submitAuthEvent() {
     }
 }
 
-// 管理設定モーダル（イベント名・PW変更・削除）
 function openAdminSettingsModal(eventObj, evId) {
     eventObj.stopPropagation();
     targetEventIdForAdmin = evId;
@@ -433,9 +305,6 @@ async function submitAdminSettings() {
         return;
     }
 
-    const ev = events.find(e => e.id === targetEventIdForAdmin);
-    if (!ev) return;
-
     const newTitle = document.getElementById('input-mgr-event-title').value;
     const noPass = document.getElementById('input-mgr-no-pass').checked;
     const newPw = document.getElementById('input-mgr-new-pw').value;
@@ -446,6 +315,16 @@ async function submitAdminSettings() {
     }
     if (!noPass && !newPw) {
         alert('新しい入室パスワードを入力するか、「パスワードなしにする」にチェックを入れてください。');
+        return;
+    }
+
+    await fetchLatestEventsBeforeAdminAction();
+
+    const ev = events.find(e => e.id === targetEventIdForAdmin);
+    if (!ev) {
+        alert('対象のイベントが見つかりませんでした。');
+        renderEventList();
+        closeModal();
         return;
     }
 
@@ -470,6 +349,8 @@ async function executeDeleteEvent() {
     if (!confirm(`本当にイベント「${ev.title}」を削除しますか？この操作は元に戻せません。`)) {
         return;
     }
+
+    await fetchLatestEventsBeforeAdminAction();
 
     events = events.filter(e => e.id !== targetEventIdForAdmin);
     await saveEventsToServer();
@@ -571,14 +452,12 @@ function renderTacticsTable(ev) {
     const tbody = document.getElementById('tbody-tactics');
     tbody.innerHTML = '';
 
-    // テーブル描画時は全行の更新対象フラグ（sync）を初期値OFF（false）にする
     ev.tactics.forEach((row, idx) => {
         row.sync = false;
         const tr = createTacticsTr(row, idx + 1, ev);
         tbody.appendChild(tr);
     });
 
-    // ヘッダーの全選択用チェックボックスもOFFにリセット
     const toggleAllHeader = document.getElementById('toggle-all-sync');
     if (toggleAllHeader) toggleAllHeader.checked = false;
 
@@ -596,7 +475,6 @@ function addTacticsRow() {
     renderTacticsTable(ev);
 }
 
-// 画面上のDOMから指定行のデータを抽出してローカルオブジェクトに格納
 function collectRowDataFromDOM(rowIndex, ev) {
     const tr = document.querySelectorAll('#tbody-tactics tr')[rowIndex];
     if (!tr || !ev.tactics[rowIndex]) return;
@@ -646,7 +524,6 @@ function collectRowDataFromDOM(rowIndex, ev) {
     }
 }
 
-// 特性が変更されたときに動的に見た目を切り替える関数
 function updateTraitStyle(selectEl, no, traitIndex) {
     collectRowDataFromDOM(no-1, events.find(e=>e.id===currentEventId));
     
@@ -802,53 +679,6 @@ function updateRangeBar(inputEl, rowIndex, type) {
     }
 }
 
-function openMechaSearchModal(rowIndex) {
-    editingRowIndex = rowIndex;
-    document.getElementById('input-mecha-query').value = '';
-    renderMechaSearchResults(mechaListArray);
-    document.getElementById('modal-overlay').classList.remove('hidden');
-    document.getElementById('modal-mecha-search').classList.remove('hidden');
-}
-
-function filterMechaList() {
-    const query = document.getElementById('input-mecha-query').value.toLowerCase();
-    const filtered = mechaListArray.filter(m => 
-        m.name.toLowerCase().includes(query) || String(m.no).toLowerCase().includes(query)
-    );
-    renderMechaSearchResults(filtered);
-}
-
-function renderMechaSearchResults(list) {
-    const container = document.getElementById('mecha-search-results');
-    container.innerHTML = '';
-    if (list.length === 0) {
-        container.innerHTML = '<div style="padding: 10px; color: var(--text-muted); text-align:center;">該当する機体が見つかりません</div>';
-        return;
-    }
-    list.forEach(m => {
-        const item = document.createElement('div');
-        item.className = 'mecha-search-item';
-        item.innerHTML = `<span>[No.${m.no}] <strong>${m.name}</strong></span> <span style="color:var(--accent);">HP: ${m.hp} / コスト: ${m.cost}</span>`;
-        item.onclick = () => selectMecha(m);
-        container.appendChild(item);
-    });
-}
-
-function selectMecha(m) {
-    const ev = events.find(e => e.id === currentEventId);
-    if (editingRowIndex !== null && ev.tactics[editingRowIndex]) {
-        const row = ev.tactics[editingRowIndex];
-        row.mecha = m.name;
-        row.hp = m.hp;
-        const playerRank = ev.members[row.player] ? ev.members[row.player].rank : null;
-        const addCost = playerRank ? (RANK_MASTER[playerRank] || 0) : 0;
-        row.actualCost = m.cost + addCost;
-
-        renderTacticsTable(ev);
-    }
-    closeModal();
-}
-
 function calculateStats() {
     const ev = events.find(e => e.id === currentEventId);
     if (!ev) return;
@@ -951,7 +781,6 @@ function calculateStats() {
     `;
 }
 
-// 【作戦要点サマリタブ】参加メンバー全員分のカードを生成し、作戦立案タブの内容と連動させる
 function renderSummaryCards() {
     const evData = events.find(e => e.id === currentEventId);
     if (!evData) return;
@@ -995,7 +824,7 @@ function renderSummaryCards() {
                         <div style="font-size: 0.85rem; margin-top: 3px;"><strong>機体:</strong> ${r.mecha || '-'} (実HP: ${r.hp} / <strong>実コスト:</strong> <span style="color: var(--accent-warn);">${r.actualCost !== undefined ? r.actualCost : 0}</span>)</div>
                         <div style="font-size: 0.85rem;"><strong>武装:</strong> ${r.weapon || '-'} (射程: ${r.minR}〜${r.maxR})</div>
                         <div style="font-size: 0.85rem;"><strong>装備:</strong> ${r.equip || '-'}</div>
-                        <div style="margin-top: 4px; color: var(--text-muted); font-size: 0.8rem;">
+                        <div style="margin-top: 4px; color: var(--text-muted); font-size: 0.80rem;">
                             個人戦術: ${r.strPre || '-'} / ${r.strPost || '-'}<br>
                             特性: ${traitsStr || '-'}
                         </div>
