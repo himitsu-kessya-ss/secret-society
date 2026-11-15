@@ -2,10 +2,9 @@
 
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxJFwDlx71xhfSF3mp6cSK46zog3cSM7kr_3tkGocyQJpnfbzQ8dDPWSjfxG5C7lcdejA/exec';
 
-// サーバーから全イベントデータを取得
+// サーバーから全イベントデータを取得（勝手な上書きセーブを完全廃止）
 async function loadEventsFromServer(isBackground = false) {
     if (!GAS_URL) {
-        initDefaultEvents();
         if (!isBackground) renderEventList();
         return;
     }
@@ -13,14 +12,12 @@ async function loadEventsFromServer(isBackground = false) {
     try {
         const response = await fetch(GAS_URL);
         const data = await response.json();
-        if (data && Array.isArray(data.events) && data.events.length > 0) {
+        if (data && Array.isArray(data.events)) {
+            // サーバーから取得できた場合のみ、データを更新（空であっても勝手に上書きセーブしない）
             events = data.events;
-        } else {
-            initDefaultEvents();
         }
     } catch (e) {
-        console.warn("サーバーからのデータ取得に失敗しました。ローカルデータを使用します。", e);
-        initDefaultEvents();
+        console.warn("サーバーからのデータ取得に失敗しました。現在のデータを維持します。", e);
     }
 
     if (!isBackground) {
@@ -54,12 +51,13 @@ async function saveSingleEventToServer(targetEvent) {
                 event: targetEvent
             })
         });
+        console.log("イベントの保存リクエストを送信しました:", targetEvent.title);
     } catch (e) {
         console.error("イベントの保存に失敗しました", e);
     }
 }
 
-// 【安全版】指定したイベントIDだけをサーバーから削除する（他のイベントには一切触れない）
+// 【安全版】指定したイベントIDだけをサーバーから削除する
 async function deleteEventFromServer(eventId) {
     if (!GAS_URL || !eventId) return;
     try {
@@ -72,23 +70,9 @@ async function deleteEventFromServer(eventId) {
                 eventId: eventId
             })
         });
+        console.log("イベントの削除リクエストを送信しました:", eventId);
     } catch (e) {
         console.error("イベントの削除に失敗しました", e);
-    }
-}
-
-// 従来の全件保存（初期データ生成時のみ使用）
-async function saveEventsToServer() {
-    if (!GAS_URL) return;
-    try {
-        await fetch(GAS_URL, {
-            method: 'POST',
-            mode: 'no-cors', 
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ events: events })
-        });
-    } catch (e) {
-        console.error("サーバーへの保存に失敗しました", e);
     }
 }
 
