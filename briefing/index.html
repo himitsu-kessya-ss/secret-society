@@ -22,9 +22,12 @@
 
     <!-- ① メインページ (イベント一覧) -->
     <div id="page-briefing-room">
-        <div class="card" style="display: flex; justify-content: space-between; align-items: center;">
+        <div class="card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
             <h2>作戦イベント一覧</h2>
-            <button class="btn" onclick="openCreateModal()">＋ 新規イベント起票（管理者）</button>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-secondary" onclick="openBulkEditModal()">📋 全イベント一括管理</button>
+                <button class="btn" onclick="openCreateModal()">＋ 新規イベント起票（管理者）</button>
+            </div>
         </div>
         <div class="event-grid" id="event-list"></div>
     </div>
@@ -173,7 +176,6 @@
         <input type="password" id="input-admin-pw" placeholder="管理者パスワード">
         <input type="text" id="input-event-title" placeholder="イベント名 (例: 11月勢力戦)">
         
-        <!-- 日付入力欄（任意） -->
         <div style="display: flex; gap: 10px; margin-top: 5px;">
             <div style="flex: 1;">
                 <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 2px;">開催予定日 (任意)</label>
@@ -197,6 +199,23 @@
         </div>
     </div>
 
+    <!-- 全イベント一括管理モーダル -->
+    <div id="modal-bulk-edit" class="modal hidden" style="width: 700px; max-width: 95%;">
+        <h3>📋 全イベント一括管理（管理者用）</h3>
+        <p class="sub-title" style="margin-bottom: 10px;">すべてのイベントのタイトルや日時、パスワードをまとめて編集できます。</p>
+        
+        <input type="password" id="input-bulk-admin-pw" placeholder="管理者パスワード" style="margin-bottom: 15px;">
+        
+        <div id="bulk-edit-container" style="max-height: 350px; overflow-y: auto; border: 1px solid var(--border); border-radius: 4px; padding: 10px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px;">
+            <!-- JavaScriptでイベントリストがここに動的に並びます -->
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button class="btn btn-secondary" onclick="closeModal()">キャンセル</button>
+            <button class="btn" onclick="submitBulkEdit()" style="background-color: rgba(0, 240, 255, 0.15);">💾 一括保存する</button>
+        </div>
+    </div>
+
     <!-- 入室認証モーダル -->
     <div id="modal-auth" class="modal hidden">
         <h3 id="auth-event-title">イベント入室</h3>
@@ -208,7 +227,7 @@
         </div>
     </div>
 
-    <!-- 管理用設定モーダル（イベント名・PW変更・日時変更・削除） -->
+    <!-- 管理用設定モーダル -->
     <div id="modal-admin-settings" class="modal hidden">
         <h3 id="admin-settings-title">イベント管理設定</h3>
         <p class="sub-title">管理者パスワードを入力してください。</p>
@@ -218,7 +237,6 @@
             <label style="font-size: 0.85rem; color: var(--text-muted); display: block; margin-bottom: 5px;">イベント名変更</label>
             <input type="text" id="input-mgr-event-title" placeholder="新しいイベント名">
 
-            <!-- 管理設定の日付変更欄（任意） -->
             <div style="display: flex; gap: 10px; margin-top: 10px;">
                 <div style="flex: 1;">
                     <label style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 2px;">開催予定日</label>
