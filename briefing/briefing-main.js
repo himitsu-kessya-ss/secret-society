@@ -15,7 +15,7 @@ window.onload = async function() {
     await loadEventsFromServer(false); 
 };
 
-// 【追加】管理者操作の直前にサーバーから最新のイベントリストを安全に取得する関数
+// 管理者操作の直前にサーバーから最新のイベントリストを安全に取得する関数
 async function fetchLatestEventsBeforeAdminAction() {
     if (!GAS_URL) return;
     try {
@@ -25,7 +25,7 @@ async function fetchLatestEventsBeforeAdminAction() {
             events = data.events;
         }
     } catch (e) {
-        console.warn("最新データの事前取得に失敗しました。ローカルデータを使用します。", e);
+        console.warn("最新データの事前取得に失敗しました。手元のデータを使用します。", e);
     }
 }
 
@@ -131,14 +131,6 @@ async function saveMembersToServer() {
     alert('参加メンバー・階級情報をサーバーに保存しました！');
     renderMemberTable(targetEv);
     renderTacticsTable(targetEv);
-}
-
-function initDefaultEvents() {
-    events = [
-        { id: 'ev1', title: '26.10 勢力戦', pass: '1234', scheduleDate: '', actualDate: '', members: {}, tactics: [] }
-    ];
-    initDefaultEventData(events[0]);
-    saveEventsToServer();
 }
 
 function initDefaultEventData(ev) {
