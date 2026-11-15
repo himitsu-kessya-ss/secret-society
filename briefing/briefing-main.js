@@ -15,6 +15,20 @@ window.onload = async function() {
     await loadEventsFromServer(false); 
 };
 
+// 【追加】管理者操作の直前にサーバーから最新のイベントリストを安全に取得する関数
+async function fetchLatestEventsBeforeAdminAction() {
+    if (!GAS_URL) return;
+    try {
+        const response = await fetch(GAS_URL);
+        const data = await response.json();
+        if (data && Array.isArray(data.events) && data.events.length > 0) {
+            events = data.events;
+        }
+    } catch (e) {
+        console.warn("最新データの事前取得に失敗しました。ローカルデータを使用します。", e);
+    }
+}
+
 // 【作戦立案タブ用】「更新対象」がONの行だけをサーバーの最新データにマージして保存
 async function saveSelectedTacticsToServer() {
     if (!GAS_URL) return;
@@ -339,7 +353,7 @@ async function submitAdminSettings() {
         return;
     }
 
-    // ★保存の直前にサーバーから最新データを取得し、他人のデータを上書きしないように同期する
+    // 保存の直前にサーバーから最新データを取得して同期
     await fetchLatestEventsBeforeAdminAction();
 
     const ev = events.find(e => e.id === targetEventIdForAdmin);
@@ -355,7 +369,7 @@ async function submitAdminSettings() {
     ev.actualDate = actualDate;
     ev.pass = noPass ? "" : newPw;
 
-    // ★変更したイベントだけを安全にサーバーへ保存
+    // 変更したイベントだけを安全にサーバーへ保存
     await saveSingleEventToServer(ev);
     
     renderEventList();
@@ -799,13 +813,12 @@ function calculateStats() {
             <td style="text-align: center;">${sumCols['c5']}</td>
             <td style="text-align: center;">${sumCols['c6']}</td>
             <td style="text-align: center;">${sumCols['c7']}</td>
-            <td style="text-align: center;">${sumCent(sumCols['c8'])}</td> <!-- 調整用 -->
             <td style="text-align: center;">${sumCols['c8']}</td>
             <td style="text-align: center;">${sumCols['r1']}</td>
             <td style="text-align: center;">${sumCols['r2']}</td>
             <td style="text-align: center;">${sumCols['r3']}</td>
         </tr>
-    `.replace('${sumCent(sumCols[\'c8\'])}', '${sumCols[\'c8\']}'); // 念のためクリーンな記述に修正
+    `;
 }
 
 function renderSummaryCards() {
