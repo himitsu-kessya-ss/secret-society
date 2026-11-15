@@ -110,7 +110,7 @@
 
 <!-- 共通ヘッダーを読み込んで現在地をアクティブにする処理（ルートのheader.htmlを正しく取得） -->
 <script>
-    fetch('../header.html')
+    fetch('/secret-society/header.html')
         .then(response => {
             if (!response.ok) throw new Error('ヘッダー読み込み失敗');
             return response.text();
@@ -120,54 +120,20 @@
             if (container) {
                 container.innerHTML = data;
                 
-                const pathParts = window.location.pathname.split('/').filter(Boolean);
-                const currentFolder = pathParts[pathParts.length - 1] || '';
-
-                const navLinks = document.querySelectorAll('.nav-links a');
-                navLinks.forEach(link => {
-                    const href = link.getAttribute('href') || '';
-                    if (href.includes(`/${currentFolder}/`) || href.includes(`/${currentFolder}`)) {
-                        link.classList.add('active');
+                // ★追加：ヘッダー内に含まれるスクリプトを強制的に実行する処理
+                const scripts = container.getElementsByTagName('script');
+                for (let script of scripts) {
+                    const newScript = document.createElement('script');
+                    if (script.src) {
+                        newScript.src = script.src;
+                    } else {
+                        newScript.textContent = script.textContent;
                     }
-                });
+                    document.body.appendChild(newScript);
+                }
             }
         })
         .catch(err => console.log("ヘッダー読み込みスキップ: ", err));
-
-    // タブ切り替え時のテキスト・HTML読み込み処理
-    $(document).ready(function() {
-        $('.tab-btn').on('click', function() {
-            $('.tab-btn').removeClass('active');
-            $(this).addClass('active');
-            const type = $(this).data('type');
-            const file = $(this).data('file');
-
-            $('#today-tool, #text-content-display, #content-frame, #static-table-area').hide();
-
-            if (type === 'today') {
-                $('#today-tool').show();
-            } else if (type === 'txt') {
-                $('#text-content-display').show().text("読み込み中...");
-                fetch(file)
-                    .then(r => {
-                        if (!r.ok) throw new Error('ファイルが見つかりません');
-                        return r.arrayBuffer();
-                    })
-                    .then(buf => {
-                        let txt = new TextDecoder('utf-8').decode(buf);
-                        if (txt.includes('\uFFFD')) txt = new TextDecoder('shift-jis').decode(buf);
-                        $('#text-content-display').html(txt);
-                    })
-                    .catch(e => {
-                        $('#text-content-display').html('<p style="color: #ff5555;">特殊戦闘ファイルの読み込みに失敗しました。</p>');
-                    });
-            } else if (type === 'html') {
-                $('#content-frame').attr('src', file).show();
-            } else if (type === 'static') {
-                $('#static-table-area').show();
-            }
-        });
-    });
 </script>
 
 <!-- 分割したJSファイルを読み込む -->
