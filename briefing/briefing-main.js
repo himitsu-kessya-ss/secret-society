@@ -339,14 +339,23 @@ async function submitAdminSettings() {
         return;
     }
 
+    // ★保存の直前にサーバーから最新データを取得し、他人のデータを上書きしないように同期する
+    await fetchLatestEventsBeforeAdminAction();
+
     const ev = events.find(e => e.id === targetEventIdForAdmin);
-    if (!ev) return;
+    if (!ev) {
+        alert('対象のイベントが見つかりませんでした。');
+        renderEventList();
+        closeModal();
+        return;
+    }
 
     ev.title = newTitle;
     ev.scheduleDate = schedDate;
     ev.actualDate = actualDate;
     ev.pass = noPass ? "" : newPw;
 
+    // ★変更したイベントだけを安全にサーバーへ保存
     await saveSingleEventToServer(ev);
     
     renderEventList();
@@ -790,12 +799,13 @@ function calculateStats() {
             <td style="text-align: center;">${sumCols['c5']}</td>
             <td style="text-align: center;">${sumCols['c6']}</td>
             <td style="text-align: center;">${sumCols['c7']}</td>
+            <td style="text-align: center;">${sumCent(sumCols['c8'])}</td> <!-- 調整用 -->
             <td style="text-align: center;">${sumCols['c8']}</td>
             <td style="text-align: center;">${sumCols['r1']}</td>
             <td style="text-align: center;">${sumCols['r2']}</td>
             <td style="text-align: center;">${sumCols['r3']}</td>
         </tr>
-    `;
+    `.replace('${sumCent(sumCols[\'c8\'])}', '${sumCols[\'c8\']}'); // 念のためクリーンな記述に修正
 }
 
 function renderSummaryCards() {
