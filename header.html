@@ -6,7 +6,7 @@
         <!-- アクセスカウンター -->
         <div class="access-counter">
             <span class="counter-label">ACCESS</span>
-            <span id="visitor-counter" class="counter-digits">000000</span>
+            <span id="visitor-counter" class="counter-digits">000120</span>
         </div>
     </div>
 
@@ -115,46 +115,29 @@
     }
 </style>
 
-<!-- 外部APIを使った、ページごと・全デバイス共通のリアルタイムカウンター処理 -->
+<!-- エラーの起きない安全なローカルストレージ・カウンター処理 -->
 <script>
 (function() {
-    // 現在のページのURLパス（例: /secret-society/briefing/index.html など）を英数字に変換
-    let path = window.location.pathname.replace(/[^a-zA-Z0-9]/g, '_');
-    if (!path || path === '_') path = 'home';
+    const currentPath = window.location.pathname;
+    const pageKey = 'secret_counter_' + currentPath;
+
+    let count = localStorage.getItem(pageKey);
     
-    // 秘密結社専用の名前空間（他のサイトと被らない識別子）
-    const namespace = 'secret_society_site_2026';
-    const key = 'page_' + path;
+    if (!count) {
+        count = 120;
+    } else {
+        count = parseInt(count, 10) + 1;
+    }
+    
+    localStorage.setItem(pageKey, count);
 
-    // 無料のアクセスカウンターAPI（アクセスするたびに自動で＋1される）
-    const apiUrl = `https://api.counterapi.dev/v1/${namespace}/${key}/up`;
-
-    fetch(apiUrl)
-        .then(response => {
-            if (!response.ok) throw new Error('カウンターAPI接続エラー');
-            return response.json();
-        })
-        .then(data => {
-            // APIから返ってきた現在のカウント数値
-            const count = data.count !== undefined ? data.count : 120;
-            
-            // 6桁のゼロ埋め形式（例: 000125）に変換して画面に表示
-            const paddedCount = String(count).padStart(6, '0');
-            
-            setTimeout(() => {
-                const counterElement = document.getElementById('visitor-counter');
-                if (counterElement) {
-                    counterElement.textContent = paddedCount;
-                }
-            }, 50);
-        })
-        .catch(err => {
-            console.log("カウンターAPI利用不可のためフォールバック表示:", err);
-            // オフラインやエラー時の予備表示
-            const counterElement = document.getElementById('visitor-counter');
-            if (counterElement) {
-                counterElement.textContent = "000120";
-            }
-        });
+    const paddedCount = String(count).padStart(6, '0');
+    
+    setTimeout(() => {
+        const counterElement = document.getElementById('visitor-counter');
+        if (counterElement) {
+            counterElement.textContent = paddedCount;
+        }
+    }, 50);
 })();
 </script>
