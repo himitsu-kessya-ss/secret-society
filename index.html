@@ -25,7 +25,8 @@
                     <label for="password">PW</label>
                     <input type="password" id="password" placeholder="パスワードを入力" required>
                 </div>
-                <button type="submit" class="enter-btn">認証</button>
+                <!-- ロック時などにボタンを無効化できるようクラスや識別用IDを付与 -->
+                <button type="submit" id="enter-btn" class="enter-btn">認証</button>
                 <div id="error-msg" class="error-message">IDまたはパスワードが正しくありません</div>
             </form>
         </div>
