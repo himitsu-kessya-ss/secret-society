@@ -1,7 +1,7 @@
 // --- 複数ユーザーの定義（セキュリティ向上のため、パスワードはSHA-256ハッシュで保持） ---
-// 登録されているパスワードの元値：
-// "secret" (管理人) -> パスワード: "12342234"
-// "pilot1" (パイロットA) -> パスワード: "abcd1234"
+// ※元のパスワード：
+// "secret" （管理人） -> パスワード: "12342234"
+// "pilot1" （パイロットA） -> パスワード: "abcd1234"
 const VALID_USERS = [
     { 
         id: "secret", 
@@ -34,7 +34,7 @@ async function handleLogin(event) {
     const idInput = document.getElementById('username').value.trim();
     const pwInput = document.getElementById('password').value.trim();
     const errorMsg = document.getElementById('error-msg');
-    const enterBtn = document.getElementById('enter-btn');
+    const enterBtn = document.getElementById('enter-btn'); // 認証ボタン
 
     // ロック中かどうかのチェック
     const lockUntil = localStorage.getItem("lockUntil");
@@ -45,12 +45,12 @@ async function handleLogin(event) {
         return;
     }
 
-    // 入力されたパスワードをハッシュ化して比較
+    // 入力されたパスワードをハッシュ化して照合
     const hashedInputPw = await hashPassword(pwInput);
     const matchedUser = VALID_USERS.find(user => user.id === idInput && user.pwHash === hashedInputPw);
 
     if (matchedUser) {
-        // 成功：失敗回数・ロック情報をクリア
+        // 成功：失敗回数・ロック情報をリセット
         localStorage.removeItem("loginAttempts");
         localStorage.removeItem("lockUntil");
 
@@ -159,7 +159,7 @@ function goToMain() {
 function checkAuthAndRoute() {
     const isLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
     
-    // ページ読み込み時にロック状態を確認
+    // ページ読み込み時やハッシュ変更時にロック状態を確認
     checkLockoutStatus();
     
     if (window.location.hash === '#main') {
