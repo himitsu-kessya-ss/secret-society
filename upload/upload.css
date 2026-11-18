@@ -73,7 +73,7 @@ header {
     margin-bottom: 25px;
 }
 
-/* ▼ タブ切り替えボタンのスタイル（マルチタブ対応） */
+/* ▼ タブ切り替えボタンのスタイル */
 .tab-buttons {
     display: flex;
     gap: 12px;
@@ -132,7 +132,6 @@ header {
     opacity: 1;
 }
 
-/* ▼ タブコンテンツの表示制御スタイル */
 .tab-content {
     display: none;
 }
@@ -523,7 +522,7 @@ tr:hover {
     color: #a0a0a0;
 }
 
-/* ▼ 投稿ランキング（Special Thanks）専用スタイル */
+/* ▼ 投稿ランキング専用スタイル */
 .top3-container {
     display: flex;
     gap: 15px;
@@ -551,57 +550,19 @@ tr:hover {
     transform: translateY(-5px);
 }
 
-.top3-card.rank-1 {
-    border-color: #ffd700;
-    background: linear-gradient(180deg, rgba(255,215,0,0.15) 0%, var(--card-bg) 100%);
-    order: 2;
-}
-.top3-card.rank-2 {
-    border-color: #c0c0c0;
-    background: linear-gradient(180deg, rgba(192,192,192,0.15) 0%, var(--card-bg) 100%);
-    order: 1;
-}
-.top3-card.rank-3 {
-    border-color: #cd7f32;
-    background: linear-gradient(180deg, rgba(205,127,50,0.15) 0%, var(--card-bg) 100%);
-    order: 3;
-}
+.top3-card.rank-1 { border-color: #ffd700; background: linear-gradient(180deg, rgba(255,215,0,0.15) 0%, var(--card-bg) 100%); order: 2; }
+.top3-card.rank-2 { border-color: #c0c0c0; background: linear-gradient(180deg, rgba(192,192,192,0.15) 0%, var(--card-bg) 100%); order: 1; }
+.top3-card.rank-3 { border-color: #cd7f32; background: linear-gradient(180deg, rgba(205,127,50,0.15) 0%, var(--card-bg) 100%); order: 3; }
 
-.crown-icon {
-    font-size: 2.2rem;
-    margin-bottom: 5px;
-}
-
-.top3-rank-num {
-    font-size: 0.85rem;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 8px;
-}
-
+.crown-icon { font-size: 2.2rem; margin-bottom: 5px; }
+.top3-rank-num { font-size: 0.85rem; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
 .top3-card.rank-1 .top3-rank-num { color: #ffd700; }
 .top3-card.rank-2 .top3-rank-num { color: #c0c0c0; }
 .top3-card.rank-3 .top3-rank-num { color: #cd7f32; }
 
-.top3-name {
-    font-size: 1.15rem;
-    font-weight: bold;
-    color: #fff;
-    margin-bottom: 10px;
-    word-break: break-all;
-}
-
-.top3-count {
-    font-size: 1.3rem;
-    font-weight: bold;
-    color: var(--accent-color);
-}
-.top3-count-unit {
-    font-size: 0.8rem;
-    color: var(--sub-text);
-    margin-left: 2px;
-}
+.top3-name { font-size: 1.15rem; font-weight: bold; color: #fff; margin-bottom: 10px; word-break: break-all; }
+.top3-count { font-size: 1.3rem; font-weight: bold; color: var(--accent-color); }
+.top3-count-unit { font-size: 0.8rem; color: var(--sub-text); margin-left: 2px; }
 
 .ranking-table-card {
     background: var(--card-bg);
@@ -648,11 +609,9 @@ tr:hover {
     transition: background 0.2s;
 }
 
-.move-up-btn:hover, .move-down-btn:hover {
-    background: #444;
-}
+.move-up-btn:hover, .move-down-btn:hover { background: #444; }
 
-/* ▼ 登録進捗プログレスバー用スタイル（新規追加） */
+/* ▼ プログレスバー用スタイル */
 .progress-bar-container {
     width: 100%;
     background-color: #1a1c1e;
@@ -660,7 +619,6 @@ tr:hover {
     border-radius: 8px;
     height: 18px;
     overflow: hidden;
-    position: relative;
 }
 
 .progress-bar-fill {
@@ -684,4 +642,71 @@ tr:hover {
     background: linear-gradient(90deg, #0099ff, var(--accent-color));
     border-radius: 4px;
     transition: width 0.4s ease;
+}
+
+/* ▼ 番号マトリクス・パレット専用スタイル（新規追加） */
+.thousand-btn {
+    background: #222;
+    color: var(--sub-text);
+    border: 1px solid #444;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: bold;
+    transition: 0.2s;
+}
+
+.thousand-btn:hover {
+    background: #333;
+    color: #fff;
+}
+
+.thousand-btn.active {
+    background: var(--accent-color);
+    color: #1a1c1e;
+    border-color: var(--accent-color);
+}
+
+.matrix-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
+    gap: 5px;
+    max-height: 400px;
+    overflow-y: auto;
+    background: #1a1c1e;
+    padding: 12px;
+    border: 1px solid #444;
+    border-radius: 6px;
+}
+
+.matrix-cell {
+    background-color: #2a2d32;
+    color: #888;
+    border: 1px solid #444;
+    border-radius: 4px;
+    text-align: center;
+    padding: 8px 2px;
+    font-size: 0.8rem;
+    font-family: monospace;
+    cursor: pointer;
+    transition: 0.15s;
+    user-select: none;
+}
+
+.matrix-cell:hover {
+    border-color: var(--accent-color);
+    transform: scale(1.05);
+}
+
+/* 登録済み（緑色ハイライト） */
+.matrix-cell.registered {
+    background-color: #15803d;
+    color: #fff;
+    border-color: #22c55e;
+    font-weight: bold;
+}
+
+.matrix-cell.registered:hover {
+    background-color: #16a34a;
 }
