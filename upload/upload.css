@@ -551,23 +551,20 @@ tr:hover {
     transform: translateY(-5px);
 }
 
-/* 1位（ゴールド） */
 .top3-card.rank-1 {
     border-color: #ffd700;
     background: linear-gradient(180deg, rgba(255,215,0,0.15) 0%, var(--card-bg) 100%);
-    order: 2; /* 中央に配置 */
+    order: 2;
 }
-/* 2位（シルバー） */
 .top3-card.rank-2 {
     border-color: #c0c0c0;
     background: linear-gradient(180deg, rgba(192,192,192,0.15) 0%, var(--card-bg) 100%);
-    order: 1; /* 左に配置 */
+    order: 1;
 }
-/* 3位（ブロンズ） */
 .top3-card.rank-3 {
     border-color: #cd7f32;
     background: linear-gradient(180deg, rgba(205,127,50,0.15) 0%, var(--card-bg) 100%);
-    order: 3; /* 右に配置 */
+    order: 3;
 }
 
 .crown-icon {
@@ -628,3 +625,29 @@ tr:hover {
 .rank-badge.rank-1-badge { background: #ffd700; color: #000; }
 .rank-badge.rank-2-badge { background: #c0c0c0; color: #000; }
 .rank-badge.rank-3-badge { background: #cd7f32; color: #fff; }
+
+/* ▼ 編集時の並び替えボタン用スタイル */
+.inline-ability-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #1f1f1f;
+    padding: 6px;
+    border-radius: 4px;
+    border: 1px solid #444;
+}
+
+.move-up-btn, .move-down-btn {
+    background: #333;
+    color: #fff;
+    border: 1px solid #555;
+    border-radius: 3px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background 0.2s;
+}
+
+.move-up-btn:hover, .move-down-btn:hover {
+    background: #444;
+}
