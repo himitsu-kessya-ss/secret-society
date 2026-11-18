@@ -48,7 +48,7 @@ let currentSortDirection = 'asc';
 
 // --- 機体No.を必ず4桁ゼロ埋めに正規化するヘルパー関数 ---
 function formatUnitNo(noStr) {
-    if (!noStr) return '';
+    if (!noStr && noStr !== 0) return '';
     const trimmed = String(noStr).trim();
     if (/^\d+$/.test(trimmed)) {
         return trimmed.padStart(4, '0');
@@ -101,7 +101,7 @@ function updateSelectBackground(selectEl) {
         selectEl.style.borderColor = '#d97706';
         selectEl.style.color = '#ffedd5';
     } else {
-        selectEl.style.backgroundColor = '#1a1c1e';
+        selectEl.style.backgroundColor = '#1a1a1a';
         selectEl.style.borderColor = '#555';
         selectEl.style.color = '#fff';
     }
@@ -260,7 +260,7 @@ function renderProgressStats(posts) {
     renderMatrixPalette(currentThousandMin, registeredMap);
 }
 
-// 千番台切り替えボタンの生成
+// 千番台切り替えボタンの生成（0番台は「0番台」、他は「1000番台」などに修正）
 function renderThousandButtons(ranges, registeredMap) {
     const btnContainer = document.getElementById('thousand-tab-buttons');
     if (!btnContainer) return;
@@ -276,7 +276,9 @@ function renderThousandButtons(ranges, registeredMap) {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = `thousand-btn ${range.min === currentThousandMin ? 'active' : ''}`;
-        btn.textContent = `${formatUnitNo(range.min)}番台`;
+        
+        // 修正：0番台は「0番台」、1000番台以降は「1000番台」と表示する
+        btn.textContent = range.min === 0 ? '0番台' : `${range.min}番台`;
         
         btn.addEventListener('click', () => {
             currentThousandMin = range.min;
@@ -302,7 +304,6 @@ function renderMatrixPalette(minVal, registeredMap) {
     const maxVal = minVal + 999;
     rangeTitle.textContent = `${formatUnitNo(minVal)} ～ ${formatUnitNo(maxVal)} 番台のパレット`;
 
-    // このレンジに該当するCSV機体を抽出してMap化（4桁ゼロ埋めされたNoをキーにする）
     const rangeMachineMap = new Map();
     allCsvMachines.forEach(m => {
         const num = parseInt(m.no, 10);
@@ -320,7 +321,6 @@ function renderMatrixPalette(minVal, registeredMap) {
     let maxNo = Math.min(minVal + 999, Math.max(...Array.from(rangeMachineMap.keys()).map(Number)));
 
     for (let i = minNo; i <= maxNo; i++) {
-        // 4桁ゼロ埋め文字列を生成（例: 0000, 0029, 1008）
         const paddedNo = formatUnitNo(i);
         const cell = document.createElement('div');
         cell.className = 'matrix-cell';
@@ -337,12 +337,10 @@ function renderMatrixPalette(minVal, registeredMap) {
                 cell.title = `[未登録] No.${paddedNo} ${csvData.name}`;
             }
 
-            // セルをクリックしたときの詳細表示アクション
             cell.addEventListener('click', () => {
                 showMatrixDetail(paddedNo, csvData, registeredMap.get(paddedNo));
             });
         } else {
-            // CSVに存在しない番号
             cell.style.opacity = '0.3';
             cell.style.cursor = 'default';
         }
