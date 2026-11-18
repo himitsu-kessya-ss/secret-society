@@ -46,6 +46,16 @@ let currentThousandMin = 0; // 現在選択中の千番台の最小値（例: 0,
 let currentSortColumn = 'unitNo';
 let currentSortDirection = 'asc';
 
+// --- 機体No.を必ず4桁ゼロ埋めに正規化するヘルパー関数 ---
+function formatUnitNo(noStr) {
+    if (!noStr) return '';
+    const trimmed = String(noStr).trim();
+    if (/^\d+$/.test(trimmed)) {
+        return trimmed.padStart(4, '0');
+    }
+    return trimmed;
+}
+
 // --- 初期化：CSVデータの読み込み（routeフォルダ内） ---
 async function loadMachineCsvForJs() {
     try {
@@ -61,11 +71,12 @@ async function loadMachineCsvForJs() {
             if (!line.trim()) return;
             const cols = line.split(',');
             if (cols.length >= 2) {
-                const machineNo = cols[0].trim();   // 1列目：機体No.
-                const machineName = cols[1].trim(); // 2列目：機体名
-                if (machineNo && machineName) {
-                    machineDataMap.set(machineName, machineNo);
-                    allCsvMachines.push({ no: machineNo, name: machineName });
+                const rawNo = cols[0].trim();      // 1列目：機体No.
+                const machineName = cols[1].trim();// 2列目：機体名
+                if (rawNo && machineName) {
+                    const formattedNo = formatUnitNo(rawNo);
+                    machineDataMap.set(machineName, formattedNo);
+                    allCsvMachines.push({ no: formattedNo, name: machineName });
                 }
             }
         });
@@ -171,11 +182,12 @@ function renderProgressStats(posts) {
         return;
     }
 
-    // 機体No.をキーにした登録済みデータのマップを作成（詳細表示用）
+    // 機体No.（4桁ゼロ埋め済み）をキーにした登録済みデータのマップを作成
     const registeredMap = new Map();
     posts.forEach(p => {
         if (p.unitNumber && p.unitNumber.trim() !== '----') {
-            registeredMap.set(p.unitNumber.trim(), p);
+            const formattedNo = formatUnitNo(p.unitNumber);
+            registeredMap.set(formattedNo, p);
         }
     });
 
@@ -198,7 +210,7 @@ function renderProgressStats(posts) {
 
     // 2. ナンバー帯（千番台）ごとの集計テーブル
     const ranges = [
-        { label: '0 ～ 999', min: 0, max: 999 },
+        { label: '0000 ～ 0999', min: 0, max: 999 },
         { label: '1000 ～ 1999', min: 1000, max: 1999 },
         { label: '2000 ～ 2999', min: 2000, max: 2999 },
         { label: '3000 ～ 3999', min: 3000, max: 3999 },
@@ -255,7 +267,6 @@ function renderThousandButtons(ranges, registeredMap) {
     btnContainer.innerHTML = '';
 
     ranges.forEach(range => {
-        // 該当する機体が存在する千番台のみボタンを表示
         const hasMachines = allCsvMachines.some(m => {
             const num = parseInt(m.no, 10);
             return !isNaN(num) && num >= range.min && num <= range.max;
@@ -265,14 +276,12 @@ function renderThousandButtons(ranges, registeredMap) {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = `thousand-btn ${range.min === currentThousandMin ? 'active' : ''}`;
-        btn.textContent = `${range.min}番台`;
+        btn.textContent = `${formatUnitNo(range.min)}番台`;
         
         btn.addEventListener('click', () => {
             currentThousandMin = range.min;
-            // アクティブクラスの切り替え
             document.querySelectorAll('.thousand-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            // パレット再描画
             renderMatrixPalette(currentThousandMin, registeredMap);
         });
 
@@ -291,14 +300,14 @@ function renderMatrixPalette(minVal, registeredMap) {
     if (detailCard) detailCard.style.display = 'none';
 
     const maxVal = minVal + 999;
-    rangeTitle.textContent = `${minVal} ～ ${maxVal} 番台のパレット`;
+    rangeTitle.textContent = `${formatUnitNo(minVal)} ～ ${formatUnitNo(maxVal)} 番台のパレット`;
 
-    // このレンジに該当するCSV機体を抽出してMap化（Noをキーにする）
+    // このレンジに該当するCSV機体を抽出してMap化（4桁ゼロ埋めされたNoをキーにする）
     const rangeMachineMap = new Map();
     allCsvMachines.forEach(m => {
         const num = parseInt(m.no, 10);
         if (!isNaN(num) && num >= minVal && num <= maxVal) {
-            rangeMachineMap.set(String(num), m);
+            rangeMachineMap.set(m.no, m);
         }
     });
 
@@ -307,30 +316,30 @@ function renderMatrixPalette(minVal, registeredMap) {
         return;
     }
 
-    // 最小の番号から最大の番号までグリッドを生成
     let minNo = minVal;
     let maxNo = Math.min(minVal + 999, Math.max(...Array.from(rangeMachineMap.keys()).map(Number)));
 
     for (let i = minNo; i <= maxNo; i++) {
-        const strNo = String(i);
+        // 4桁ゼロ埋め文字列を生成（例: 0000, 0029, 1008）
+        const paddedNo = formatUnitNo(i);
         const cell = document.createElement('div');
         cell.className = 'matrix-cell';
-        cell.textContent = i;
+        cell.textContent = paddedNo;
 
-        const csvData = rangeMachineMap.get(strNo);
-        const isRegistered = registeredMap.has(strNo);
+        const csvData = rangeMachineMap.get(paddedNo);
+        const isRegistered = registeredMap.has(paddedNo);
 
         if (csvData) {
             if (isRegistered) {
                 cell.classList.add('registered');
-                cell.title = `[登録済] No.${strNo} ${csvData.name}`;
+                cell.title = `[登録済] No.${paddedNo} ${csvData.name}`;
             } else {
-                cell.title = `[未登録] No.${strNo} ${csvData.name}`;
+                cell.title = `[未登録] No.${paddedNo} ${csvData.name}`;
             }
 
             // セルをクリックしたときの詳細表示アクション
             cell.addEventListener('click', () => {
-                showMatrixDetail(strNo, csvData, registeredMap.get(strNo));
+                showMatrixDetail(paddedNo, csvData, registeredMap.get(paddedNo));
             });
         } else {
             // CSVに存在しない番号
@@ -513,7 +522,7 @@ function renderRegisteredTable(posts) {
 
     posts.forEach(data => {
         const tr = document.createElement('tr');
-        const unitNo = escapeHTML(data.unitNumber || '----');
+        const unitNo = escapeHTML(formatUnitNo(data.unitNumber) || '----');
         const unitName = escapeHTML(data.unitName || '名称未設定');
         const postIdStr = data.postId || data.postNo ? `No.${data.postId || data.postNo}` : '----';
         const authorStr = escapeHTML(data.author || '名無し');
@@ -612,7 +621,7 @@ function renderPosts(postsToRender) {
     slicedPosts.forEach((data) => {
         const dateStr = data.createdAt ? new Date(data.createdAt.toDate()).toLocaleString('ja-JP') : '日時不明';
         const postNoStr = data.postNo || data.postId ? `投稿 No.${data.postNo || data.postId}` : '投稿 No.--';
-        const unitNoStr = data.unitNumber ? `機体 No.${escapeHTML(data.unitNumber)}` : '機体 No.----';
+        const unitNoStr = data.unitNumber ? `機体 No.${escapeHTML(formatUnitNo(data.unitNumber))}` : '機体 No.----';
 
         let abilityBadgesHTML = '';
         if (data.abilities && Array.isArray(data.abilities) && data.abilities.length > 0) {
@@ -778,7 +787,7 @@ function renderPosts(postsToRender) {
                         return;
                     }
 
-                    let newUnitNumber = machineDataMap.get(newUnitName) || data.unitNumber || '';
+                    let newUnitNumber = machineDataMap.get(newUnitName) || formatUnitNo(data.unitNumber) || '';
 
                     const rows = inlineEditContainer.querySelectorAll('.inline-ability-row');
                     const newAbilities = [];
@@ -884,7 +893,7 @@ form.addEventListener('submit', async (e) => {
     const file = imageFileInput.files[0];
     const unitName = document.getElementById('unit-name').value.trim();
     
-    let unitNumber = document.getElementById('unit-number').value.trim();
+    let unitNumber = formatUnitNo(document.getElementById('unit-number').value);
     if (!unitNumber && unitName && machineDataMap.has(unitName)) {
         unitNumber = machineDataMap.get(unitName);
     }
