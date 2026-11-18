@@ -40,6 +40,7 @@ let displayLimit = 10;
 // --- 機体名(キー)と機体No.(バリュー)の対応マップ ＆ CSV全データ ---
 let machineDataMap = new Map();
 let allCsvMachines = []; // { no, name } の配列
+let currentThousandMin = 0; // 現在選択中の千番台の最小値（例: 0, 1000, 2000...）
 
 // --- ソート状態管理 ---
 let currentSortColumn = 'unitNo';
@@ -89,7 +90,7 @@ function updateSelectBackground(selectEl) {
         selectEl.style.borderColor = '#d97706';
         selectEl.style.color = '#ffedd5';
     } else {
-        selectEl.style.backgroundColor = '#1a1a1a';
+        selectEl.style.backgroundColor = '#1a1c1e';
         selectEl.style.borderColor = '#555';
         selectEl.style.color = '#fff';
     }
@@ -145,7 +146,7 @@ async function loadPosts() {
         renderPosts(allPosts);
         applySortAndRenderTable();
         renderRanking(allPosts);
-        renderProgressStats(allPosts); // 登録進捗の集計・描画
+        renderProgressStats(allPosts); // 登録進捗 ＆ マトリクス描画
 
     } catch (error) {
         console.error("読み込みエラー:", error);
@@ -154,7 +155,7 @@ async function loadPosts() {
     }
 }
 
-// --- 登録進捗（コンプリート率）の計算・表示処理 ---
+// --- 登録進捗 ＆ マトリクス・パレット描画処理 ---
 function renderProgressStats(posts) {
     const overallNumEl = document.getElementById('overall-progress-num');
     const overallRegEl = document.getElementById('overall-registered-count');
@@ -164,18 +165,17 @@ function renderProgressStats(posts) {
 
     if (!overallNumEl || !rangeTableBody) return;
 
-    // CSVに機体データがない場合のガード
     if (allCsvMachines.length === 0) {
         overallNumEl.textContent = '0.00%';
         rangeTableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--sub-text);">CSV機体データが読み込まれていません。</td></tr>';
         return;
     }
 
-    // 登録済みの機体No.をSetとして抽出（大文字小文字・トリム正規化）
-    const registeredNos = new Set();
+    // 機体No.をキーにした登録済みデータのマップを作成（詳細表示用）
+    const registeredMap = new Map();
     posts.forEach(p => {
         if (p.unitNumber && p.unitNumber.trim() !== '----') {
-            registeredNos.add(p.unitNumber.trim());
+            registeredMap.set(p.unitNumber.trim(), p);
         }
     });
 
@@ -184,7 +184,7 @@ function renderProgressStats(posts) {
     let registeredCsvCount = 0;
 
     allCsvMachines.forEach(m => {
-        if (registeredNos.has(m.no)) {
+        if (registeredMap.has(m.no)) {
             registeredCsvCount++;
         }
     });
@@ -196,8 +196,7 @@ function renderProgressStats(posts) {
     overallTotalEl.textContent = totalCsvCount;
     overallBarEl.style.width = `${Math.min(parseFloat(overallPercentage), 100)}%`;
 
-    // 2. ナンバー帯（千番台）ごとの集計
-    // レンジ定義: 0〜999, 1000〜1999, ..., 9000〜
+    // 2. ナンバー帯（千番台）ごとの集計テーブル
     const ranges = [
         { label: '0 ～ 999', min: 0, max: 999 },
         { label: '1000 ～ 1999', min: 1000, max: 1999 },
@@ -214,22 +213,18 @@ function renderProgressStats(posts) {
     rangeTableBody.innerHTML = '';
 
     ranges.forEach(range => {
-        // このレンジに該当するCSV機体を抽出
         const rangeMachines = allCsvMachines.filter(m => {
             const num = parseInt(m.no, 10);
             return !isNaN(num) && num >= range.min && num <= range.max;
         });
 
-        // 該当レンジがない場合はテーブル行をスキップ
         if (rangeMachines.length === 0) return;
 
         let rangeTotal = rangeMachines.length;
         let rangeReg = 0;
 
         rangeMachines.forEach(m => {
-            if (registeredNos.has(m.no)) {
-                rangeReg++;
-            }
+            if (registeredMap.has(m.no)) rangeReg++;
         });
 
         const rangePercentage = rangeTotal > 0 ? ((rangeReg / rangeTotal) * 100).toFixed(2) : '0.00';
@@ -247,9 +242,145 @@ function renderProgressStats(posts) {
         `;
         rangeTableBody.appendChild(tr);
     });
+
+    // 3. 千番台切り替えボタン ＆ マトリクス・パレットの構築
+    renderThousandButtons(ranges, registeredMap);
+    renderMatrixPalette(currentThousandMin, registeredMap);
 }
 
-// --- 投稿ランキング（Special Thanks）集計・表示処理 ---
+// 千番台切り替えボタンの生成
+function renderThousandButtons(ranges, registeredMap) {
+    const btnContainer = document.getElementById('thousand-tab-buttons');
+    if (!btnContainer) return;
+    btnContainer.innerHTML = '';
+
+    ranges.forEach(range => {
+        // 該当する機体が存在する千番台のみボタンを表示
+        const hasMachines = allCsvMachines.some(m => {
+            const num = parseInt(m.no, 10);
+            return !isNaN(num) && num >= range.min && num <= range.max;
+        });
+        if (!hasMachines) return;
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `thousand-btn ${range.min === currentThousandMin ? 'active' : ''}`;
+        btn.textContent = `${range.min}番台`;
+        
+        btn.addEventListener('click', () => {
+            currentThousandMin = range.min;
+            // アクティブクラスの切り替え
+            document.querySelectorAll('.thousand-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            // パレット再描画
+            renderMatrixPalette(currentThousandMin, registeredMap);
+        });
+
+        btnContainer.appendChild(btn);
+    });
+}
+
+// 番号マトリクス・パレット（グリッド）の描画
+function renderMatrixPalette(minVal, registeredMap) {
+    const gridContainer = document.getElementById('matrix-grid-container');
+    const rangeTitle = document.getElementById('matrix-range-title');
+    const detailCard = document.getElementById('matrix-detail-card');
+    if (!gridContainer) return;
+
+    gridContainer.innerHTML = '';
+    if (detailCard) detailCard.style.display = 'none';
+
+    const maxVal = minVal + 999;
+    rangeTitle.textContent = `${minVal} ～ ${maxVal} 番台のパレット`;
+
+    // このレンジに該当するCSV機体を抽出してMap化（Noをキーにする）
+    const rangeMachineMap = new Map();
+    allCsvMachines.forEach(m => {
+        const num = parseInt(m.no, 10);
+        if (!isNaN(num) && num >= minVal && num <= maxVal) {
+            rangeMachineMap.set(String(num), m);
+        }
+    });
+
+    if (rangeMachineMap.size === 0) {
+        gridContainer.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: var(--sub-text); padding: 20px;">この番号帯には機体データがありません。</div>';
+        return;
+    }
+
+    // 最小の番号から最大の番号までグリッドを生成
+    let minNo = minVal;
+    let maxNo = Math.min(minVal + 999, Math.max(...Array.from(rangeMachineMap.keys()).map(Number)));
+
+    for (let i = minNo; i <= maxNo; i++) {
+        const strNo = String(i);
+        const cell = document.createElement('div');
+        cell.className = 'matrix-cell';
+        cell.textContent = i;
+
+        const csvData = rangeMachineMap.get(strNo);
+        const isRegistered = registeredMap.has(strNo);
+
+        if (csvData) {
+            if (isRegistered) {
+                cell.classList.add('registered');
+                cell.title = `[登録済] No.${strNo} ${csvData.name}`;
+            } else {
+                cell.title = `[未登録] No.${strNo} ${csvData.name}`;
+            }
+
+            // セルをクリックしたときの詳細表示アクション
+            cell.addEventListener('click', () => {
+                showMatrixDetail(strNo, csvData, registeredMap.get(strNo));
+            });
+        } else {
+            // CSVに存在しない番号
+            cell.style.opacity = '0.3';
+            cell.style.cursor = 'default';
+        }
+
+        gridContainer.appendChild(cell);
+    }
+}
+
+// マトリクスでクリックした機体の詳細を表示
+function showMatrixDetail(no, csvData, postData) {
+    const detailCard = document.getElementById('matrix-detail-card');
+    const detailContent = document.getElementById('matrix-detail-content');
+    if (!detailCard || !detailContent) return;
+
+    detailCard.style.display = 'block';
+
+    let abilitiesHTML = '-';
+    if (postData && postData.abilities && Array.isArray(postData.abilities)) {
+        abilitiesHTML = postData.abilities.map(a => `<span class="ability-badge"><span class="ability-num">No.${a.no}</span>${escapeHTML(a.text)}</span>`).join(' ');
+    }
+
+    if (postData) {
+        detailContent.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 15px;">
+                <div>
+                    <div style="font-size: 1.1rem; font-weight: bold; color: #fff; margin-bottom: 5px;">
+                        <span class="unit-no-badge" style="margin-right: 8px;">No.${no}</span>${escapeHTML(csvData.name)}
+                    </div>
+                    <div style="color: #22c55e; font-weight: bold; margin-bottom: 8px;">✔ 登録済み（投稿者: ${escapeHTML(postData.author || '名無し')}）</div>
+                    <div style="font-size: 0.85rem; color: var(--sub-text); margin-bottom: 8px;">特殊能力: ${abilitiesHTML}</div>
+                </div>
+                ${postData.imageUrl ? `<div><a href="${postData.imageUrl}" target="_blank" rel="noopener noreferrer" class="img-link-btn">🔗 投稿画像を見る</a></div>` : ''}
+            </div>
+        `;
+    } else {
+        detailContent.innerHTML = `
+            <div>
+                <div style="font-size: 1.1rem; font-weight: bold; color: #fff; margin-bottom: 5px;">
+                    <span class="unit-no-badge" style="margin-right: 8px; border-color: #555; color: #aaa;">No.${no}</span>${escapeHTML(csvData.name)}
+                </div>
+                <div style="color: #ff4d4d; font-weight: bold;">⚠️ 未登録の機体です（まだ誰もSSを投稿していません）</div>
+            </div>
+        `;
+    }
+}
+
+// --- 投稿ランキング集計・表示処理 ---
 function renderRanking(posts) {
     const top3Container = document.getElementById('top3-ranking-container');
     const rankingTableBody = document.getElementById('ranking-table-body');
@@ -563,7 +694,7 @@ function renderPosts(postsToRender) {
                 <div style="margin-bottom: 15px; background: #1f1f1f; padding: 10px; border-radius: 4px; border: 1px solid #444;">
                     <div>
                         <label style="font-size: 11px; color: #aaa; display: block; margin-bottom: 4px;">機体名（変更すると機体No.もCSVから自動更新されます）</label>
-                        <input type="text" id="edit-unit-name-${data.id}" value="${escapeHTML(data.unitName || '')}" style="width: 100%; padding: 6px; box-sizing: border-box; background: #1a1a1a; color: #fff; border: 1px solid #555; border-radius: 4px;">
+                        <input type="text" id="edit-unit-name-${data.id}" value="${escapeHTML(data.unitName || '')}" style="width: 100%; padding: 6px; box-sizing: border-box; background: #1a1c1e; color: #fff; border: 1px solid #555; border-radius: 4px;">
                     </div>
                 </div>
             `;
