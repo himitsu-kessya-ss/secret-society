@@ -46,7 +46,7 @@
                     <li><strong>機体ナンバー：</strong> 機体名から自動で取得・登録されます（隠し項目として保持）。</li>
                     <li><strong>投稿者：</strong> ゲーム内でのキャラクター名（パイロット名）を入力してください。</li>
                     <li><strong>削除キー：</strong> 投稿後に自分で削除したい場合に使用する<span class="guide-highlight">数字4桁の暗証番号</span>を設定してください。</li>
-                    <li><strong>特殊能力解析：</strong> 画像から特殊能力を自動抽出します。プルダウンから手動で変更・追加も可能です。</li>
+                    <li><strong>特殊能力解析：</strong> 画像から特殊能力を自動抽出します（No.1〜11）。編集時は上下ボタンで順番を簡単に並び替えられます。</li>
                 </ul>
             </div>
 
@@ -85,9 +85,9 @@
                         <input type="file" id="image-file" accept="image/*" required>
                     </div>
 
-                    <!-- ▼ 特殊能力 プルダウン選択エリア (No.1 〜 No.9) -->
+                    <!-- ▼ 特殊能力 プルダウン選択エリア (No.1 〜 No.11) -->
                     <div class="form-group" style="margin-top: 20px; border-top: 1px dashed #444; padding-top: 15px;">
-                        <label style="margin-bottom: 8px; display: block; color: var(--accent-color, #ff9800);">✨ 特殊能力の選択・手動修正 (No.1 〜 No.9)</label>
+                        <label style="margin-bottom: 8px; display: block; color: var(--accent-color, #ff9800);">✨ 特殊能力の選択・手動修正 (No.1 〜 No.11)</label>
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px;">
                             <div><label style="font-size: 12px;">No.1</label><select id="ability-1" style="width: 100%; padding: 6px; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;"><option value="">-- 未選択 --</option></select></div>
                             <div><label style="font-size: 12px;">No.2</label><select id="ability-2" style="width: 100%; padding: 6px; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;"><option value="">-- 未選択 --</option></select></div>
@@ -98,6 +98,8 @@
                             <div><label style="font-size: 12px;">No.7</label><select id="ability-7" style="width: 100%; padding: 6px; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;"><option value="">-- 未選択 --</option></select></div>
                             <div><label style="font-size: 12px;">No.8</label><select id="ability-8" style="width: 100%; padding: 6px; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;"><option value="">-- 未選択 --</option></select></div>
                             <div><label style="font-size: 12px;">No.9</label><select id="ability-9" style="width: 100%; padding: 6px; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;"><option value="">-- 未選択 --</option></select></div>
+                            <div><label style="font-size: 12px;">No.10</label><select id="ability-10" style="width: 100%; padding: 6px; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;"><option value="">-- 未選択 --</option></select></div>
+                            <div><label style="font-size: 12px;">No.11</label><select id="ability-11" style="width: 100%; padding: 6px; box-sizing: border-box; background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;"><option value="">-- 未選択 --</option></select></div>
                         </div>
                     </div>
 
@@ -128,7 +130,7 @@
                             <tr>
                                 <th style="width: 90px; cursor: pointer;" data-sort="unitNo">機体 No. <span class="sort-icon">🔼</span></th>
                                 <th style="width: 180px; cursor: pointer;" data-sort="unitName">機体名 <span class="sort-icon"></span></th>
-                                <th style="cursor: pointer;" data-sort="abilities">特殊能力 (No.1 〜 No.9) <span class="sort-icon"></span></th>
+                                <th style="cursor: pointer;" data-sort="abilities">特殊能力 (No.1 〜 No.11) <span class="sort-icon"></span></th>
                                 <th style="width: 100px; cursor: pointer;" data-sort="image">画像リンク <span class="sort-icon"></span></th>
                                 <th style="width: 90px; cursor: pointer;" data-sort="postId">投稿No. <span class="sort-icon"></span></th>
                                 <th style="width: 130px; cursor: pointer;" data-sort="author">投稿者 <span class="sort-icon"></span></th>
@@ -256,7 +258,6 @@
             if (container) {
                 container.innerHTML = data;
                 
-                // ★追加：ヘッダー内に含まれるスクリプトを強制的に実行する処理
                 const scripts = container.getElementsByTagName('script');
                 for (let script of scripts) {
                     const newScript = document.createElement('script');
@@ -270,7 +271,7 @@
             }
         })
         .catch(err => console.log("ヘッダー読み込みスキップ: ", err));
-</script>
+    </script>
 
     <!-- ▼ routeフォルダ内のCSVを読み込み、機体名から機体No.を自動紐付けるスクリプト -->
     <script>
@@ -280,10 +281,9 @@
             const statusDisplay = document.getElementById('machine-no-status');
             const datalist = document.getElementById('machine-name-candidates');
 
-            let machineMap = new Map(); // 機体名 -> 機体No.
+            let machineMap = new Map();
 
             try {
-                // routeフォルダ内のCSVを参照
                 const response = await fetch('../route/GL)機体一覧 - 機体一覧.csv');
                 if (!response.ok) throw new Error('CSVファイルの取得に失敗しました');
                 const csvText = await response.text();
@@ -293,12 +293,11 @@
                     if (!line.trim()) return;
                     const cols = line.split(',');
                     if (cols.length >= 2) {
-                        const machineNo = cols[0].trim();   // 1列目：機体No.
-                        const machineName = cols[1].trim(); // 2列目：機体名
+                        const machineNo = cols[0].trim();
+                        const machineName = cols[1].trim();
                         if (machineNo && machineName) {
                             machineMap.set(machineName, machineNo);
 
-                            // 入力補助（サジェスト）用の候補リストに追加
                             const option = document.createElement('option');
                             option.value = machineName;
                             datalist.appendChild(option);
@@ -313,7 +312,6 @@
                 }
             }
 
-            // 機体名入力時のリアルタイム自動紐付け処理
             if (machineNameInput) {
                 machineNameInput.addEventListener('input', (e) => {
                     const inputName = e.target.value.trim();
