@@ -30,6 +30,10 @@
                 <span class="tab-title">🔍 未登録機体チェック</span>
                 <span class="tab-subtitle">（手持ちコピペ判定）</span>
             </button>
+            <button class="tab-btn" data-target="progress-tab">
+                <span class="tab-title">📊 登録進捗</span>
+                <span class="tab-subtitle">（コンプリート率）</span>
+            </button>
             <button class="tab-btn" data-target="ranking-tab">
                 <span class="tab-title">🏆 投稿ランキング</span>
                 <span class="tab-subtitle">（Special Thanks）</span>
@@ -184,7 +188,53 @@
             </div>
         </div>
 
-        <!-- ▼ 4. 投稿ランキング（Special Thanks）タブのコンテンツ -->
+        <!-- ▼ 4. 登録進捗タブのコンテンツ（新規追加） -->
+        <div id="progress-tab" class="tab-content">
+            <div class="guide-card" style="background: rgba(0, 212, 255, 0.05); border-color: rgba(0, 212, 255, 0.3); border-left-color: var(--accent-color);">
+                <h2 class="guide-title" style="color: var(--accent-color);">📊 機体登録コンプリート状況</h2>
+                <p style="margin: 0; font-size: 0.9rem; color: #e0e0e0;">
+                    機体一覧CSVに登録されている全機体に対する、現在の登録（コンプリート）進捗率です。<br>
+                    全体および千番台ごとの進捗状況をご確認いただけます。
+                </p>
+            </div>
+
+            <!-- 全体進捗カード -->
+            <div class="upload-form-card" style="text-align: center; padding: 25px;">
+                <h3 style="margin-top: 0; color: var(--sub-text); font-size: 1rem;">🌟 全体の登録進捗</h3>
+                <div id="overall-progress-num" style="font-size: 2.5rem; font-weight: bold; color: var(--accent-color); margin: 10px 0;">0.00%</div>
+                <div style="font-size: 0.9rem; color: var(--sub-text); margin-bottom: 15px;">
+                    登録済: <span id="overall-registered-count" style="color: #fff; font-weight: bold;">0</span> 件 / 総機体数: <span id="overall-total-count" style="color: #fff; font-weight: bold;">0</span> 件
+                </div>
+                <!-- プログレスバー -->
+                <div class="progress-bar-container">
+                    <div id="overall-progress-bar" class="progress-bar-fill" style="width: 0%;"></div>
+                </div>
+            </div>
+
+            <!-- 千番台ごとの進捗一覧 -->
+            <div class="ranking-table-card" style="margin-top: 25px;">
+                <h3 style="margin-top: 0; color: var(--accent-color); font-size: 1.05rem;">📂 ナンバー帯別（千番台）の進捗詳細</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ナンバー帯</th>
+                                <th style="text-align: right;">登録 / 総数</th>
+                                <th style="text-align: right;">進捗率</th>
+                                <th style="width: 40%;">進捗ゲージ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="range-progress-table-body">
+                            <tr>
+                                <td colspan="4" style="text-align: center; color: var(--sub-text);">データを集計中...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ▼ 5. 投稿ランキング（Special Thanks）タブのコンテンツ -->
         <div id="ranking-tab" class="tab-content">
             <div class="guide-card" style="background: rgba(255, 215, 0, 0.05); border-color: rgba(255, 215, 0, 0.3); border-left-color: #ffd700;">
                 <h2 class="guide-title" style="color: #ffd700;">💖 Special Thanks (投稿貢献者ランキング)</h2>
