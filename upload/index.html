@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- セキュリティポリシー（CSP）を正しい位置（head内）に設置 -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: blob: 'unsafe-inline' 'unsafe-eval';">
     <title>SS Upload - 秘密結社の部屋</title>
     <!-- Tesseract.js (OCR) -->
@@ -31,7 +30,7 @@
                 <span class="tab-subtitle">（手持ちコピペ判定）</span>
             </button>
             <button class="tab-btn" data-target="progress-tab">
-                <span class="tab-title">📊 登録進捗</span>
+                <span class="tab-title">📊 登録進捗・マトリクス</span>
                 <span class="tab-subtitle">（コンプリート率）</span>
             </button>
             <button class="tab-btn" data-target="ranking-tab">
@@ -42,7 +41,6 @@
 
         <!-- ▼ 1. 投稿タブのコンテンツ -->
         <div id="post-tab" class="tab-content active">
-            <!-- 投稿者向けの使い方説明エリア -->
             <div class="guide-card">
                 <h2 class="guide-title">ℹ️ SS投稿の使い方・ルール</h2>
                 <ul class="guide-list">
@@ -58,17 +56,13 @@
             <div class="upload-form-card">
                 <form id="upload-form">
                     <div class="form-row">
-                        <!-- 機体名入力（手打ち・コピペ用 ＋ サジェスト候補リスト付き） -->
                         <div class="form-group" style="flex: 1;">
                             <label for="unit-name">機体名</label>
                             <input type="text" id="unit-name" list="machine-name-candidates" placeholder="例：ガンダム（コピペまたは手入力）" required>
-                            <!-- サジェスト用datalist（CSVから自動生成） -->
                             <datalist id="machine-name-candidates"></datalist>
-                            <!-- 自動検出された機体No.の表示用ステータス -->
                             <div id="machine-no-status" style="font-size: 0.85rem; color: var(--accent-color, #00d4ff); margin-top: 5px;">
                                 機体No.：未入力（機体名を入力すると自動取得されます）
                             </div>
-                            <!-- データベース等へ送信される実際の機体No.保持用（隠しフィールド） -->
                             <input type="hidden" id="unit-number" name="unit-number">
                         </div>
                     </div>
@@ -155,7 +149,7 @@
             <div class="upload-form-card">
                 <h2 style="color: var(--accent-color, #00d4ff); margin-top: 0; font-size: 1.2rem;">🔍 手持ち機体の未登録チェック</h2>
                 <p style="font-size: 0.9rem; color: var(--sub-text, #aaa); line-height: 1.5;">
-                    ゲーム内の手持ち機体リスト（テキスト）をそのまま下の枠に貼り付け、「未登録をチェックする」ボタンを押してください。<br>
+                    ゲーム内の手持ち機体リスト（テキスト）をそのまま下の枠に貼り付けて、「未登録をチェックする」ボタンを押してください。<br>
                     ※「✨」や「Ψ」の記号、ステータス数値等は自動で除外され、登録済みデータと照合されます。
                 </p>
                 <textarea id="raw-units-input" placeholder="ここにゲーム内の手持ち機体テキストを貼り付けてください..." style="width: 100%; height: 160px; padding: 12px; box-sizing: border-box; background: #1a1c1e; border: 1px solid #444; border-radius: 6px; color: #fff; font-family: monospace; font-size: 0.9rem; resize: vertical; margin-bottom: 15px;"></textarea>
@@ -164,7 +158,6 @@
 
             <!-- チェック結果表示エリア -->
             <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 20px;">
-                <!-- 未登録機体 -->
                 <div style="flex: 1; min-width: 280px; background: var(--card-bg, #25282c); border: 1px solid #444; border-radius: 8px; padding: 20px;">
                     <h3 style="margin-top: 0; display: flex; justify-content: space-between; align-items: center; font-size: 1.1rem; color: #ff4d4d;">
                         <span>⚠️ 未登録の機体</span>
@@ -175,7 +168,6 @@
                     </ul>
                 </div>
 
-                <!-- 登録済み機体 -->
                 <div style="flex: 1; min-width: 280px; background: var(--card-bg, #25282c); border: 1px solid #444; border-radius: 8px; padding: 20px;">
                     <h3 style="margin-top: 0; display: flex; justify-content: space-between; align-items: center; font-size: 1.1rem; color: #00d4ff;">
                         <span>✅ 登録済みの機体</span>
@@ -188,13 +180,12 @@
             </div>
         </div>
 
-        <!-- ▼ 4. 登録進捗タブのコンテンツ（新規追加） -->
+        <!-- ▼ 4. 登録進捗・マトリクスビュータブのコンテンツ（拡張） -->
         <div id="progress-tab" class="tab-content">
             <div class="guide-card" style="background: rgba(0, 212, 255, 0.05); border-color: rgba(0, 212, 255, 0.3); border-left-color: var(--accent-color);">
-                <h2 class="guide-title" style="color: var(--accent-color);">📊 機体登録コンプリート状況</h2>
+                <h2 class="guide-title" style="color: var(--accent-color);">📊 機体登録コンプリート状況 ＆ 番号マトリクス</h2>
                 <p style="margin: 0; font-size: 0.9rem; color: #e0e0e0;">
-                    機体一覧CSVに登録されている全機体に対する、現在の登録（コンプリート）進捗率です。<br>
-                    全体および千番台ごとの進捗状況をご確認いただけます。
+                    全体および各千番台の進捗率です。下の千番台ボタンをクリックすると、ご提示いただいた図のように**登録済み（緑色）**と**未登録（グレー）**の番号パレットが表示され、番号をクリックすると詳細を確認できます。
                 </p>
             </div>
 
@@ -205,15 +196,46 @@
                 <div style="font-size: 0.9rem; color: var(--sub-text); margin-bottom: 15px;">
                     登録済: <span id="overall-registered-count" style="color: #fff; font-weight: bold;">0</span> 件 / 総機体数: <span id="overall-total-count" style="color: #fff; font-weight: bold;">0</span> 件
                 </div>
-                <!-- プログレスバー -->
                 <div class="progress-bar-container">
                     <div id="overall-progress-bar" class="progress-bar-fill" style="width: 0%;"></div>
                 </div>
             </div>
 
-            <!-- 千番台ごとの進捗一覧 -->
+            <!-- ▼ ナンバー帯別マトリクス・パレット表示エリア -->
+            <div class="upload-form-card" style="margin-top: 25px;">
+                <h3 style="margin-top: 0; color: var(--accent-color); font-size: 1.1rem; margin-bottom: 15px;">🟩 番号マトリクス・パレット（千番台ビュー）</h3>
+                
+                <!-- 千番台切り替えボタン群 -->
+                <div id="thousand-tab-buttons" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px;">
+                    <!-- JSで動的生成されます -->
+                </div>
+
+                <!-- 選択中の千番台のタイトル ＆ 凡例 -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
+                    <h4 id="matrix-range-title" style="margin: 0; font-size: 1rem; color: #fff;">0 ～ 999 番台のパレット</h4>
+                    <div style="display: flex; gap: 15px; font-size: 0.85rem;">
+                        <span style="display: flex; align-items: center; gap: 5px;"><span style="display: inline-block; width: 14px; height: 14px; background: #22c55e; border-radius: 3px;"></span> 登録済み</span>
+                        <span style="display: flex; align-items: center; gap: 5px;"><span style="display: inline-block; width: 14px; height: 14px; background: #2a2d32; border: 1px solid #555; border-radius: 3px;"></span> 未登録 (CSV存在)</span>
+                    </div>
+                </div>
+
+                <!-- 実際の数字パレットGridコンテナ -->
+                <div id="matrix-grid-container" class="matrix-grid">
+                    <!-- JSで動的生成されます -->
+                </div>
+
+                <!-- クリックした番号の詳細情報表示カード -->
+                <div id="matrix-detail-card" style="display: none; margin-top: 20px; background: #1a1c1e; border: 1px solid var(--accent-color); border-radius: 6px; padding: 15px;">
+                    <h4 style="margin-top: 0; color: var(--accent-color); font-size: 1rem; border-bottom: 1px solid #333; padding-bottom: 6px;">📌 機体詳細情報</h4>
+                    <div id="matrix-detail-content" style="font-size: 0.9rem; color: #e0e0e0;">
+                        <!-- 詳細が入ります -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 千番台ごとの進捗一覧テーブル -->
             <div class="ranking-table-card" style="margin-top: 25px;">
-                <h3 style="margin-top: 0; color: var(--accent-color); font-size: 1.05rem;">📂 ナンバー帯別（千番台）の進捗詳細</h3>
+                <h3 style="margin-top: 0; color: var(--accent-color); font-size: 1.05rem;">📂 ナンバー帯別の進捗詳細一覧</h3>
                 <div class="table-container">
                     <table>
                         <thead>
@@ -234,7 +256,7 @@
             </div>
         </div>
 
-        <!-- ▼ 5. 投稿ランキング（Special Thanks）タブのコンテンツ -->
+        <!-- ▼ 5. 投稿ランキングタブのコンテンツ -->
         <div id="ranking-tab" class="tab-content">
             <div class="guide-card" style="background: rgba(255, 215, 0, 0.05); border-color: rgba(255, 215, 0, 0.3); border-left-color: #ffd700;">
                 <h2 class="guide-title" style="color: #ffd700;">💖 Special Thanks (投稿貢献者ランキング)</h2>
@@ -244,12 +266,8 @@
                 </p>
             </div>
 
-            <!-- トップ3表彰台エリア -->
-            <div id="top3-ranking-container" class="top3-container">
-                <!-- JSで動的生成されます -->
-            </div>
+            <div id="top3-ranking-container" class="top3-container"></div>
 
-            <!-- 4位以降のランキングテーブル -->
             <div class="ranking-table-card">
                 <h3 style="margin-top: 0; color: var(--accent-color); font-size: 1.05rem;">📊 全メンバー投稿数ランキング</h3>
                 <div class="table-container">
@@ -323,7 +341,7 @@
         .catch(err => console.log("ヘッダー読み込みスキップ: ", err));
     </script>
 
-    <!-- ▼ routeフォルダ内のCSVを読み込み、機体名から機体No.を自動紐付けるスクリプト -->
+    <!-- CSV機体読み込みスクリプト -->
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             const machineNameInput = document.getElementById('unit-name');
@@ -372,7 +390,7 @@
                         statusDisplay.style.color = 'var(--accent-color, #00d4ff)';
                     } else if (inputName === '') {
                         machineNoHidden.value = '';
-                        statusDisplay.textContent = '機体No.：未入力（機体名を入力すると自動取得されます）';
+                        statusDisplay.textContent = '機体No.：未登録（機体名を入力すると自動取得されます）';
                         statusDisplay.style.color = 'var(--accent-color, #00d4ff)';
                     } else {
                         machineNoHidden.value = '';
