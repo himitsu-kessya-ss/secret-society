@@ -68,7 +68,7 @@ async function loadMachineCsvForJs() {
     }
 }
 
-// --- 初期化：No.1 〜 No.9 セレクトボックスの生成 ---
+// --- 初期化：No.1 〜 No.11 セレクトボックスの生成 ---
 function createAbilityOptionsHTML(selectedValue = '') {
     let html = '<option value="">-- 未選択 --</option>';
     MASTER_ABILITIES.forEach(ability => {
@@ -91,7 +91,7 @@ function updateSelectBackground(selectEl) {
 }
 
 function initAbilityDropdowns() {
-    for (let i = 1; i <= 9; i++) {
+    for (let i = 1; i <= 11; i++) {
         const selectEl = document.getElementById(`ability-${i}`);
         if (!selectEl) continue;
         selectEl.innerHTML = createAbilityOptionsHTML();
@@ -341,7 +341,7 @@ imageFileInput.addEventListener('change', async (e) => {
         submitBtn.disabled = true;
         submitBtn.textContent = 'OCR解析中...';
 
-        for (let i = 1; i <= 9; i++) {
+        for (let i = 1; i <= 11; i++) {
             const selectEl = document.getElementById(`ability-${i}`);
             if (selectEl) {
                 selectEl.value = '';
@@ -467,17 +467,22 @@ function renderPosts(postsToRender) {
                 </div>
             `;
 
-            editorHTML += `<div style="font-size: 12px; color: #ff9800; margin-bottom: 6px; font-weight: bold;">特殊能力 (No.1 〜 No.9)</div>`;
-            editorHTML += `<div style="display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 15px;">`;
+            editorHTML += `<div style="font-size: 12px; color: #ff9800; margin-bottom: 6px; font-weight: bold; display: flex; justify-content: space-between; align-items: center;">
+                <span>特殊能力 (No.1 〜 No.11) ↕️ 並び替え可能</span>
+                <span style="font-size: 11px; color: #aaa; font-weight: normal;">※上下ボタンで歯抜けのズレを修正できます</span>
+            </div>`;
+            editorHTML += `<div class="inline-ability-list" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px;">`;
 
-            for (let i = 1; i <= 9; i++) {
+            for (let i = 1; i <= 11; i++) {
                 const val = currentAbilitiesMap[i] || '';
                 editorHTML += `
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="font-size: 12px; min-width: 40px; color: #aaa;">No.${i}</span>
-                        <select class="inline-ability-select" data-no="${i}" style="flex: 1; padding: 6px; color: #fff; border: 1px solid #555; border-radius: 4px;">
+                    <div class="inline-ability-row" style="display: flex; align-items: center; gap: 6px; background: #1f1f1f; padding: 6px; border-radius: 4px; border: 1px solid #444;">
+                        <span class="ability-label-num" style="font-size: 12px; min-width: 45px; color: #00d4ff; font-weight: bold;">No.${i}</span>
+                        <select class="inline-ability-select" style="flex: 1; padding: 6px; color: #fff; background: #222; border: 1px solid #555; border-radius: 4px;">
                             ${createAbilityOptionsHTML(val)}
                         </select>
+                        <button type="button" class="move-up-btn" title="上に移動" style="background: #333; color: #fff; border: 1px solid #555; border-radius: 3px; padding: 4px 8px; cursor: pointer; font-size: 12px;">⬆️</button>
+                        <button type="button" class="move-down-btn" title="下に移動" style="background: #333; color: #fff; border: 1px solid #555; border-radius: 3px; padding: 4px 8px; cursor: pointer; font-size: 12px;">⬇️</button>
                     </div>
                 `;
             }
@@ -493,11 +498,31 @@ function renderPosts(postsToRender) {
             inlineEditContainer.style.display = 'block';
             inlineEditToggleBtn.textContent = '閉じる';
 
-            const inlineSelects = inlineEditContainer.querySelectorAll('.inline-ability-select');
-            inlineSelects.forEach(sel => {
+            const inlineRows = inlineEditContainer.querySelectorAll('.inline-ability-row');
+            inlineRows.forEach(row => {
+                const sel = row.querySelector('.inline-ability-select');
                 updateSelectBackground(sel);
-                sel.addEventListener('change', () => {
-                    updateSelectBackground(sel);
+                sel.addEventListener('change', () => updateSelectBackground(sel));
+
+                const upBtn = row.querySelector('.move-up-btn');
+                const downBtn = row.querySelector('.move-down-btn');
+
+                upBtn.addEventListener('click', () => {
+                    const currentRow = row;
+                    const prevRow = currentRow.previousElementSibling;
+                    if (prevRow) {
+                        currentRow.parentNode.insertBefore(currentRow, prevRow);
+                        reindexAbilityRows(inlineEditContainer);
+                    }
+                });
+
+                downBtn.addEventListener('click', () => {
+                    const currentRow = row;
+                    const nextRow = currentRow.nextElementSibling;
+                    if (nextRow) {
+                        currentRow.parentNode.insertBefore(nextRow, currentRow);
+                        reindexAbilityRows(inlineEditContainer);
+                    }
                 });
             });
 
@@ -523,11 +548,12 @@ function renderPosts(postsToRender) {
 
                     let newUnitNumber = machineDataMap.get(newUnitName) || data.unitNumber || '';
 
-                    const selects = inlineEditContainer.querySelectorAll('.inline-ability-select');
+                    const rows = inlineEditContainer.querySelectorAll('.inline-ability-row');
                     const newAbilities = [];
 
-                    selects.forEach(select => {
-                        const no = parseInt(select.getAttribute('data-no'), 10);
+                    rows.forEach((r, idx) => {
+                        const no = idx + 1;
+                        const select = r.querySelector('.inline-ability-select');
                         const text = select.value.trim();
                         if (text) {
                             newAbilities.push({ no, text });
@@ -582,6 +608,16 @@ function renderPosts(postsToRender) {
     }
 }
 
+function reindexAbilityRows(container) {
+    const rows = container.querySelectorAll('.inline-ability-row');
+    rows.forEach((row, idx) => {
+        const labelNum = row.querySelector('.ability-label-num');
+        if (labelNum) {
+            labelNum.textContent = `No.${idx + 1}`;
+        }
+    });
+}
+
 tableSearchInput.addEventListener('input', () => {
     applySortAndRenderTable();
 });
@@ -625,7 +661,7 @@ form.addEventListener('submit', async (e) => {
     const deleteKey = document.getElementById('delete-key').value.trim();
 
     const selectedAbilities = [];
-    for (let i = 1; i <= 9; i++) {
+    for (let i = 1; i <= 11; i++) {
         const selectEl = document.getElementById(`ability-${i}`);
         const val = selectEl ? selectEl.value.trim() : '';
         if (val) {
@@ -652,7 +688,7 @@ form.addEventListener('submit', async (e) => {
         form.reset();
         loadSavedCredentials();
 
-        for (let i = 1; i <= 9; i++) {
+        for (let i = 1; i <= 11; i++) {
             const selectEl = document.getElementById(`ability-${i}`);
             if (selectEl) {
                 selectEl.value = '';
