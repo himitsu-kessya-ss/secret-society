@@ -37,8 +37,9 @@ const STORAGE_KEY_DELETE_KEY = 'ss_upload_delete_key';
 let allPosts = [];
 let displayLimit = 10;
 
-// --- 機体名(キー)と機体No.(バリュー)の対応マップ ---
+// --- 機体名(キー)と機体No.(バリュー)の対応マップ ＆ CSV全データ ---
 let machineDataMap = new Map();
+let allCsvMachines = []; // { no, name } の配列
 
 // --- ソート状態管理 ---
 let currentSortColumn = 'unitNo';
@@ -52,6 +53,9 @@ async function loadMachineCsvForJs() {
         const csvText = await response.text();
         
         const lines = csvText.split(/\r\n|\n/);
+        allCsvMachines = [];
+        machineDataMap.clear();
+
         lines.forEach(line => {
             if (!line.trim()) return;
             const cols = line.split(',');
@@ -60,6 +64,7 @@ async function loadMachineCsvForJs() {
                 const machineName = cols[1].trim(); // 2列目：機体名
                 if (machineNo && machineName) {
                     machineDataMap.set(machineName, machineNo);
+                    allCsvMachines.push({ no: machineNo, name: machineName });
                 }
             }
         });
@@ -115,7 +120,7 @@ function loadSavedCredentials() {
     }
 }
 
-// 投稿一覧データの読み込み＆ランキング集計
+// 投稿一覧データの読み込み＆ランキング・進捗集計
 async function loadPosts() {
     try {
         postList.innerHTML = '';
@@ -140,12 +145,108 @@ async function loadPosts() {
         renderPosts(allPosts);
         applySortAndRenderTable();
         renderRanking(allPosts);
+        renderProgressStats(allPosts); // 登録進捗の集計・描画
 
     } catch (error) {
         console.error("読み込みエラー:", error);
         loadingMsg.textContent = 'データの読み込みに失敗しました。画面を再読み込みしてください。';
         tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--danger-color);">データの読み込みに失敗しました。</td></tr>';
     }
+}
+
+// --- 登録進捗（コンプリート率）の計算・表示処理 ---
+function renderProgressStats(posts) {
+    const overallNumEl = document.getElementById('overall-progress-num');
+    const overallRegEl = document.getElementById('overall-registered-count');
+    const overallTotalEl = document.getElementById('overall-total-count');
+    const overallBarEl = document.getElementById('overall-progress-bar');
+    const rangeTableBody = document.getElementById('range-progress-table-body');
+
+    if (!overallNumEl || !rangeTableBody) return;
+
+    // CSVに機体データがない場合のガード
+    if (allCsvMachines.length === 0) {
+        overallNumEl.textContent = '0.00%';
+        rangeTableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--sub-text);">CSV機体データが読み込まれていません。</td></tr>';
+        return;
+    }
+
+    // 登録済みの機体No.をSetとして抽出（大文字小文字・トリム正規化）
+    const registeredNos = new Set();
+    posts.forEach(p => {
+        if (p.unitNumber && p.unitNumber.trim() !== '----') {
+            registeredNos.add(p.unitNumber.trim());
+        }
+    });
+
+    // 1. 全体の集計
+    const totalCsvCount = allCsvMachines.length;
+    let registeredCsvCount = 0;
+
+    allCsvMachines.forEach(m => {
+        if (registeredNos.has(m.no)) {
+            registeredCsvCount++;
+        }
+    });
+
+    const overallPercentage = totalCsvCount > 0 ? ((registeredCsvCount / totalCsvCount) * 100).toFixed(2) : '0.00';
+
+    overallNumEl.textContent = `${overallPercentage}%`;
+    overallRegEl.textContent = registeredCsvCount;
+    overallTotalEl.textContent = totalCsvCount;
+    overallBarEl.style.width = `${Math.min(parseFloat(overallPercentage), 100)}%`;
+
+    // 2. ナンバー帯（千番台）ごとの集計
+    // レンジ定義: 0〜999, 1000〜1999, ..., 9000〜
+    const ranges = [
+        { label: '0 ～ 999', min: 0, max: 999 },
+        { label: '1000 ～ 1999', min: 1000, max: 1999 },
+        { label: '2000 ～ 2999', min: 2000, max: 2999 },
+        { label: '3000 ～ 3999', min: 3000, max: 3999 },
+        { label: '4000 ～ 4999', min: 4000, max: 4999 },
+        { label: '5000 ～ 5999', min: 5000, max: 5999 },
+        { label: '6000 ～ 6999', min: 6000, max: 6999 },
+        { label: '7000 ～ 7999', min: 7000, max: 7999 },
+        { label: '8000 ～ 8999', min: 8000, max: 8999 },
+        { label: '9000番台以降', min: 9000, max: 999999 }
+    ];
+
+    rangeTableBody.innerHTML = '';
+
+    ranges.forEach(range => {
+        // このレンジに該当するCSV機体を抽出
+        const rangeMachines = allCsvMachines.filter(m => {
+            const num = parseInt(m.no, 10);
+            return !isNaN(num) && num >= range.min && num <= range.max;
+        });
+
+        // 該当レンジがない場合はテーブル行をスキップ
+        if (rangeMachines.length === 0) return;
+
+        let rangeTotal = rangeMachines.length;
+        let rangeReg = 0;
+
+        rangeMachines.forEach(m => {
+            if (registeredNos.has(m.no)) {
+                rangeReg++;
+            }
+        });
+
+        const rangePercentage = rangeTotal > 0 ? ((rangeReg / rangeTotal) * 100).toFixed(2) : '0.00';
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><strong>${range.label}</strong></td>
+            <td style="text-align: right; color: var(--accent-color); font-weight: bold;">${rangeReg} / ${rangeTotal} 件</td>
+            <td style="text-align: right; font-weight: bold; color: #fff;">${rangePercentage}%</td>
+            <td>
+                <div class="progress-bar-container-small">
+                    <div class="progress-bar-fill-small" style="width: ${Math.min(parseFloat(rangePercentage), 100)}%;"></div>
+                </div>
+            </td>
+        `;
+        rangeTableBody.appendChild(tr);
+    });
 }
 
 // --- 投稿ランキング（Special Thanks）集計・表示処理 ---
@@ -476,13 +577,13 @@ function renderPosts(postsToRender) {
             for (let i = 1; i <= 11; i++) {
                 const val = currentAbilitiesMap[i] || '';
                 editorHTML += `
-                    <div class="inline-ability-row" style="display: flex; align-items: center; gap: 6px; background: #1f1f1f; padding: 6px; border-radius: 4px; border: 1px solid #444;">
+                    <div class="inline-ability-row">
                         <span class="ability-label-num" style="font-size: 12px; min-width: 45px; color: #00d4ff; font-weight: bold;">No.${i}</span>
                         <select class="inline-ability-select" style="flex: 1; padding: 6px; color: #fff; background: #222; border: 1px solid #555; border-radius: 4px;">
                             ${createAbilityOptionsHTML(val)}
                         </select>
-                        <button type="button" class="move-up-btn" title="上に移動" style="background: #333; color: #fff; border: 1px solid #555; border-radius: 3px; padding: 4px 8px; cursor: pointer; font-size: 12px;">⬆️</button>
-                        <button type="button" class="move-down-btn" title="下に移動" style="background: #333; color: #fff; border: 1px solid #555; border-radius: 3px; padding: 4px 8px; cursor: pointer; font-size: 12px;">⬇️</button>
+                        <button type="button" class="move-up-btn" title="上に移動">⬆️</button>
+                        <button type="button" class="move-down-btn" title="下に移動">⬇️</button>
                     </div>
                 `;
             }
