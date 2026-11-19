@@ -101,7 +101,7 @@ function updateSelectBackground(selectEl) {
         selectEl.style.borderColor = '#d97706';
         selectEl.style.color = '#ffedd5';
     } else {
-        selectEl.style.backgroundColor = '#1a1a1a';
+        selectEl.style.backgroundColor = '#1a1c1e';
         selectEl.style.borderColor = '#555';
         selectEl.style.color = '#fff';
     }
@@ -157,7 +157,7 @@ async function loadPosts() {
         renderPosts(allPosts);
         applySortAndRenderTable();
         renderRanking(allPosts);
-        renderProgressStats(allPosts); // 登録進捗 ＆ マトリクス描画
+        renderProgressStats(allPosts);
 
     } catch (error) {
         console.error("読み込みエラー:", error);
@@ -182,7 +182,6 @@ function renderProgressStats(posts) {
         return;
     }
 
-    // 機体No.（4桁ゼロ埋め済み）をキーにした登録済みデータのマップを作成
     const registeredMap = new Map();
     posts.forEach(p => {
         if (p.unitNumber && p.unitNumber.trim() !== '----') {
@@ -191,7 +190,6 @@ function renderProgressStats(posts) {
         }
     });
 
-    // 1. 全体の集計
     const totalCsvCount = allCsvMachines.length;
     let registeredCsvCount = 0;
 
@@ -208,7 +206,6 @@ function renderProgressStats(posts) {
     overallTotalEl.textContent = totalCsvCount;
     overallBarEl.style.width = `${Math.min(parseFloat(overallPercentage), 100)}%`;
 
-    // 2. ナンバー帯（千番台）ごとの集計テーブル
     const ranges = [
         { label: '0000 ～ 0999', min: 0, max: 999 },
         { label: '1000 ～ 1999', min: 1000, max: 1999 },
@@ -255,12 +252,10 @@ function renderProgressStats(posts) {
         rangeTableBody.appendChild(tr);
     });
 
-    // 3. 千番台切り替えボタン ＆ マトリクス・パレットの構築
     renderThousandButtons(ranges, registeredMap);
     renderMatrixPalette(currentThousandMin, registeredMap);
 }
 
-// 千番台切り替えボタンの生成（0番台は「0番台」、他は「1000番台」などに修正）
 function renderThousandButtons(ranges, registeredMap) {
     const btnContainer = document.getElementById('thousand-tab-buttons');
     if (!btnContainer) return;
@@ -276,8 +271,6 @@ function renderThousandButtons(ranges, registeredMap) {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = `thousand-btn ${range.min === currentThousandMin ? 'active' : ''}`;
-        
-        // 修正：0番台は「0番台」、1000番台以降は「1000番台」と表示する
         btn.textContent = range.min === 0 ? '0番台' : `${range.min}番台`;
         
         btn.addEventListener('click', () => {
@@ -291,7 +284,6 @@ function renderThousandButtons(ranges, registeredMap) {
     });
 }
 
-// 番号マトリクス・パレット（グリッド）の描画
 function renderMatrixPalette(minVal, registeredMap) {
     const gridContainer = document.getElementById('matrix-grid-container');
     const rangeTitle = document.getElementById('matrix-range-title');
@@ -349,7 +341,6 @@ function renderMatrixPalette(minVal, registeredMap) {
     }
 }
 
-// マトリクスでクリックした機体の詳細を表示
 function showMatrixDetail(no, csvData, postData) {
     const detailCard = document.getElementById('matrix-detail-card');
     const detailContent = document.getElementById('matrix-detail-content');
@@ -387,7 +378,6 @@ function showMatrixDetail(no, csvData, postData) {
     }
 }
 
-// --- 投稿ランキング集計・表示処理 ---
 function renderRanking(posts) {
     const top3Container = document.getElementById('top3-ranking-container');
     const rankingTableBody = document.getElementById('ranking-table-body');
@@ -606,6 +596,52 @@ imageFileInput.addEventListener('change', async (e) => {
     }
 });
 
+// --- 編集エリア内の行選択状態＆集中上下ボタンの制御 ---
+function refreshAbilityRowsState(container) {
+    const rows = Array.from(container.querySelectorAll('.inline-ability-row'));
+    const selectedLabel = container.querySelector('.ability-toolbar-selected');
+    const upBtn = container.querySelector('.toolbar-up-btn');
+    const downBtn = container.querySelector('.toolbar-down-btn');
+
+    let selectedIndex = -1;
+
+    rows.forEach((row, idx) => {
+        const labelNum = row.querySelector('.ability-label-num');
+        if (labelNum) {
+            labelNum.textContent = `No.${idx + 1}`;
+        }
+        if (row.classList.contains('selected')) {
+            selectedIndex = idx;
+        }
+    });
+
+    if (selectedLabel) {
+        if (selectedIndex >= 0) {
+            const sel = rows[selectedIndex].querySelector('.inline-ability-select');
+            const valText = sel && sel.value ? `（${sel.value}）` : '（未選択）';
+            selectedLabel.textContent = `選択中: No.${selectedIndex + 1}${valText}`;
+        } else {
+            selectedLabel.textContent = '選択中: なし（行をクリックして選択）';
+        }
+    }
+
+    if (upBtn) {
+        upBtn.disabled = selectedIndex <= 0;
+    }
+    if (downBtn) {
+        downBtn.disabled = selectedIndex < 0 || selectedIndex >= rows.length - 1;
+    }
+}
+
+function selectAbilityRow(container, targetRow) {
+    const rows = container.querySelectorAll('.inline-ability-row');
+    rows.forEach(r => r.classList.remove('selected'));
+    if (targetRow) {
+        targetRow.classList.add('selected');
+    }
+    refreshAbilityRowsState(container);
+}
+
 function renderPosts(postsToRender) {
     postList.innerHTML = '';
 
@@ -706,11 +742,20 @@ function renderPosts(postsToRender) {
                 </div>
             `;
 
-            editorHTML += `<div style="font-size: 12px; color: #ff9800; margin-bottom: 6px; font-weight: bold; display: flex; justify-content: space-between; align-items: center;">
-                <span>特殊能力 (No.1 〜 No.11) ↕️ 並び替え可能</span>
-                <span style="font-size: 11px; color: #aaa; font-weight: normal;">※上下ボタンで歯抜けのズレを修正できます</span>
-            </div>`;
-            editorHTML += `<div class="inline-ability-list" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px;">`;
+            editorHTML += `
+                <div class="ability-toolbar">
+                    <div class="ability-toolbar-info">
+                        <strong style="color: #ff9800;">特殊能力 (No.1 〜 No.11)</strong>
+                        <span class="ability-toolbar-selected">選択中: なし</span>
+                    </div>
+                    <div class="ability-toolbar-buttons">
+                        <button type="button" class="toolbar-move-btn toolbar-up-btn" disabled>⬆️ 上へ</button>
+                        <button type="button" class="toolbar-move-btn toolbar-down-btn" disabled>⬇️ 下へ</button>
+                    </div>
+                </div>
+            `;
+
+            editorHTML += `<div class="inline-ability-list" style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 15px;">`;
 
             for (let i = 1; i <= 11; i++) {
                 const val = currentAbilitiesMap[i] || '';
@@ -720,8 +765,6 @@ function renderPosts(postsToRender) {
                         <select class="inline-ability-select" style="flex: 1; padding: 6px; color: #fff; background: #222; border: 1px solid #555; border-radius: 4px;">
                             ${createAbilityOptionsHTML(val)}
                         </select>
-                        <button type="button" class="move-up-btn" title="上に移動">⬆️</button>
-                        <button type="button" class="move-down-btn" title="下に移動">⬇️</button>
                     </div>
                 `;
             }
@@ -741,28 +784,45 @@ function renderPosts(postsToRender) {
             inlineRows.forEach(row => {
                 const sel = row.querySelector('.inline-ability-select');
                 updateSelectBackground(sel);
-                sel.addEventListener('change', () => updateSelectBackground(sel));
 
-                const upBtn = row.querySelector('.move-up-btn');
-                const downBtn = row.querySelector('.move-down-btn');
-
-                upBtn.addEventListener('click', () => {
-                    const currentRow = row;
-                    const prevRow = currentRow.previousElementSibling;
-                    if (prevRow) {
-                        currentRow.parentNode.insertBefore(currentRow, prevRow);
-                        reindexAbilityRows(inlineEditContainer);
-                    }
+                // 行をクリックしたら選択状態にする
+                row.addEventListener('click', () => {
+                    selectAbilityRow(inlineEditContainer, row);
                 });
 
-                downBtn.addEventListener('click', () => {
-                    const currentRow = row;
-                    const nextRow = currentRow.nextElementSibling;
-                    if (nextRow) {
-                        currentRow.parentNode.insertBefore(nextRow, currentRow);
-                        reindexAbilityRows(inlineEditContainer);
-                    }
+                // セレクトボックスを操作・フォーカスしたときもその行を選択状態にし、表示を更新する
+                sel.addEventListener('focus', () => {
+                    selectAbilityRow(inlineEditContainer, row);
                 });
+
+                sel.addEventListener('change', () => {
+                    updateSelectBackground(sel);
+                    selectAbilityRow(inlineEditContainer, row);
+                });
+            });
+
+            // 集中「⬆️ 上へ」ボタン（選択状態を保持したまま連続移動）
+            const upBtn = inlineEditContainer.querySelector('.toolbar-up-btn');
+            upBtn.addEventListener('click', () => {
+                const currentRow = inlineEditContainer.querySelector('.inline-ability-row.selected');
+                if (!currentRow) return;
+                const prevRow = currentRow.previousElementSibling;
+                if (prevRow) {
+                    currentRow.parentNode.insertBefore(currentRow, prevRow);
+                    refreshAbilityRowsState(inlineEditContainer);
+                }
+            });
+
+            // 集中「⬇️ 下へ」ボタン（選択状態を保持したまま連続移動）
+            const downBtn = inlineEditContainer.querySelector('.toolbar-down-btn');
+            downBtn.addEventListener('click', () => {
+                const currentRow = inlineEditContainer.querySelector('.inline-ability-row.selected');
+                if (!currentRow) return;
+                const nextRow = currentRow.nextElementSibling;
+                if (nextRow) {
+                    currentRow.parentNode.insertBefore(nextRow, currentRow);
+                    refreshAbilityRowsState(inlineEditContainer);
+                }
             });
 
             inlineEditContainer.querySelector('.inline-cancel-btn').addEventListener('click', () => {
@@ -845,16 +905,6 @@ function renderPosts(postsToRender) {
         loadMoreContainer.appendChild(loadMoreBtn);
         postList.appendChild(loadMoreContainer);
     }
-}
-
-function reindexAbilityRows(container) {
-    const rows = container.querySelectorAll('.inline-ability-row');
-    rows.forEach((row, idx) => {
-        const labelNum = row.querySelector('.ability-label-num');
-        if (labelNum) {
-            labelNum.textContent = `No.${idx + 1}`;
-        }
-    });
 }
 
 tableSearchInput.addEventListener('input', () => {
