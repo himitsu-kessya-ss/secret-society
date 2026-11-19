@@ -587,29 +587,84 @@ tr:hover {
 .rank-badge.rank-2-badge { background: #c0c0c0; color: #000; }
 .rank-badge.rank-3-badge { background: #cd7f32; color: #fff; }
 
-/* ▼ 編集時の並び替えボタン用スタイル */
+/* ▼ 編集時の選択式・集中上下ボタン用スタイル */
+.ability-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    background: #181a1d;
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+}
+
+.ability-toolbar-info {
+    font-size: 12px;
+    color: #ccc;
+}
+
+.ability-toolbar-selected {
+    color: #00d4ff;
+    font-weight: bold;
+    margin-left: 6px;
+}
+
+.ability-toolbar-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.toolbar-move-btn {
+    background: #2b3038;
+    color: #fff;
+    border: 1px solid #00d4ff;
+    border-radius: 4px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+    transition: background 0.15s, transform 0.1s;
+}
+
+.toolbar-move-btn:hover:not(:disabled) {
+    background: rgba(0, 212, 255, 0.22);
+}
+
+.toolbar-move-btn:active:not(:disabled) {
+    transform: translateY(1px);
+}
+
+.toolbar-move-btn:disabled {
+    opacity: 0.35;
+    border-color: #555;
+    cursor: not-allowed;
+}
+
 .inline-ability-row {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     background: #1f1f1f;
-    padding: 6px;
+    padding: 6px 8px;
     border-radius: 4px;
     border: 1px solid #444;
-}
-
-.move-up-btn, .move-down-btn {
-    background: #333;
-    color: #fff;
-    border: 1px solid #555;
-    border-radius: 3px;
-    padding: 4px 8px;
     cursor: pointer;
-    font-size: 12px;
-    transition: background 0.2s;
+    transition: background 0.15s, border-color 0.15s;
 }
 
-.move-up-btn:hover, .move-down-btn:hover { background: #444; }
+.inline-ability-row:hover {
+    border-color: #666;
+    background: #242629;
+}
+
+.inline-ability-row.selected {
+    background: rgba(0, 212, 255, 0.14);
+    border-color: #00d4ff;
+    box-shadow: 0 0 0 1px rgba(0, 212, 255, 0.35);
+}
 
 /* ▼ プログレスバー用スタイル */
 .progress-bar-container {
@@ -644,7 +699,7 @@ tr:hover {
     transition: width 0.4s ease;
 }
 
-/* ▼ 番号マトリクス・パレット専用スタイル（新規追加） */
+/* ▼ 番号マトリクス・パレット専用スタイル */
 .thousand-btn {
     background: #222;
     color: var(--sub-text);
@@ -670,7 +725,7 @@ tr:hover {
 
 .matrix-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(46px, 1fr));
     gap: 5px;
     max-height: 400px;
     overflow-y: auto;
@@ -699,7 +754,6 @@ tr:hover {
     transform: scale(1.05);
 }
 
-/* 登録済み（緑色ハイライト） */
 .matrix-cell.registered {
     background-color: #15803d;
     color: #fff;
