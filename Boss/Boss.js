@@ -3,9 +3,29 @@ import {
   getFirestore, collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, increment, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-fetch('../header.html')
+// 共通ヘッダーの読み込み＆スクリプト実行
+fetch('/secret-society/header.html')
   .then(res => res.ok ? res.text() : '')
-  .then(html => { if (html) document.getElementById('common-header').innerHTML = html; })
+  .then(html => {
+    if (!html) return;
+    const container = document.getElementById('common-header');
+    const parsed = new DOMParser().parseFromString(html, 'text/html');
+    container.innerHTML = '';
+    Array.from(parsed.head.childNodes).forEach(node => container.appendChild(node.cloneNode(true)));
+    Array.from(parsed.body.childNodes).forEach(node => {
+      if (node.tagName === 'SCRIPT') {
+        const s = document.createElement('script');
+        s.textContent = node.textContent;
+        container.appendChild(s);
+      } else {
+        container.appendChild(node.cloneNode(true));
+      }
+    });
+    // 現在のページ（/boss/）のメニューをアクティブ表示
+    container.querySelectorAll('.nav-item-custom').forEach(a => {
+      if (a.getAttribute('href') === '/secret-society/boss/') a.classList.add('active');
+    });
+  })
   .catch(() => {});
 
 const firebaseConfig = {
