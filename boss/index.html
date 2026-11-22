@@ -22,7 +22,9 @@
 
     <!-- ① ボス一覧 -->
     <section id="view-list">
-      <div class="boss-grid" id="boss-grid"></div>
+      <div class="boss-grid" id="boss-grid">
+        <p class="loading-text">ボスデータを読み込み中...</p>
+      </div>
     </section>
 
     <!-- ② 個別ボス攻略 -->
@@ -105,7 +107,7 @@
     <section id="view-master" class="hidden">
       <div class="panel-box">
         <h3 class="panel-title">📊 ボス情報まとめ一覧</h3>
-        <p class="master-note">※ボス情報は <code>Boss/BossData.js</code> で管理されています。</p>
+        <p class="master-note">※<code>boss/boss_list.csv</code> を読み込んで表示しています。</p>
         <div class="table-wrap">
           <table class="master-table">
             <thead>
@@ -121,7 +123,6 @@
     </section>
   </div>
 
-  <script src="BossData.js"></script>
   <script src="Boss_BestCompData.js"></script>
   <script type="module" src="Boss.js"></script>
 </body>
