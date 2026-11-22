@@ -3,7 +3,6 @@ import {
   getFirestore, collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, increment, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// 共通ヘッダーの読み込み＆スクリプト実行
 fetch('/secret-society/header.html')
   .then(res => res.ok ? res.text() : '')
   .then(html => {
@@ -21,7 +20,6 @@ fetch('/secret-society/header.html')
         container.appendChild(node.cloneNode(true));
       }
     });
-    // 現在のページ（/boss/）のメニューをアクティブ表示
     container.querySelectorAll('.nav-item-custom').forEach(a => {
       if (a.getAttribute('href') === '/secret-society/boss/') a.classList.add('active');
     });
@@ -41,11 +39,12 @@ const firebaseConfig = {
 const ADMIN_PASS = "p@ssw0rd";
 const COLLECTION_NAME = "boss_comps";
 const LIKED_STORAGE_KEY = "mst_boss_liked_keys";
+const CSV_FILE_PATH = "./boss_list.csv";
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const bossList = (typeof BOSS_DATA !== 'undefined') ? BOSS_DATA : [];
+let bossList = [];
 let compMap = (typeof BOSS_BEST_COMP_DATA !== 'undefined') ? { ...BOSS_BEST_COMP_DATA } : {};
 let likedKeys = JSON.parse(localStorage.getItem(LIKED_STORAGE_KEY)) || [];
 let currentBossId = null;
@@ -73,8 +72,73 @@ document.getElementById('comp-form').addEventListener('submit', submitComp);
 document.getElementById('sort-select').addEventListener('change', renderCompList);
 document.getElementById('export-comp-btn').addEventListener('click', exportCompDataJS);
 
-renderBossGrid();
-renderMasterTable();
+initBossCsv();
+
+async function initBossCsv() {
+  try {
+    const res = await fetch(CSV_FILE_PATH, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const csvText = await res.text();
+    const rows = parseCsvText(csvText);
+
+    bossList = rows
+      .filter(r => r && r.length >= 2 && /^\d+$/.test((r[0] || '').trim()) && (r[1] || '').trim())
+      .map(r => {
+        const id = Number(r[0].trim());
+        return {
+          id,
+          name: r[1].trim(),
+          pilot: (r[2] || '').trim(),
+          nt: (r[3] || '').trim(),
+          weapon: (r[4] || '').trim(),
+          rangeMin: Number((r[5] || '0').trim()) || 0,
+          rangeMax: Number((r[6] || '0').trim()) || 0,
+          attribute: (r[7] || '').trim(),
+          cut: (r[8] || '').trim(),
+          effect: (r[9] || '').trim(),
+          image: `images/boss_${String(id).padStart(2, '0')}.png`
+        };
+      });
+
+    renderBossGrid();
+    renderMasterTable();
+  } catch (err) {
+    console.error('boss_list.csv 読み込みエラー:', err);
+    document.getElementById('boss-grid').innerHTML =
+      `<p class="loading-text">boss_list.csv の読み込みに失敗しました。</p>`;
+    document.getElementById('master-tbody').innerHTML =
+      `<tr><td colspan="10">boss_list.csv の読み込みに失敗しました。</td></tr>`;
+  }
+}
+
+function parseCsvText(text) {
+  const rows = [];
+  let row = [];
+  let cell = '';
+  let inQuotes = false;
+  const clean = text.replace(/^\uFEFF/, '');
+
+  for (let i = 0; i < clean.length; i++) {
+    const ch = clean[i];
+    const next = clean[i + 1];
+    if (inQuotes) {
+      if (ch === '"' && next === '"') { cell += '"'; i++; }
+      else if (ch === '"') { inQuotes = false; }
+      else { cell += ch; }
+    } else {
+      if (ch === '"') { inQuotes = true; }
+      else if (ch === ',') { row.push(cell); cell = ''; }
+      else if (ch === '\r' && next === '\n') { row.push(cell); rows.push(row); row = []; cell = ''; i++; }
+      else if (ch === '\n' || ch === '\r') { row.push(cell); rows.push(row); row = []; cell = ''; }
+      else { cell += ch; }
+    }
+  }
+  if (cell.length > 0 || row.length > 0) {
+    row.push(cell);
+    rows.push(row);
+  }
+  return rows;
+}
 
 function switchTab(tabName) {
   ['list', 'detail', 'master'].forEach(v => document.getElementById(`view-${v}`).classList.add('hidden'));
@@ -307,11 +371,11 @@ function exportCompDataJS() {
     const { createdAt, ...rest } = v;
     exportObj[k] = rest;
   });
-  const content = `// Boss/Boss_BestCompData.js\nconst BOSS_BEST_COMP_DATA = ${JSON.stringify(exportObj, null, 2)};\n`;
+  const content = `// boss/boss_best_comp_data.js\nconst BOSS_BEST_COMP_DATA = ${JSON.stringify(exportObj, null, 2)};\n`;
   const blob = new Blob([content], { type: 'text/javascript;charset=utf-8' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'Boss_BestCompData.js';
+  a.download = 'boss_best_comp_data.js';
   a.click();
 }
 
