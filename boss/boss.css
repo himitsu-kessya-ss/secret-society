@@ -186,6 +186,10 @@ html, body {
   margin-bottom: 24px;
   width: 100%;
 }
+.panel-box.editing-mode {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 12px rgba(0, 212, 255, 0.2);
+}
 .panel-title {
   font-size: 1.15rem;
   color: var(--accent-gold);
@@ -231,6 +235,7 @@ input[type="text"], input[type="password"], textarea, select {
 }
 .checkbox-group label { color: #fff; font-weight: normal; display: flex; align-items: center; gap: 5px; cursor: pointer; }
 
+.form-btn-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
 .btn-primary {
   background: var(--accent-gold);
   color: #111;
@@ -239,14 +244,13 @@ input[type="text"], input[type="password"], textarea, select {
   border-radius: 6px;
   font-weight: bold;
   cursor: pointer;
-  margin-top: 10px;
 }
 .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn-secondary {
   background: #2c334d;
   color: #fff;
   border: 1px solid var(--border-color);
-  padding: 7px 14px;
+  padding: 8px 14px;
   border-radius: 5px;
   cursor: pointer;
   font-size: 0.85rem;
@@ -312,7 +316,8 @@ input[type="text"], input[type="password"], textarea, select {
 }
 .comp-specs span { color: var(--text-muted); font-size: 0.78rem; display: block; }
 .comp-comment { font-size: 0.9rem; color: #dce1ec; white-space: pre-wrap; margin-bottom: 10px; }
-.comp-actions { display: flex; justify-content: space-between; align-items: center; }
+.comp-actions { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.comp-manage-btns { display: flex; gap: 12px; align-items: center; }
 
 .like-btn {
   background: var(--bg-card);
@@ -331,7 +336,15 @@ input[type="text"], input[type="password"], textarea, select {
 .heart-icon { font-size: 1.1rem; color: var(--text-muted); }
 .like-btn.liked .heart-icon { color: var(--accent-pink); }
 
-.del-btn { background: transparent; border: none; color: var(--text-muted); font-size: 0.8rem; cursor: pointer; text-decoration: underline; }
+.edit-btn, .del-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.edit-btn:hover { color: var(--accent-cyan); }
 .del-btn:hover { color: var(--accent-red); }
 
 /* ボス情報まとめ */
