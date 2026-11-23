@@ -69,6 +69,8 @@ document.getElementById('tab-list').addEventListener('click', () => switchTab('l
 document.getElementById('tab-master').addEventListener('click', () => switchTab('master'));
 document.getElementById('back-to-list-btn').addEventListener('click', () => switchTab('list'));
 document.getElementById('comp-form').addEventListener('submit', submitComp);
+document.getElementById('filter-terrain').addEventListener('change', renderCompList);
+document.getElementById('filter-weight').addEventListener('change', renderCompList);
 document.getElementById('sort-select').addEventListener('change', renderCompList);
 document.getElementById('export-comp-btn').addEventListener('click', exportCompDataJS);
 
@@ -215,6 +217,8 @@ function openBossDetail(bossId) {
   const heroImg = detailDiv.querySelector('.boss-hero-img img');
   heroImg.addEventListener('error', () => handleImgError(heroImg, boss.name));
 
+  document.getElementById('filter-terrain').value = '';
+  document.getElementById('filter-weight').value = '';
   updateNextPostNo(boss);
   renderCompList();
   switchTab('detail');
@@ -236,6 +240,8 @@ async function submitComp(e) {
   const boss = bossList.find(b => b.id === currentBossId);
   if (!boss) return;
 
+  const checkedTerrains = Array.from(document.querySelectorAll('input[name="terrainCond"]:checked')).map(cb => cb.value);
+  const checkedWeights = Array.from(document.querySelectorAll('input[name="weightCond"]:checked')).map(cb => cb.value);
   const checkedHps = Array.from(document.querySelectorAll('input[name="hpCond"]:checked')).map(cb => cb.value);
   if (checkedHps.length === 0) return alert('「ボス残りHP割合」を1つ以上チェックしてください。');
 
@@ -257,6 +263,8 @@ async function submitComp(e) {
       bossName: boss.name,
       pilot: boss.pilot,
       postNo,
+      terrains: checkedTerrains,
+      weights: checkedWeights,
       hpConditions: checkedHps,
       unitName: document.getElementById('f-unitName').value.trim(),
       unitCustom: document.getElementById('f-unitCustom').value.trim(),
@@ -285,14 +293,23 @@ async function submitComp(e) {
 
 function renderCompList() {
   const listDiv = document.getElementById('comp-list');
+  const selectedTerrain = document.getElementById('filter-terrain').value;
+  const selectedWeight = document.getElementById('filter-weight').value;
   const sortType = document.getElementById('sort-select').value;
   const boss = bossList.find(b => b.id === currentBossId);
   if (!boss) return;
 
   const prefix = `${boss.name}(${boss.pilot})_`;
-  const items = Object.entries(compMap)
+  let items = Object.entries(compMap)
     .filter(([k, v]) => k.startsWith(prefix) || v.bossId === currentBossId)
     .map(([key, val]) => ({ key, ...val }));
+
+  if (selectedTerrain) {
+    items = items.filter(item => Array.isArray(item.terrains) && item.terrains.includes(selectedTerrain));
+  }
+  if (selectedWeight) {
+    items = items.filter(item => Array.isArray(item.weights) && item.weights.includes(selectedWeight));
+  }
 
   items.sort((a, b) => {
     if (sortType === 'likes') return (b.likes || 0) - (a.likes || 0) || (b.postNo || 0) - (a.postNo || 0);
@@ -301,20 +318,27 @@ function renderCompList() {
   });
 
   if (items.length === 0) {
-    listDiv.innerHTML = `<p class="loading-text">まだ攻略編成の投稿がありません。</p>`;
+    listDiv.innerHTML = `<p class="loading-text">条件に一致する攻略編成がありません。</p>`;
     return;
   }
 
   listDiv.innerHTML = items.map(item => {
     const isLiked = likedKeys.includes(item.key);
+    const terrainBadges = (item.terrains || []).map(t => `<span class="terrain-tag">${escapeHtml(t)}</span>`).join('');
+    const weightBadges = (item.weights || []).map(w => `<span class="weight-tag">${escapeHtml(w)}</span>`).join('');
     const hpBadges = (item.hpConditions || []).map(hp => `<span class="hp-tag">${escapeHtml(hp)}</span>`).join('');
+
     return `
       <div class="comp-card">
         <div class="comp-top">
           <div class="comp-meta"><span class="comp-no">No.${item.postNo}</span> ｜ 投稿者：<strong>${escapeHtml(item.author)}</strong></div>
           <div class="comp-meta">${escapeHtml(item.timestamp || '')}</div>
         </div>
-        <div class="hp-tags">${hpBadges}</div>
+        <div class="tag-rows">
+          ${terrainBadges ? `<div class="hp-tags"><span class="tag-label">地形:</span>${terrainBadges}</div>` : ''}
+          ${weightBadges ? `<div class="hp-tags"><span class="tag-label">重量:</span>${weightBadges}</div>` : ''}
+          <div class="hp-tags"><span class="tag-label">残りHP:</span>${hpBadges}</div>
+        </div>
         <div class="comp-specs">
           <div><span>機体名</span><strong>${escapeHtml(item.unitName)}</strong></div>
           <div><span>機体カスタム</span>${escapeHtml(item.unitCustom || '-')}</div>
