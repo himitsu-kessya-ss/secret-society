@@ -32,8 +32,8 @@
       <button class="back-btn" id="back-to-list-btn">← ボス一覧に戻る</button>
       <div id="boss-detail-content"></div>
 
-      <div class="panel-box">
-        <h3 class="panel-title">📝 攻略編成を投稿する</h3>
+      <div class="panel-box" id="comp-form-panel">
+        <h3 class="panel-title" id="form-panel-title">📝 攻略編成を投稿する</h3>
         <form id="comp-form">
           <div class="form-grid">
             <div class="form-group full-width">
@@ -96,7 +96,7 @@
               <input type="text" id="f-author" required placeholder="パイロット名">
             </div>
             <div class="form-group">
-              <label>投稿PW（4桁数字・削除用）<span class="req-mark">*</span></label>
+              <label>投稿PW（4桁数字・編集/削除用）<span class="req-mark">*</span></label>
               <input type="password" id="f-password" required pattern="\d{4}" maxlength="4" placeholder="1234">
             </div>
             <div class="form-group full-width">
@@ -104,7 +104,10 @@
               <textarea id="f-comment" rows="2" placeholder="立ち回りや注意点など"></textarea>
             </div>
           </div>
-          <button type="submit" class="btn-primary" id="submit-comp-btn">編成を投稿する</button>
+          <div class="form-btn-row">
+            <button type="submit" class="btn-primary" id="submit-comp-btn">編成を投稿する</button>
+            <button type="button" class="btn-secondary hidden" id="cancel-edit-btn">編集をキャンセル</button>
+          </div>
         </form>
       </div>
 
