@@ -48,6 +48,7 @@ let bossList = [];
 let compMap = (typeof BOSS_BEST_COMP_DATA !== 'undefined') ? { ...BOSS_BEST_COMP_DATA } : {};
 let likedKeys = JSON.parse(localStorage.getItem(LIKED_STORAGE_KEY)) || [];
 let currentBossId = null;
+let editingCompKey = null;
 
 // キー: "各ボス名(搭乗者名)_投稿No."
 const buildCompKey = (bossName, pilot, postNo) => `${bossName.trim()}(${pilot.trim()})_${postNo}`;
@@ -60,15 +61,23 @@ onSnapshot(collection(db, COLLECTION_NAME), (snapshot) => {
   if (!document.getElementById('view-list').classList.contains('hidden')) renderBossGrid();
   if (!document.getElementById('view-detail').classList.contains('hidden') && currentBossId !== null) {
     const boss = bossList.find(b => b.id === currentBossId);
-    if (boss) updateNextPostNo(boss);
+    if (boss && !editingCompKey) updateNextPostNo(boss);
     renderCompList();
   }
 });
 
 document.getElementById('tab-list').addEventListener('click', () => switchTab('list'));
 document.getElementById('tab-master').addEventListener('click', () => switchTab('master'));
-document.getElementById('back-to-list-btn').addEventListener('click', () => switchTab('list'));
+document.getElementById('back-to-list-btn').addEventListener('click', () => {
+  cancelEditMode();
+  switchTab('list');
+});
 document.getElementById('comp-form').addEventListener('submit', submitComp);
+document.getElementById('cancel-edit-btn').addEventListener('click', () => {
+  cancelEditMode();
+  const boss = bossList.find(b => b.id === currentBossId);
+  if (boss) updateNextPostNo(boss);
+});
 document.getElementById('filter-terrain').addEventListener('change', renderCompList);
 document.getElementById('filter-weight').addEventListener('change', renderCompList);
 document.getElementById('sort-select').addEventListener('change', renderCompList);
@@ -195,6 +204,7 @@ function renderBossGrid() {
 }
 
 function openBossDetail(bossId) {
+  cancelEditMode();
   currentBossId = bossId;
   const boss = bossList.find(b => b.id === bossId);
   if (!boss) return;
@@ -235,6 +245,56 @@ function updateNextPostNo(boss) {
   document.getElementById('f-postNo').value = maxNo + 1;
 }
 
+function startEditComp(key) {
+  const target = compMap[key];
+  if (!target) return;
+
+  const pw = prompt('編集するには投稿時の4桁パスワード（または管理者PW）を入力してください：');
+  if (pw === null) return;
+
+  if (pw !== target.password && pw !== ADMIN_PASS) {
+    alert('パスワードが一致しません。');
+    return;
+  }
+
+  editingCompKey = key;
+  document.getElementById('comp-form-panel').classList.add('editing-mode');
+  document.getElementById('form-panel-title').textContent = `✏️ 攻略編成を編集する（No.${target.postNo}）`;
+  document.getElementById('submit-comp-btn').textContent = '編成を更新する';
+  document.getElementById('cancel-edit-btn').classList.remove('hidden');
+
+  setCheckboxValues('terrainCond', target.terrains || []);
+  setCheckboxValues('weightCond', target.weights || []);
+  setCheckboxValues('hpCond', target.hpConditions || []);
+
+  document.getElementById('f-unitName').value = target.unitName || '';
+  document.getElementById('f-unitCustom').value = target.unitCustom || '';
+  document.getElementById('f-weapon').value = target.weapon || '';
+  document.getElementById('f-equipment').value = target.equipment || '';
+  document.getElementById('f-trait').value = target.trait || '';
+  document.getElementById('f-postNo').value = target.postNo || '';
+  document.getElementById('f-author').value = target.author || '';
+  document.getElementById('f-password').value = target.password || '';
+  document.getElementById('f-comment').value = target.comment || '';
+
+  document.getElementById('comp-form-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function cancelEditMode() {
+  editingCompKey = null;
+  document.getElementById('comp-form-panel').classList.remove('editing-mode');
+  document.getElementById('form-panel-title').textContent = '📝 攻略編成を投稿する';
+  document.getElementById('submit-comp-btn').textContent = '編成を投稿する';
+  document.getElementById('cancel-edit-btn').classList.add('hidden');
+  document.getElementById('comp-form').reset();
+}
+
+function setCheckboxValues(name, values) {
+  document.querySelectorAll(`input[name="${name}"]`).forEach(cb => {
+    cb.checked = values.includes(cb.value);
+  });
+}
+
 async function submitComp(e) {
   e.preventDefault();
   const boss = bossList.find(b => b.id === currentBossId);
@@ -245,24 +305,16 @@ async function submitComp(e) {
   const checkedHps = Array.from(document.querySelectorAll('input[name="hpCond"]:checked')).map(cb => cb.value);
   if (checkedHps.length === 0) return alert('「ボス残りHP割合」を1つ以上チェックしてください。');
 
-  const postNo = Number(document.getElementById('f-postNo').value);
-  const uniqueKey = buildCompKey(boss.name, boss.pilot, postNo);
-  if (compMap[uniqueKey]) return alert('投稿No.が重複しています。');
-
   const btn = document.getElementById('submit-comp-btn');
   btn.disabled = true;
-  btn.textContent = '送信中...';
+  btn.textContent = editingCompKey ? '更新中...' : '送信中...';
 
   try {
     const now = new Date();
     const pad = n => String(n).padStart(2, '0');
-    const timestamp = `${now.getFullYear()}/${pad(now.getMonth()+1)}/${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    const nowStr = `${now.getFullYear()}/${pad(now.getMonth()+1)}/${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
 
-    await setDoc(doc(db, COLLECTION_NAME, uniqueKey), {
-      bossId: boss.id,
-      bossName: boss.name,
-      pilot: boss.pilot,
-      postNo,
+    const payload = {
       terrains: checkedTerrains,
       weights: checkedWeights,
       hpConditions: checkedHps,
@@ -274,20 +326,40 @@ async function submitComp(e) {
       author: document.getElementById('f-author').value.trim(),
       comment: document.getElementById('f-comment').value.trim(),
       password: document.getElementById('f-password').value.trim(),
-      timestamp,
-      likes: 0,
-      createdAt: serverTimestamp()
-    });
+      updatedAt: nowStr
+    };
 
-    document.getElementById('comp-form').reset();
-    updateNextPostNo(boss);
-    alert('攻略編成を投稿しました！');
+    if (editingCompKey) {
+      await updateDoc(doc(db, COLLECTION_NAME, editingCompKey), payload);
+      cancelEditMode();
+      updateNextPostNo(boss);
+      alert('攻略編成を更新しました！');
+    } else {
+      const postNo = Number(document.getElementById('f-postNo').value);
+      const uniqueKey = buildCompKey(boss.name, boss.pilot, postNo);
+      if (compMap[uniqueKey]) return alert('投稿No.が重複しています。');
+
+      await setDoc(doc(db, COLLECTION_NAME, uniqueKey), {
+        bossId: boss.id,
+        bossName: boss.name,
+        pilot: boss.pilot,
+        postNo,
+        ...payload,
+        timestamp: nowStr,
+        likes: 0,
+        createdAt: serverTimestamp()
+      });
+
+      document.getElementById('comp-form').reset();
+      updateNextPostNo(boss);
+      alert('攻略編成を投稿しました！');
+    }
   } catch (err) {
     console.error(err);
-    alert('投稿に失敗しました。');
+    alert(editingCompKey ? '更新に失敗しました。' : '投稿に失敗しました。');
   } finally {
     btn.disabled = false;
-    btn.textContent = '編成を投稿する';
+    btn.textContent = editingCompKey ? '編成を更新する' : '編成を投稿する';
   }
 }
 
@@ -327,12 +399,15 @@ function renderCompList() {
     const terrainBadges = (item.terrains || []).map(t => `<span class="terrain-tag">${escapeHtml(t)}</span>`).join('');
     const weightBadges = (item.weights || []).map(w => `<span class="weight-tag">${escapeHtml(w)}</span>`).join('');
     const hpBadges = (item.hpConditions || []).map(hp => `<span class="hp-tag">${escapeHtml(hp)}</span>`).join('');
+    const timeLabel = item.updatedAt
+      ? `${escapeHtml(item.timestamp || '')}（更新: ${escapeHtml(item.updatedAt)}）`
+      : escapeHtml(item.timestamp || '');
 
     return `
       <div class="comp-card">
         <div class="comp-top">
           <div class="comp-meta"><span class="comp-no">No.${item.postNo}</span> ｜ 投稿者：<strong>${escapeHtml(item.author)}</strong></div>
-          <div class="comp-meta">${escapeHtml(item.timestamp || '')}</div>
+          <div class="comp-meta">${timeLabel}</div>
         </div>
         <div class="tag-rows">
           ${terrainBadges ? `<div class="hp-tags"><span class="tag-label">地形:</span>${terrainBadges}</div>` : ''}
@@ -351,12 +426,16 @@ function renderCompList() {
           <button type="button" class="like-btn ${isLiked ? 'liked' : ''}" data-key="${escapeHtml(item.key)}">
             <span class="heart-icon">${isLiked ? '❤' : '♡'}</span><span>いいね！</span><strong>${item.likes || 0}</strong>
           </button>
-          <button type="button" class="del-btn" data-key="${escapeHtml(item.key)}">削除</button>
+          <div class="comp-manage-btns">
+            <button type="button" class="edit-btn" data-key="${escapeHtml(item.key)}">編集</button>
+            <button type="button" class="del-btn" data-key="${escapeHtml(item.key)}">削除</button>
+          </div>
         </div>
       </div>`;
   }).join('');
 
   listDiv.querySelectorAll('.like-btn').forEach(b => b.addEventListener('click', () => toggleLike(b.dataset.key)));
+  listDiv.querySelectorAll('.edit-btn').forEach(b => b.addEventListener('click', () => startEditComp(b.dataset.key)));
   listDiv.querySelectorAll('.del-btn').forEach(b => b.addEventListener('click', () => deleteComp(b.dataset.key)));
 }
 
@@ -382,6 +461,7 @@ async function deleteComp(key) {
   if (pw === null) return;
 
   if (pw === target.password || pw === ADMIN_PASS) {
+    if (editingCompKey === key) cancelEditMode();
     await deleteDoc(doc(db, COLLECTION_NAME, key));
     alert('投稿を削除しました。');
   } else {
