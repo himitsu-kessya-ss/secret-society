@@ -37,6 +37,29 @@
         <form id="comp-form">
           <div class="form-grid">
             <div class="form-group full-width">
+              <label>地形（複数チェック可）</label>
+              <div class="checkbox-group">
+                <label><input type="checkbox" name="terrainCond" value="地上"> 地上</label>
+                <label><input type="checkbox" name="terrainCond" value="海洋"> 海洋</label>
+                <label><input type="checkbox" name="terrainCond" value="宇宙"> 宇宙</label>
+                <label><input type="checkbox" name="terrainCond" value="空中"> 空中</label>
+                <label><input type="checkbox" name="terrainCond" value="砂漠"> 砂漠</label>
+                <label><input type="checkbox" name="terrainCond" value="月面"> 月面</label>
+                <label><input type="checkbox" name="terrainCond" value="大気圏"> 大気圏</label>
+                <label><input type="checkbox" name="terrainCond" value="森林"> 森林</label>
+                <label><input type="checkbox" name="terrainCond" value="夜戦"> 夜戦</label>
+                <label><input type="checkbox" name="terrainCond" value="仮想空間"> 仮想空間</label>
+              </div>
+            </div>
+            <div class="form-group full-width">
+              <label>重量クラス（複数チェック可）</label>
+              <div class="checkbox-group">
+                <label><input type="checkbox" name="weightCond" value="軽"> 軽</label>
+                <label><input type="checkbox" name="weightCond" value="中"> 中</label>
+                <label><input type="checkbox" name="weightCond" value="重"> 重</label>
+              </div>
+            </div>
+            <div class="form-group full-width">
               <label>ボス残りHP割合（複数チェック可）<span class="req-mark">*</span></label>
               <div class="checkbox-group">
                 <label><input type="checkbox" name="hpCond" value="残り５割以上"> 残り５割以上</label>
@@ -88,13 +111,32 @@
       <div class="panel-box">
         <div class="comp-header-bar">
           <h3 class="panel-title no-margin">⚔️ 投稿された攻略編成一覧</h3>
-          <div>
-            <select id="sort-select">
+          <div class="filter-controls">
+            <select id="filter-terrain" aria-label="地形フィルター">
+              <option value="">地形：すべて</option>
+              <option value="地上">地形：地上</option>
+              <option value="海洋">地形：海洋</option>
+              <option value="宇宙">地形：宇宙</option>
+              <option value="空中">地形：空中</option>
+              <option value="砂漠">地形：砂漠</option>
+              <option value="月面">地形：月面</option>
+              <option value="大気圏">地形：大気圏</option>
+              <option value="森林">地形：森林</option>
+              <option value="夜戦">地形：夜戦</option>
+              <option value="仮想空間">地形：仮想空間</option>
+            </select>
+            <select id="filter-weight" aria-label="重量クラスフィルター">
+              <option value="">重量：すべて</option>
+              <option value="軽">重量：軽</option>
+              <option value="中">重量：中</option>
+              <option value="重">重量：重</option>
+            </select>
+            <select id="sort-select" aria-label="並び替え">
               <option value="likes">いいね数の多い順</option>
               <option value="newest">新しい順（投稿No.降順）</option>
               <option value="oldest">古い順（投稿No.昇順）</option>
             </select>
-            <button type="button" class="btn-secondary ml-8" id="export-comp-btn">💾 boss_best_comp_data.js 出力</button>
+            <button type="button" class="btn-secondary" id="export-comp-btn">💾 boss_best_comp_data.js 出力</button>
           </div>
         </div>
         <div id="comp-list">
