@@ -81,6 +81,7 @@ document.getElementById('cancel-edit-btn').addEventListener('click', () => {
 document.getElementById('filter-terrain').addEventListener('change', renderCompList);
 document.getElementById('filter-weight').addEventListener('change', renderCompList);
 document.getElementById('sort-select').addEventListener('change', renderCompList);
+document.getElementById('export-comp-btn').addEventListener('click', exportCompDataJS);
 
 initBossCsv();
 
@@ -472,6 +473,20 @@ async function deleteComp(key) {
   } else {
     alert('パスワードが一致しません。');
   }
+}
+
+function exportCompDataJS() {
+  const exportObj = {};
+  Object.entries(compMap).forEach(([k, v]) => {
+    const { createdAt, ...rest } = v;
+    exportObj[k] = rest;
+  });
+  const content = `// boss/boss_best_comp_data.js\nconst BOSS_BEST_COMP_DATA = ${JSON.stringify(exportObj, null, 2)};\n`;
+  const blob = new Blob([content], { type: 'text/javascript;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'boss_best_comp_data.js';
+  a.click();
 }
 
 function renderMasterTable() {
