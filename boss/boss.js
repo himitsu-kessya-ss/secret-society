@@ -271,6 +271,7 @@ function startEditComp(key) {
   document.getElementById('f-unitCustom').value = target.unitCustom || '';
   document.getElementById('f-weapon').value = target.weapon || '';
   document.getElementById('f-equipment').value = target.equipment || '';
+  document.getElementById('f-moveTactic').value = target.moveTactic || '';
   document.getElementById('f-trait').value = target.trait || '';
   document.getElementById('f-postNo').value = target.postNo || '';
   document.getElementById('f-author').value = target.author || '';
@@ -303,6 +304,9 @@ async function submitComp(e) {
   const checkedTerrains = Array.from(document.querySelectorAll('input[name="terrainCond"]:checked')).map(cb => cb.value);
   const checkedWeights = Array.from(document.querySelectorAll('input[name="weightCond"]:checked')).map(cb => cb.value);
   const checkedHps = Array.from(document.querySelectorAll('input[name="hpCond"]:checked')).map(cb => cb.value);
+  const moveTactic = document.getElementById('f-moveTactic').value.trim();
+
+  if (!moveTactic) return alert('「移動戦術」を選択してください。');
   if (checkedHps.length === 0) return alert('「ボス残りHP割合」を1つ以上チェックしてください。');
 
   const btn = document.getElementById('submit-comp-btn');
@@ -322,6 +326,7 @@ async function submitComp(e) {
       unitCustom: document.getElementById('f-unitCustom').value.trim(),
       weapon: document.getElementById('f-weapon').value.trim(),
       equipment: document.getElementById('f-equipment').value.trim(),
+      moveTactic,
       trait: document.getElementById('f-trait').value.trim(),
       author: document.getElementById('f-author').value.trim(),
       comment: document.getElementById('f-comment').value.trim(),
@@ -419,6 +424,7 @@ function renderCompList() {
           <div><span>機体カスタム</span>${escapeHtml(item.unitCustom || '-')}</div>
           <div><span>武器</span><strong>${escapeHtml(item.weapon)}</strong></div>
           <div><span>装備</span>${escapeHtml(item.equipment)}</div>
+          <div><span>移動戦術</span><strong>${escapeHtml(item.moveTactic || '-')}</strong></div>
           <div><span>特性</span>${escapeHtml(item.trait || '-')}</div>
         </div>
         ${item.comment ? `<div class="comp-comment">${escapeHtml(item.comment)}</div>` : ''}
