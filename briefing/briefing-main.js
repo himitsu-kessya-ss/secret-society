@@ -178,17 +178,43 @@ function showMainPage() {
 function closeModal() {
     document.getElementById('modal-overlay').classList.add('hidden');
     document.getElementById('modal-create').classList.add('hidden');
+    document.getElementById('modal-bulk-auth').classList.add('hidden');
     document.getElementById('modal-bulk-edit').classList.add('hidden');
     document.getElementById('modal-auth').classList.add('hidden');
     document.getElementById('modal-admin-settings').classList.add('hidden');
     document.getElementById('modal-mecha-search').classList.add('hidden');
 }
 
-// 【追加】全イベント一括管理モーダルを開く
+// 【追加】全イベント一括管理前の管理者認証モーダルを開く
+function openBulkAuthModal() {
+    const pwInput = document.getElementById('input-bulk-auth-pw');
+    if (pwInput) {
+        pwInput.value = '';
+    }
+    document.getElementById('modal-overlay').classList.remove('hidden');
+    document.getElementById('modal-bulk-auth').classList.remove('hidden');
+    if (pwInput) {
+        setTimeout(() => pwInput.focus(), 50);
+    }
+}
+
+// 【追加】一括管理を開く前の管理者パスワード認証
+async function submitBulkAuth() {
+    const adminPw = document.getElementById('input-bulk-auth-pw').value;
+    if (adminPw !== 'p@ssw0rd') {
+        alert('管理者パスワードが正しくありません。');
+        return;
+    }
+
+    // 認証モーダルを閉じてから、一括管理モーダルを開く
+    closeModal();
+    await openBulkEditModal();
+}
+
+// 【修正】全イベント一括管理モーダルを開く（認証成功後に実行）
 async function openBulkEditModal() {
     await loadEventsFromServer(true); // 開く直前に最新データを取得
 
-    document.getElementById('input-bulk-admin-pw').value = '';
     const container = document.getElementById('bulk-edit-container');
     container.innerHTML = '';
 
@@ -213,31 +239,36 @@ async function openBulkEditModal() {
     document.getElementById('modal-bulk-edit').classList.remove('hidden');
 }
 
-// 【追加】全イベント一括管理の保存処理
+// 【修正】全イベント一括管理の保存処理
 async function submitBulkEdit() {
-    const adminPw = document.getElementById('input-bulk-admin-pw').value;
-    if (adminPw !== 'p@ssw0rd') {
-        alert('管理者パスワードが正しくありません。');
-        return;
-    }
-
-    // 画面の入力内容を各イベントオブジェクトに反映
     const container = document.getElementById('bulk-edit-container');
-    const items = container.querySelectorAll('div > div');
 
-    // 最新データを再度同期
-    await loadEventsFromServer(true);
-
+    // 画面上の入力値を先に退避
+    const draftMap = {};
     events.forEach(ev => {
         const titleInput = container.querySelector(`.bulk-title-input[data-id="${ev.id}"]`);
         const passInput = container.querySelector(`.bulk-pass-input[data-id="${ev.id}"]`);
         const schedInput = container.querySelector(`.bulk-sched-input[data-id="${ev.id}"]`);
         const dateInput = container.querySelector(`.bulk-date-input[data-id="${ev.id}"]`);
 
-        if (titleInput) ev.title = titleInput.value;
-        if (passInput) ev.pass = passInput.value;
-        if (schedInput) ev.scheduleDate = schedInput.value;
-        if (dateInput) ev.actualDate = dateInput.value;
+        draftMap[ev.id] = {
+            title: titleInput ? titleInput.value : ev.title,
+            pass: passInput ? passInput.value : (ev.pass || ''),
+            scheduleDate: schedInput ? schedInput.value : (ev.scheduleDate || ''),
+            actualDate: dateInput ? dateInput.value : (ev.actualDate || '')
+        };
+    });
+
+    // 最新データを再度同期してから反映
+    await loadEventsFromServer(true);
+
+    events.forEach(ev => {
+        if (draftMap[ev.id]) {
+            ev.title = draftMap[ev.id].title;
+            ev.pass = draftMap[ev.id].pass;
+            ev.scheduleDate = draftMap[ev.id].scheduleDate;
+            ev.actualDate = draftMap[ev.id].actualDate;
+        }
     });
 
     // 一括でサーバーへ保存
