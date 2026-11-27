@@ -25,7 +25,7 @@
         <div class="card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
             <h2>作戦イベント一覧</h2>
             <div style="display: flex; gap: 10px;">
-                <button class="btn btn-secondary" onclick="openBulkEditModal()">📋 全イベント一括管理</button>
+                <button class="btn btn-secondary" onclick="openBulkAuthModal()">📋 全イベント一括管理</button>
                 <button class="btn" onclick="openCreateModal()">＋ 新規イベント起票（管理者）</button>
             </div>
         </div>
@@ -199,12 +199,21 @@
         </div>
     </div>
 
+    <!-- 全イベント一括管理前の管理者認証モーダル -->
+    <div id="modal-bulk-auth" class="modal hidden">
+        <h3>🔐 管理者認証</h3>
+        <p class="sub-title">全イベント一括管理を開くには、管理者パスワードを入力してください。</p>
+        <input type="password" id="input-bulk-auth-pw" placeholder="管理者パスワード">
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px;">
+            <button class="btn btn-secondary" onclick="closeModal()">キャンセル</button>
+            <button class="btn" onclick="submitBulkAuth()">認証して開く</button>
+        </div>
+    </div>
+
     <!-- 全イベント一括管理モーダル -->
     <div id="modal-bulk-edit" class="modal hidden" style="width: 700px; max-width: 95%;">
         <h3>📋 全イベント一括管理（管理者用）</h3>
-        <p class="sub-title" style="margin-bottom: 10px;">すべてのイベントのタイトルや日時、パスワードをまとめて編集できます。</p>
-        
-        <input type="password" id="input-bulk-admin-pw" placeholder="管理者パスワード" style="margin-bottom: 15px;">
+        <p class="sub-title" style="margin-bottom: 15px;">すべてのイベントのタイトルや日時、パスワードをまとめて編集できます。</p>
         
         <div id="bulk-edit-container" style="max-height: 350px; overflow-y: auto; border: 1px solid var(--border); border-radius: 4px; padding: 10px; margin-bottom: 15px; display: flex; flex-direction: column; gap: 10px;">
             <!-- JavaScriptでイベントリストがここに動的に並びます -->
