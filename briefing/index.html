@@ -74,6 +74,21 @@
                         <div class="status-item">HP計: <span id="stat-hp" class="val-green">0</span></div>
                     </div>
                 </div>
+
+                <!-- レギュレーション表示・編集エリア -->
+                <div style="margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 6px;">
+                        <span style="font-size: 0.9rem; font-weight: bold; color: var(--accent);">📜 イベントレギュレーション（ルール確認・編集）</span>
+                        <div style="display: flex; gap: 8px;">
+                            <button type="button" id="btn-toggle-reg-edit" class="btn btn-secondary" style="padding: 3px 10px; font-size: 0.8rem;" onclick="toggleRegulationEditMode()">✏️ 編集する</button>
+                            <button type="button" id="btn-save-reg" class="btn hidden" style="padding: 3px 10px; font-size: 0.8rem; background-color: rgba(0, 240, 255, 0.15);" onclick="saveRegulationToServer()">💾 レギュを保存</button>
+                        </div>
+                    </div>
+                    <!-- 閲覧用表示ボックス -->
+                    <div id="regulation-display-box" style="background: rgba(0, 0, 0, 0.25); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; font-size: 0.85rem; line-height: 1.6; white-space: pre-wrap; color: #e2e8f0;">（レギュレーション未設定）</div>
+                    <!-- 編集用テキストエリア -->
+                    <textarea id="regulation-edit-textarea" class="hidden" rows="8" style="width: 100%; background: var(--bg-main); color: #fff; border: 1px solid var(--accent); border-radius: 6px; padding: 10px; font-size: 0.85rem; line-height: 1.5; font-family: inherit; resize: vertical;" placeholder="例：&#13;&#10;・レギュ&#13;&#10;コスト１０５ 総ＨＰ８５０ｘ人数以下 能力５００固定 結社設置&#13;&#10;..."></textarea>
+                </div>
             </div>
 
             <div class="table-responsive card">
