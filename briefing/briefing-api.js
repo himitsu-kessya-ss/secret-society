@@ -54,6 +54,39 @@ async function saveAllEventsToServer() {
     }
 }
 
+// 管理者パスワードの照合（GAS側で { action: 'verifyAdmin', adminPw } を受け取れる構成向け）
+async function verifyAdminPasswordOnServer(adminPw) {
+    if (!adminPw) return { ok: false, reason: 'empty' };
+
+    if (!GAS_URL) {
+        return { ok: adminPw === 'p@ssw0rd', mode: 'local' };
+    }
+
+    try {
+        const response = await fetch(GAS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'verifyAdmin', adminPw: adminPw })
+        });
+
+        // no-corsや非JSONレスポンスの場合はローカル照合にフォールバック
+        if (!response.ok) {
+            return { ok: adminPw === 'p@ssw0rd', mode: 'fallback' };
+        }
+
+        const result = await response.json();
+        if (result && typeof result.valid === 'boolean') {
+            return { ok: result.valid, mode: 'server' };
+        }
+
+        // GAS側が verifyAdmin 未実装で通常の保存応答などを返した場合のフォールバック
+        return { ok: adminPw === 'p@ssw0rd', mode: 'fallback' };
+    } catch (e) {
+        console.warn("サーバーでの管理者認証に失敗したため、ローカル照合にフォールバックします。", e);
+        return { ok: adminPw === 'p@ssw0rd', mode: 'fallback' };
+    }
+}
+
 // 手動同期ボタン用
 async function manualLoadFromServer() {
     await loadEventsFromServer(false);
