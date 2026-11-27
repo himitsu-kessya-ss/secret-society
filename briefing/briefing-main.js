@@ -7,6 +7,17 @@ let MECHA_DB = {};
 let mechaListArray = []; 
 let editingRowIndex = null; 
 
+const DEFAULT_REGULATION_TEMPLATE = `・レギュ
+コスト１０５ 総ＨＰ８５０ｘ人数以下 能力５００固定 結社設置
+コスト８５ 総ＨＰ５５０ｘ人数以下  能力フリー 星屑設置
+リーダー無し団体戦術あり
+
+禁止：同機体複数登録、ＬＡ、直撃、超龍神、武器庫産アトミックバズーカ
+〇配慮要素：
+ オールSS、ジャマーHP吸収セット
+〇地形：
+ 設置側が選択`;
+
 window.onload = async function() {
     localStorage.removeItem('secret_society_briefing_state_v3');
     showMainPage();
@@ -14,6 +25,76 @@ window.onload = async function() {
     await loadMechaCsv();
     await loadEventsFromServer(false); 
 };
+
+// 【レギュレーション表示描画】
+function renderRegulationArea(ev) {
+    const displayBox = document.getElementById('regulation-display-box');
+    const editArea = document.getElementById('regulation-edit-textarea');
+    const toggleBtn = document.getElementById('btn-toggle-reg-edit');
+    const saveBtn = document.getElementById('btn-save-reg');
+
+    if (!displayBox || !editArea) return;
+
+    const regText = (ev && ev.regulation) ? ev.regulation : '';
+    displayBox.textContent = regText ? regText : '（レギュレーション未設定 — 右上の「✏️ 編集する」から記入できます）';
+    displayBox.style.color = regText ? '#e2e8f0' : 'var(--text-muted)';
+    editArea.value = regText;
+
+    // 閲覧モードにリセット
+    displayBox.classList.remove('hidden');
+    editArea.classList.add('hidden');
+    if (toggleBtn) toggleBtn.textContent = '✏️ 編集する';
+    if (saveBtn) saveBtn.classList.add('hidden');
+}
+
+// 【レギュレーション編集モード切替】
+function toggleRegulationEditMode() {
+    const displayBox = document.getElementById('regulation-display-box');
+    const editArea = document.getElementById('regulation-edit-textarea');
+    const toggleBtn = document.getElementById('btn-toggle-reg-edit');
+    const saveBtn = document.getElementById('btn-save-reg');
+
+    if (!displayBox || !editArea) return;
+
+    const isEditing = !editArea.classList.contains('hidden');
+    if (isEditing) {
+        // 編集キャンセル -> 元の値に戻して閲覧モードへ
+        const ev = events.find(e => e.id === currentEventId);
+        editArea.value = (ev && ev.regulation) ? ev.regulation : '';
+        displayBox.classList.remove('hidden');
+        editArea.classList.add('hidden');
+        if (toggleBtn) toggleBtn.textContent = '✏️ 編集する';
+        if (saveBtn) saveBtn.classList.add('hidden');
+    } else {
+        // 編集モードへ
+        displayBox.classList.add('hidden');
+        editArea.classList.remove('hidden');
+        if (toggleBtn) toggleBtn.textContent = '✖ キャンセル';
+        if (saveBtn) saveBtn.classList.remove('hidden');
+        editArea.focus();
+    }
+}
+
+// 【レギュレーションをサーバーへ保存】
+async function saveRegulationToServer() {
+    if (!GAS_URL || !currentEventId) return;
+
+    const editArea = document.getElementById('regulation-edit-textarea');
+    if (!editArea) return;
+    const newRegText = editArea.value;
+
+    // 他メンバーの作戦・メンバー更新を上書きしないよう最新データを取得
+    await loadEventsFromServer(true);
+
+    const ev = events.find(e => e.id === currentEventId);
+    if (!ev) return;
+
+    ev.regulation = newRegText;
+    await saveAllEventsToServer();
+
+    renderRegulationArea(ev);
+    alert('レギュレーションをサーバーに保存しました！');
+}
 
 // 【作戦立案タブ用】「更新対象」がONの行だけを反映して一括保存
 async function saveSelectedTacticsToServer() {
@@ -185,7 +266,7 @@ function closeModal() {
     document.getElementById('modal-mecha-search').classList.add('hidden');
 }
 
-// 【追加】全イベント一括管理前の管理者認証モーダルを開く
+// 全イベント一括管理前の管理者認証モーダルを開く
 function openBulkAuthModal() {
     const pwInput = document.getElementById('input-bulk-auth-pw');
     if (pwInput) {
@@ -198,7 +279,7 @@ function openBulkAuthModal() {
     }
 }
 
-// 【追加】一括管理を開く前の管理者パスワード認証
+// 一括管理を開く前の管理者パスワード認証
 async function submitBulkAuth() {
     const adminPw = document.getElementById('input-bulk-auth-pw').value;
     if (adminPw !== 'p@ssw0rd') {
@@ -206,14 +287,13 @@ async function submitBulkAuth() {
         return;
     }
 
-    // 認証モーダルを閉じてから、一括管理モーダルを開く
     closeModal();
     await openBulkEditModal();
 }
 
-// 【修正】全イベント一括管理モーダルを開く（認証成功後に実行）
+// 全イベント一括管理モーダルを開く（認証成功後に実行）
 async function openBulkEditModal() {
-    await loadEventsFromServer(true); // 開く直前に最新データを取得
+    await loadEventsFromServer(true);
 
     const container = document.getElementById('bulk-edit-container');
     container.innerHTML = '';
@@ -239,11 +319,10 @@ async function openBulkEditModal() {
     document.getElementById('modal-bulk-edit').classList.remove('hidden');
 }
 
-// 【修正】全イベント一括管理の保存処理
+// 全イベント一括管理の保存処理
 async function submitBulkEdit() {
     const container = document.getElementById('bulk-edit-container');
 
-    // 画面上の入力値を先に退避
     const draftMap = {};
     events.forEach(ev => {
         const titleInput = container.querySelector(`.bulk-title-input[data-id="${ev.id}"]`);
@@ -259,7 +338,6 @@ async function submitBulkEdit() {
         };
     });
 
-    // 最新データを再度同期してから反映
     await loadEventsFromServer(true);
 
     events.forEach(ev => {
@@ -271,7 +349,6 @@ async function submitBulkEdit() {
         }
     });
 
-    // 一括でサーバーへ保存
     await saveAllEventsToServer();
 
     renderEventList();
@@ -326,6 +403,7 @@ async function submitCreateEvent() {
         scheduleDate: schedDate,
         actualDate: actualDate,
         pass: noPass ? "" : eventPw,
+        regulation: DEFAULT_REGULATION_TEMPLATE,
         members: {},
         tactics: []
     };
@@ -465,6 +543,7 @@ function loadEventSheet(ev) {
     document.getElementById('sheet-event-title').innerText = ev.title;
     document.getElementById('sheet-event-desc').innerText = `イベントID: ${ev.id} | 全件同期モード`;
 
+    renderRegulationArea(ev);
     renderMemberTable(ev);
     renderTacticsTable(ev);
     switchTab('plan');
