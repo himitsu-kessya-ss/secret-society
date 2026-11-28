@@ -147,17 +147,47 @@
         <!-- TAB 2: 参加メンバー・階級設定 -->
         <div id="tab-member" class="tab-content hidden">
             <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
                     <div>
                         <h3>参加メンバー・階級管理</h3>
-                        <p class="sub-title">メンバーの追加、削除、およびイベント時点の階級変更が行えます。</p>
+                        <p class="sub-title">「出場」にチェックを入れたメンバーのみ、作戦立案タブのプルダウンとサマリーに反映されます。</p>
                     </div>
-                    <button class="btn" onclick="saveMembersToServer()" style="background-color: rgba(0, 240, 255, 0.15);">💾 メンバー情報をサーバーに保存</button>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-secondary" onclick="toggleMemberImportArea()">📋 勢力メンバー一覧から一括取込</button>
+                        <button type="button" class="btn btn-danger" onclick="clearAllMembers()">🗑️ 全削除</button>
+                        <button type="button" class="btn" onclick="saveMembersToServer()" style="background-color: rgba(0, 240, 255, 0.15);">💾 メンバー情報をサーバーに保存</button>
+                    </div>
                 </div>
+
+                <!-- 勢力所属メンバー一覧コピペ取込エリア -->
+                <div id="member-import-box" class="hidden" style="background: rgba(0, 0, 0, 0.25); border: 1px solid var(--accent); border-radius: 6px; padding: 12px; margin-bottom: 15px;">
+                    <div style="font-size: 0.85rem; font-weight: bold; color: var(--accent); margin-bottom: 6px;">
+                        📥 勢力所属メンバー一覧をそのまま貼り付けてください
+                    </div>
+                    <p class="sub-title" style="font-size: 0.8rem; margin-bottom: 8px;">
+                        ゲームの「勢力所属メンバー一覧」表を範囲選択してコピー＆ペーストすると、全メンバーの「プレイヤー名・階級・熟練度」を自動抽出します。
+                    </p>
+                    <textarea id="member-import-textarea" rows="6" style="width: 100%; background: var(--bg-main); color: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 8px; font-size: 0.85rem; font-family: inherit; resize: vertical;" placeholder="ここに勢力所属メンバー一覧のテキストを貼り付け..."></textarea>
+                    <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;">
+                        <button type="button" class="btn btn-secondary" style="padding: 4px 12px; font-size: 0.85rem;" onclick="toggleMemberImportArea()">閉じる</button>
+                        <button type="button" class="btn" style="padding: 4px 12px; font-size: 0.85rem; background-color: rgba(0, 240, 255, 0.15);" onclick="importMembersFromPaste()">⚡ テキストから一括取り込み</button>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 10px; font-size: 0.85rem; color: var(--text-muted);">
+                    出場チェック済: <strong id="member-active-count" style="color: var(--accent);">0</strong> 名 / 全 <strong id="member-total-count" style="color: #fff;">0</strong> 名
+                </div>
+
                 <div class="table-responsive">
-                    <table style="min-width: 600px; max-width: 800px;">
+                    <table style="min-width: 650px; max-width: 880px;">
                         <thead>
                             <tr>
+                                <th style="width: 70px; text-align: center;">
+                                    <div style="display:flex; flex-direction:column; align-items:center; gap:2px;">
+                                        <span>出場</span>
+                                        <input type="checkbox" id="toggle-all-members" onchange="toggleAllMemberActive(this)" title="全選択/全解除" style="cursor:pointer;">
+                                    </div>
+                                </th>
                                 <th>プレイヤー名</th>
                                 <th>熟練度</th>
                                 <th>階級</th>
