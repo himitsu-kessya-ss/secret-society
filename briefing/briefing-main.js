@@ -40,7 +40,6 @@ function renderRegulationArea(ev) {
     displayBox.style.color = regText ? '#e2e8f0' : 'var(--text-muted)';
     editArea.value = regText;
 
-    // 閲覧モードにリセット
     displayBox.classList.remove('hidden');
     editArea.classList.add('hidden');
     if (toggleBtn) toggleBtn.textContent = '✏️ 編集する';
@@ -58,7 +57,6 @@ function toggleRegulationEditMode() {
 
     const isEditing = !editArea.classList.contains('hidden');
     if (isEditing) {
-        // 編集キャンセル -> 元の値に戻して閲覧モードへ
         const ev = events.find(e => e.id === currentEventId);
         editArea.value = (ev && ev.regulation) ? ev.regulation : '';
         displayBox.classList.remove('hidden');
@@ -66,7 +64,6 @@ function toggleRegulationEditMode() {
         if (toggleBtn) toggleBtn.textContent = '✏️ 編集する';
         if (saveBtn) saveBtn.classList.add('hidden');
     } else {
-        // 編集モードへ
         displayBox.classList.add('hidden');
         editArea.classList.remove('hidden');
         if (toggleBtn) toggleBtn.textContent = '✖ キャンセル';
@@ -83,7 +80,6 @@ async function saveRegulationToServer() {
     if (!editArea) return;
     const newRegText = editArea.value;
 
-    // 他メンバーの作戦・メンバー更新を上書きしないよう最新データを取得
     await loadEventsFromServer(true);
 
     const ev = events.find(e => e.id === currentEventId);
@@ -113,7 +109,6 @@ async function saveSelectedTacticsToServer() {
     const currentEvBeforeSync = events.find(e => e.id === currentEventId);
     if (!currentEvBeforeSync) return;
 
-    // 1. サーバー同期で上書きされる前に、画面上でチェックされた行のデータを先に吸い上げる
     const rows = document.querySelectorAll('#tbody-tactics tr');
     const pendingUpdates = [];
 
@@ -124,7 +119,6 @@ async function saveSelectedTacticsToServer() {
                 currentEvBeforeSync.tactics[idx] = createEmptyTacticsRow();
             }
             collectRowDataFromDOM(idx, currentEvBeforeSync);
-            // ディープコピーして退避（syncフラグは保存時にOFFに戻す）
             const rowSnapshot = JSON.parse(JSON.stringify(currentEvBeforeSync.tactics[idx]));
             rowSnapshot.sync = false;
             pendingUpdates.push({ idx: idx, data: rowSnapshot });
@@ -136,13 +130,11 @@ async function saveSelectedTacticsToServer() {
         return;
     }
 
-    // 2. 他メンバーの更新を消さないよう最新データを取得
     await loadEventsFromServer(true);
 
     const ev = events.find(e => e.id === currentEventId);
     if (!ev) return;
 
-    // 3. 退避しておいた行データを最新イベントデータへ反映（新規行なら末尾まで補完して格納）
     pendingUpdates.forEach(item => {
         while (ev.tactics.length <= item.idx) {
             ev.tactics.push(createEmptyTacticsRow());
@@ -153,7 +145,6 @@ async function saveSelectedTacticsToServer() {
     const toggleAllHeader = document.getElementById('toggle-all-sync');
     if (toggleAllHeader) toggleAllHeader.checked = false;
 
-    // 4. サーバーへ一括保存
     await saveAllEventsToServer();
     alert(`選択された ${pendingUpdates.length} 行の作戦データをサーバーに反映しました！`);
     renderTacticsTable(ev);
@@ -175,16 +166,26 @@ function toggleAllSyncCheckboxes(headerCheckbox) {
     });
 }
 
+// メンバーが「出場」有効かどうかを判定（旧データ互換のため未定義時はtrue扱い）
+function isMemberActive(memberObj) {
+    if (!memberObj) return false;
+    return memberObj.active !== false;
+}
+
+// 参加メンバー表のDOMから状態（出場チェック・名前・熟練度・階級）を収集
 function collectMembersFromDOM(ev) {
     const memberRows = document.querySelectorAll('#tbody-members tr');
     let newMembersObj = {};
 
     memberRows.forEach(tr => {
+        const activeCb = tr.querySelector('.member-active-checkbox');
         const nameInput = tr.querySelector('.member-name-input');
         const expInput = tr.querySelector('.member-exp-input');
         const rankSelect = tr.querySelector('.member-rank-select');
-        if (nameInput && nameInput.value) {
-            newMembersObj[nameInput.value] = {
+        if (nameInput && nameInput.value.trim()) {
+            const pName = nameInput.value.trim();
+            newMembersObj[pName] = {
+                active: activeCb ? activeCb.checked : true,
                 exp: Number(expInput ? expInput.value : 100),
                 rank: rankSelect ? rankSelect.value : '一等兵'
             };
@@ -193,14 +194,182 @@ function collectMembersFromDOM(ev) {
     ev.members = newMembersObj;
 }
 
+// 【追加】画面上のメンバーを全削除する（保存ボタンを押すまではサーバーに反映されない）
+function clearAllMembers() {
+    const ev = events.find(e => e.id === currentEventId);
+    if (!ev) return;
+
+    const currentCount = Object.keys(ev.members || {}).length;
+    if (currentCount === 0) {
+        alert('削除するメンバーがいません。');
+        return;
+    }
+
+    if (!confirm(`画面上のメンバー（${currentCount}名）をすべて削除しますか？\n※「💾 メンバー情報をサーバーに保存」を押すまでサーバーには確定しません。`)) {
+        return;
+    }
+
+    ev.members = {};
+    renderMemberTable(ev);
+    renderTacticsTable(ev);
+}
+
+// メンバー取込ボックスの開閉
+function toggleMemberImportArea() {
+    const box = document.getElementById('member-import-box');
+    const textarea = document.getElementById('member-import-textarea');
+    if (!box) return;
+    box.classList.toggle('hidden');
+    if (!box.classList.contains('hidden') && textarea) {
+        textarea.focus();
+    }
+}
+
+// 勢力所属メンバー一覧コピペテキストから「プレイヤー名・熟練度・階級」を抽出して一括取込
+function importMembersFromPaste() {
+    const ev = events.find(e => e.id === currentEventId);
+    if (!ev) return;
+
+    const textarea = document.getElementById('member-import-textarea');
+    const rawText = textarea ? textarea.value : '';
+    if (!rawText.trim()) {
+        alert('貼り付け欄が空です。勢力所属メンバー一覧のテキストを貼り付けてください。');
+        return;
+    }
+
+    collectMembersFromDOM(ev);
+
+    const rankKeys = Object.keys(RANK_MASTER);
+    const sortedRanks = [...rankKeys].sort((a, b) => b.length - a.length);
+    const rankPattern = sortedRanks.map(r => r.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+    const rankExpRegex = new RegExp(`(${rankPattern})\\s+(\\d+)`);
+
+    const lines = rawText.split(/\r?\n/).map(line => line.trim()).filter(line => line !== '');
+    const parsedMembers = [];
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+
+        if (/^【.+】$/.test(line) && i + 1 < lines.length) {
+            const candidateName = lines[i + 1].trim();
+            if (candidateName && !candidateName.startsWith('貢献ポイント') && !/^\d+$/.test(candidateName)) {
+                let foundRank = '一等兵';
+                let foundExp = 100;
+
+                for (let j = i + 2; j <= Math.min(i + 8, lines.length - 1); j++) {
+                    if (/^【.+】$/.test(lines[j])) break;
+
+                    const match = lines[j].match(rankExpRegex);
+                    if (match) {
+                        foundRank = match[1];
+                        foundExp = Number(match[2]);
+                        break;
+                    }
+                }
+
+                parsedMembers.push({
+                    name: candidateName,
+                    rank: foundRank,
+                    exp: foundExp
+                });
+            }
+        }
+    }
+
+    if (parsedMembers.length === 0) {
+        alert('メンバー情報を読み取れませんでした。\n「【称号】」と「階級・熟練度」が含まれるように勢力所属メンバー一覧をコピーして貼り付けてください。');
+        return;
+    }
+
+    let addedCount = 0;
+    let updatedCount = 0;
+
+    parsedMembers.forEach(m => {
+        if (ev.members[m.name]) {
+            ev.members[m.name].exp = m.exp;
+            ev.members[m.name].rank = m.rank;
+            updatedCount++;
+        } else {
+            ev.members[m.name] = {
+                active: false,
+                exp: m.exp,
+                rank: m.rank
+            };
+            addedCount++;
+        }
+    });
+
+    renderMemberTable(ev);
+    renderTacticsTable(ev);
+
+    if (textarea) textarea.value = '';
+    const box = document.getElementById('member-import-box');
+    if (box) box.classList.add('hidden');
+
+    alert(`勢力メンバー ${parsedMembers.length} 名を取り込みました！（新規: ${addedCount} 名 / 更新: ${updatedCount} 名）\n出場するメンバーにチェックを入れて「💾 メンバー情報をサーバーに保存」を押してください。`);
+}
+
+// 出場チェック全選択／全解除
+function toggleAllMemberActive(headerCheckbox) {
+    const isChecked = headerCheckbox.checked;
+    const ev = events.find(e => e.id === currentEventId);
+    if (!ev) return;
+
+    collectMembersFromDOM(ev);
+    Object.keys(ev.members).forEach(pName => {
+        ev.members[pName].active = isChecked;
+    });
+
+    renderMemberTable(ev);
+    renderTacticsTable(ev);
+}
+
+// 個別の出場チェック変更時
+function onMemberActiveChange() {
+    const ev = events.find(e => e.id === currentEventId);
+    if (!ev) return;
+    collectMembersFromDOM(ev);
+    updateMemberCountDisplay(ev);
+    renderTacticsTable(ev);
+}
+
+// 階級変更時に加算コスト表示と作戦表を即反映
+function onMemberRankChange() {
+    const ev = events.find(e => e.id === currentEventId);
+    if (!ev) return;
+    collectMembersFromDOM(ev);
+    renderMemberTable(ev);
+    renderTacticsTable(ev);
+}
+
+function updateMemberCountDisplay(ev) {
+    const names = Object.keys(ev.members);
+    const activeCount = names.filter(p => isMemberActive(ev.members[p])).length;
+    const activeEl = document.getElementById('member-active-count');
+    const totalEl = document.getElementById('member-total-count');
+    const toggleAllEl = document.getElementById('toggle-all-members');
+
+    if (activeEl) activeEl.textContent = activeCount;
+    if (totalEl) totalEl.textContent = names.length;
+    if (toggleAllEl) {
+        toggleAllEl.checked = names.length > 0 && activeCount === names.length;
+    }
+}
+
 async function saveMembersToServer() {
     if (!GAS_URL) return;
+    const currentEv = events.find(e => e.id === currentEventId);
+    if (!currentEv) return;
+
+    collectMembersFromDOM(currentEv);
+    const membersSnapshot = JSON.parse(JSON.stringify(currentEv.members));
+
     await loadEventsFromServer(true);
 
     const ev = events.find(e => e.id === currentEventId);
     if (!ev) return;
 
-    collectMembersFromDOM(ev);
+    ev.members = membersSnapshot;
     
     await saveAllEventsToServer();
     alert('参加メンバー・階級情報をサーバーに保存しました！');
@@ -210,10 +379,10 @@ async function saveMembersToServer() {
 
 function initDefaultEventData(ev) {
     DEFAULT_PLAYERS.forEach((p, idx) => {
-        ev.members[p] = { exp: 150 + idx * 10, rank: "曹長" };
+        ev.members[p] = { active: true, exp: 150 + idx * 10, rank: "曹長" };
     });
-    ev.members["Oro🍊min"] = { exp: 294, rank: "特務准尉" };
-    ev.members["Halbert"] = { exp: 265, rank: "先任曹長" };
+    ev.members["Oro🍊min"] = { active: true, exp: 294, rank: "特務准尉" };
+    ev.members["Halbert"] = { active: true, exp: 265, rank: "先任曹長" };
 
     ev.tactics = [
         { reg: true, sync: false, tactic: "DA", actualCost: 38, turn: 10, player: "Oro🍊min", mecha: "ガンダム", hp: 501, weapon: "★フルバースト", minR: 20, maxR: 70, equip: "プロペラントタンク", strPre: "移動しない", strPost: "攻撃", 
@@ -294,7 +463,6 @@ function closeModal() {
     document.getElementById('modal-mecha-search').classList.add('hidden');
 }
 
-// 全イベント一括管理前の管理者認証モーダルを開く
 function openBulkAuthModal() {
     const pwInput = document.getElementById('input-bulk-auth-pw');
     if (pwInput) {
@@ -307,7 +475,6 @@ function openBulkAuthModal() {
     }
 }
 
-// 一括管理を開く前の管理者パスワード認証
 async function submitBulkAuth() {
     const adminPw = document.getElementById('input-bulk-auth-pw').value;
     if (adminPw !== 'p@ssw0rd') {
@@ -319,7 +486,6 @@ async function submitBulkAuth() {
     await openBulkEditModal();
 }
 
-// 全イベント一括管理モーダルを開く（認証成功後に実行）
 async function openBulkEditModal() {
     await loadEventsFromServer(true);
 
@@ -347,7 +513,6 @@ async function openBulkEditModal() {
     document.getElementById('modal-bulk-edit').classList.remove('hidden');
 }
 
-// 全イベント一括管理の保存処理
 async function submitBulkEdit() {
     const container = document.getElementById('bulk-edit-container');
 
@@ -591,6 +756,8 @@ function switchTab(tabName) {
     if (tabName === 'plan') {
         document.querySelectorAll('.tab-btn')[0].classList.add('active');
         document.getElementById('tab-plan').classList.remove('hidden');
+        const ev = events.find(e => e.id === currentEventId);
+        if (ev) renderTacticsTable(ev);
     } else if (tabName === 'member') {
         document.querySelectorAll('.tab-btn')[1].classList.add('active');
         document.getElementById('tab-member').classList.remove('hidden');
@@ -609,14 +776,21 @@ function renderMemberTable(ev) {
 
     Object.keys(ev.members).forEach(pName => {
         const m = ev.members[pName];
+        const active = isMemberActive(m);
         const rankCost = RANK_MASTER[m.rank] || 0;
 
         const tr = document.createElement('tr');
+        if (!active) {
+            tr.style.opacity = '0.55';
+        }
         tr.innerHTML = `
-            <td><input type="text" value="${pName}" class="member-name-input" style="width:120px;"></td>
+            <td style="text-align: center;">
+                <input type="checkbox" class="member-active-checkbox" ${active ? 'checked' : ''} onchange="onMemberActiveChange()" style="transform: scale(1.2); cursor: pointer;">
+            </td>
+            <td><input type="text" value="${pName}" class="member-name-input" style="width:130px;"></td>
             <td><input type="number" value="${m.exp}" class="member-exp-input" style="width:70px; text-align:center;"></td>
             <td>
-                <select class="member-rank-select" style="width:130px;">
+                <select class="member-rank-select" style="width:130px;" onchange="onMemberRankChange()">
                     ${Object.keys(RANK_MASTER).map(r => `<option value="${r}" ${r === m.rank ? 'selected' : ''}>${r}</option>`).join('')}
                 </select>
             </td>
@@ -625,6 +799,8 @@ function renderMemberTable(ev) {
         `;
         tbody.appendChild(tr);
     });
+
+    updateMemberCountDisplay(ev);
 }
 
 function addMemberRow() {
@@ -637,8 +813,9 @@ function addMemberRow() {
     while(ev.members[newName]) {
         newName = `新規メンバー(${count++})`;
     }
-    ev.members[newName] = { exp: 100, rank: "一等兵" };
+    ev.members[newName] = { active: true, exp: 100, rank: "一等兵" };
     renderMemberTable(ev);
+    renderTacticsTable(ev);
 }
 
 function deleteMember(pName) {
@@ -751,6 +928,11 @@ function createTacticsTr(row, no, ev) {
     const dbCost = row.mecha ? mechaData.cost : '#N/A';
     const dbHp = row.mecha ? mechaData.hp : '#N/A';
 
+    const activePlayerNames = Object.keys(ev.members).filter(p => isMemberActive(ev.members[p]));
+    if (row.player && !activePlayerNames.includes(row.player)) {
+        activePlayerNames.push(row.player);
+    }
+
     let tacticClass = "";
     if (row.tactic) {
         const lastChar = row.tactic.slice(-1).toUpperCase();
@@ -794,7 +976,7 @@ function createTacticsTr(row, no, ev) {
         <td>
             <select class="row-player-select" onchange="collectRowDataFromDOM(${no-1}, events.find(e=>e.id===currentEventId)); renderTacticsTable(events.find(e=>e.id===currentEventId));" style="width:120px;">
                 <option value="">選択</option>
-                ${Object.keys(ev.members).map(p => `<option value="${p}" ${p === row.player ? 'selected' : ''}>${p}</option>`).join('')}
+                ${activePlayerNames.map(p => `<option value="${p}" ${p === row.player ? 'selected' : ''}>${p}</option>`).join('')}
             </select>
         </td>
         <td style="color:var(--accent); font-weight:bold;">${calcCost || '#N/A'}</td>
@@ -985,10 +1167,10 @@ function renderSummaryCards() {
     const container = document.getElementById('summary-cards');
     container.innerHTML = '';
 
-    const memberNames = Object.keys(evData.members);
+    const memberNames = Object.keys(evData.members).filter(p => isMemberActive(evData.members[p]));
     
     if (memberNames.length === 0) {
-        container.innerHTML = '<p class="sub-title">登録されている参加メンバーがいません。</p>';
+        container.innerHTML = '<p class="sub-title">「参加メンバー・階級設定」タブで出場にチェックが入っているメンバーがいません。</p>';
         return;
     }
 
