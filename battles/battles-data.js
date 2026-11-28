@@ -94,5 +94,25 @@ const battleEvents = [
                 description: "戦闘詳細"
             }
         ]
+    },
+    {
+        eventName: "勢力内戦（中距離カップ🏆）261128",
+        battles: [
+            {
+                roundName: "大会概要",
+                url: "./勢力内戦（中距離カップ🏆）261128/summary.html",
+                description: "レギュなど大会概要"
+            },
+            {
+                roundName: "大会結果まとめ",
+                url: "./勢力内戦（中距離カップ🏆）261128/result.html",
+                description: "勝敗やスコアなどの結果データ"
+            },
+            {
+                roundName: "戦闘ログ (1〜100ターン)",
+                url: "./勢力内戦（中距離カップ🏆）261128/1-100.html",
+                description: "戦闘詳細"
+            }
+        ]
     }
 ];
