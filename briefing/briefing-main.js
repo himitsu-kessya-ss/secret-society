@@ -96,38 +96,66 @@ async function saveRegulationToServer() {
     alert('レギュレーションをサーバーに保存しました！');
 }
 
-// 【作戦立案タブ用】「更新対象」がONの行だけを反映して一括保存
+// 空の作戦行オブジェクトを生成するヘルパー
+function createEmptyTacticsRow() {
+    return {
+        reg: false, sync: false, tactic: "AA", actualCost: 0, turn: 1, player: "", mecha: "", hp: 0, weapon: "", minR: 0, maxR: 20, equip: "", 
+        strPre: "移動", strPost: "攻撃", 
+        t1: "", l1: 0, t2: "", l2: 0, t3: "", l3: 0, t4: "", l4: 0, t5: "", l5: 0, 
+        c1:false, c2:false, c3:false, c4:false, c5:false, c6:false, c7:false, c8:false, r1:false, r2:false, r3:false
+    };
+}
+
+// 【作戦立案タブ用】「更新対象」がONの行だけを反映して一括保存（新規追加行にも対応）
 async function saveSelectedTacticsToServer() {
     if (!GAS_URL) return;
-    
+
+    const currentEvBeforeSync = events.find(e => e.id === currentEventId);
+    if (!currentEvBeforeSync) return;
+
+    // 1. サーバー同期で上書きされる前に、画面上でチェックされた行のデータを先に吸い上げる
+    const rows = document.querySelectorAll('#tbody-tactics tr');
+    const pendingUpdates = [];
+
+    rows.forEach((tr, idx) => {
+        const syncCheckbox = tr.querySelector('.row-sync-checkbox');
+        if (syncCheckbox && syncCheckbox.checked) {
+            if (!currentEvBeforeSync.tactics[idx]) {
+                currentEvBeforeSync.tactics[idx] = createEmptyTacticsRow();
+            }
+            collectRowDataFromDOM(idx, currentEvBeforeSync);
+            // ディープコピーして退避（syncフラグは保存時にOFFに戻す）
+            const rowSnapshot = JSON.parse(JSON.stringify(currentEvBeforeSync.tactics[idx]));
+            rowSnapshot.sync = false;
+            pendingUpdates.push({ idx: idx, data: rowSnapshot });
+        }
+    });
+
+    if (pendingUpdates.length === 0) {
+        alert('「更新対象」にチェックが入っている行がありません。更新したい行のチェックボックスをONにしてください。');
+        return;
+    }
+
+    // 2. 他メンバーの更新を消さないよう最新データを取得
     await loadEventsFromServer(true);
 
     const ev = events.find(e => e.id === currentEventId);
     if (!ev) return;
 
-    const rows = document.querySelectorAll('#tbody-tactics tr');
-    let updatedCount = 0;
-
-    rows.forEach((tr, idx) => {
-        const syncCheckbox = tr.querySelector('.row-sync-checkbox');
-        if (syncCheckbox && syncCheckbox.checked) {
-            collectRowDataFromDOM(idx, ev);
-            ev.tactics[idx].sync = false;
-            updatedCount++;
-            syncCheckbox.checked = false;
+    // 3. 退避しておいた行データを最新イベントデータへ反映（新規行なら末尾まで補完して格納）
+    pendingUpdates.forEach(item => {
+        while (ev.tactics.length <= item.idx) {
+            ev.tactics.push(createEmptyTacticsRow());
         }
+        ev.tactics[item.idx] = item.data;
     });
-
-    if (updatedCount === 0) {
-        alert('「更新対象」にチェックが入っている行がありません。更新したい行のチェックボックスをONにしてください。');
-        return;
-    }
 
     const toggleAllHeader = document.getElementById('toggle-all-sync');
     if (toggleAllHeader) toggleAllHeader.checked = false;
 
+    // 4. サーバーへ一括保存
     await saveAllEventsToServer();
-    alert(`選択された ${updatedCount} 行の作戦データをサーバーに反映しました！`);
+    alert(`選択された ${pendingUpdates.length} 行の作戦データをサーバーに反映しました！`);
     renderTacticsTable(ev);
 }
 
@@ -640,12 +668,7 @@ function renderTacticsTable(ev) {
 
 function addTacticsRow() {
     const ev = events.find(e => e.id === currentEventId);
-    ev.tactics.push({
-        reg: false, sync: false, tactic: "AA", actualCost: 0, turn: 1, player: "", mecha: "", hp: 0, weapon: "", minR: 0, maxR: 20, equip: "", 
-        strPre: "移動", strPost: "攻撃", 
-        t1: "", l1: 0, t2: "", l2: 0, t3: "", l3: 0, t4: "", l4: 0, t5: "", l5: 0, 
-        c1:false, c2:false, c3:false, c4:false, c5:false, c6:false, c7:false, c8:false, r1:false, r2:false, r3:false
-    });
+    ev.tactics.push(createEmptyTacticsRow());
     renderTacticsTable(ev);
 }
 
